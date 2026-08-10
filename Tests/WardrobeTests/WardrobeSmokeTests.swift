@@ -1,9 +1,12 @@
 import XCTest
 @testable import Wardrobe
 
+@MainActor
 final class WardrobeSmokeTests: XCTestCase {
-    func testProductionEnvironmentHasApplicationName() {
-        XCTAssertEqual(AppEnvironment.production().applicationName, "Wardrobe")
+    func testEnvironmentHasApplicationName() throws {
+        let container = try WardrobeModelContainerFactory.inMemory()
+        let environment = AppEnvironment(applicationName: "Wardrobe", modelContainer: container)
+        XCTAssertEqual(environment.applicationName, "Wardrobe")
     }
 
     func testSidebarDefinesExactlyTheFivePlannedRoutes() {

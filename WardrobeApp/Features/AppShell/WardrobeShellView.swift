@@ -21,5 +21,6 @@ struct WardrobeShellView: View {
 }
 
 #Preview {
-    WardrobeShellView(environment: .production())
+    let container = try! WardrobeModelContainerFactory.inMemory()
+    WardrobeShellView(environment: AppEnvironment(applicationName: "Wardrobe", modelContainer: container))
 }

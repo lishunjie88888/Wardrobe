@@ -14,6 +14,12 @@
 		A00000000000000000000005 /* PlaceholderFeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000005 /* PlaceholderFeatureView.swift */; };
 		A00000000000000000000006 /* WardrobeSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000006 /* WardrobeSmokeTests.swift */; };
 		A00000000000000000000007 /* WardrobeLaunchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000A /* WardrobeLaunchUITests.swift */; };
+		A00000000000000000000008 /* DomainCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000B /* DomainCodes.swift */; };
+		A00000000000000000000009 /* WardrobeSchemaV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000C /* WardrobeSchemaV1.swift */; };
+		A0000000000000000000000A /* WardrobeRepositories.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000D /* WardrobeRepositories.swift */; };
+		A0000000000000000000000B /* WardrobeDataRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000E /* WardrobeDataRules.swift */; };
+		A0000000000000000000000C /* WardrobePersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000F /* WardrobePersistence.swift */; };
+		A0000000000000000000000D /* Stage1PersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000010 /* Stage1PersistenceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +50,12 @@
 		B00000000000000000000008 /* WardrobeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WardrobeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B00000000000000000000009 /* WardrobeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WardrobeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0000000000000000000000A /* WardrobeLaunchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeLaunchUITests.swift; sourceTree = "<group>"; };
+		B0000000000000000000000B /* DomainCodes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainCodes.swift; sourceTree = "<group>"; };
+		B0000000000000000000000C /* WardrobeSchemaV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeSchemaV1.swift; sourceTree = "<group>"; };
+		B0000000000000000000000D /* WardrobeRepositories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeRepositories.swift; sourceTree = "<group>"; };
+		B0000000000000000000000E /* WardrobeDataRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeDataRules.swift; sourceTree = "<group>"; };
+		B0000000000000000000000F /* WardrobePersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobePersistence.swift; sourceTree = "<group>"; };
+		B00000000000000000000010 /* Stage1PersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage1PersistenceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,6 +151,7 @@
 			isa = PBXGroup;
 			children = (
 				B00000000000000000000006 /* WardrobeSmokeTests.swift */,
+				B00000000000000000000010 /* Stage1PersistenceTests.swift */,
 			);
 			path = WardrobeTests;
 			sourceTree = "<group>";
@@ -153,8 +166,24 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		G0000000000000000000000A /* Domain */ = {isa = PBXGroup; children = (); path = Domain; sourceTree = "<group>"; };
-		G0000000000000000000000B /* Core */ = {isa = PBXGroup; children = (); path = Core; sourceTree = "<group>"; };
+		G0000000000000000000000A /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				G00000000000000000000015 /* Models */,
+				G00000000000000000000016 /* Repositories */,
+				G00000000000000000000017 /* Services */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		G0000000000000000000000B /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				G00000000000000000000018 /* Database */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
 		G0000000000000000000000C /* AI */ = {isa = PBXGroup; children = (); path = AI; sourceTree = "<group>"; };
 		G0000000000000000000000D /* Resources */ = {isa = PBXGroup; children = (); path = Resources; sourceTree = "<group>"; };
 		G0000000000000000000000E /* Wardrobe */ = {isa = PBXGroup; children = (); path = Wardrobe; sourceTree = "<group>"; };
@@ -164,6 +193,10 @@
 		G00000000000000000000012 /* GenerationHistory */ = {isa = PBXGroup; children = (); path = GenerationHistory; sourceTree = "<group>"; };
 		G00000000000000000000013 /* Settings */ = {isa = PBXGroup; children = (); path = Settings; sourceTree = "<group>"; };
 		G00000000000000000000014 /* WardrobeUITests */ = {isa = PBXGroup; children = (B0000000000000000000000A /* WardrobeLaunchUITests.swift */,); path = WardrobeUITests; sourceTree = "<group>"; };
+		G00000000000000000000015 /* Models */ = {isa = PBXGroup; children = (B0000000000000000000000B /* DomainCodes.swift */, B0000000000000000000000C /* WardrobeSchemaV1.swift */,); path = Models; sourceTree = "<group>"; };
+		G00000000000000000000016 /* Repositories */ = {isa = PBXGroup; children = (B0000000000000000000000D /* WardrobeRepositories.swift */,); path = Repositories; sourceTree = "<group>"; };
+		G00000000000000000000017 /* Services */ = {isa = PBXGroup; children = (B0000000000000000000000E /* WardrobeDataRules.swift */,); path = Services; sourceTree = "<group>"; };
+		G00000000000000000000018 /* Database */ = {isa = PBXGroup; children = (B0000000000000000000000F /* WardrobePersistence.swift */,); path = Database; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -271,6 +304,11 @@
 				A00000000000000000000003 /* AppRoute.swift in Sources */,
 				A00000000000000000000004 /* WardrobeShellView.swift in Sources */,
 				A00000000000000000000005 /* PlaceholderFeatureView.swift in Sources */,
+				A00000000000000000000008 /* DomainCodes.swift in Sources */,
+				A00000000000000000000009 /* WardrobeSchemaV1.swift in Sources */,
+				A0000000000000000000000A /* WardrobeRepositories.swift in Sources */,
+				A0000000000000000000000B /* WardrobeDataRules.swift in Sources */,
+				A0000000000000000000000C /* WardrobePersistence.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -279,6 +317,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000006 /* WardrobeSmokeTests.swift in Sources */,
+				A0000000000000000000000D /* Stage1PersistenceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -127,63 +127,74 @@
 
 ### Scope
 
-- [ ] 实现 `ClothingItem`、`PersonProfile`、`PersonImage`、`Outfit`、`OutfitItem`、`GenerationRecord`。
-- [ ] 实现 `GenerationPersonInput` 与 `GenerationGarmentInput` 历史快照模型。
-- [ ] 实现稳定 code 的领域枚举和持久化映射。
-- [ ] 建立 `WardrobeSchemaV1`、`SchemaMigrationPlan` 基线和 `ModelContainer`。
-- [ ] 建立 Repository 协议、SwiftData 实现基础和内存测试容器。
+- [x] 实现 `ClothingItem`、`PersonProfile`、`PersonImage`、`Outfit`、`OutfitItem`、`GenerationRecord`。
+- [x] 实现 `GenerationPersonInput` 与 `GenerationGarmentInput` 历史快照模型。
+- [x] 实现稳定 code 的领域枚举和持久化映射。
+- [x] 建立 `WardrobeSchemaV1`、`SchemaMigrationPlan` 基线和 `ModelContainer`。
+- [x] 建立 Repository 协议、SwiftData 实现基础和内存测试容器。
 
 ### Out of Scope
 
-- [ ] 不实现文件写入、图片处理或 UI CRUD。
-- [ ] 不实现真实迁移到尚不存在的未来 Schema。
-- [ ] 不将图片 Data、API Key 或绝对路径保存到 SwiftData。
+- [x] 不实现文件写入、图片处理或 UI CRUD。
+- [x] 不实现真实迁移到尚不存在的未来 Schema。
+- [x] 不将图片 Data、API Key 或绝对路径保存到 SwiftData。
 
 ### Dependencies
 
-- [ ] Stage 0 已通过。
-- [ ] `docs/DATA_MODEL.md` 字段、关系和删除规则已复核。
+- [x] Stage 0 已通过。
+- [x] `docs/DATA_MODEL.md` 字段、关系和删除规则已复核。
 
 ### Implementation Tasks
 
-- [ ] 为所有持久模型使用唯一、不可变、应用生成的 UUID。
-- [ ] 为所有模型实现 `createdAt`、`updatedAt` 及所需 `archivedAt`。
-- [ ] 按文档实现可选性、默认值、反向关系和 cascade/nullify 删除规则。
-- [ ] 将可演进枚举持久化为稳定 String code，并保留未知 code。
-- [ ] 建立默认人物、人物主图和 Try-On Slot 数量约束的 Service/Repository 边界。
-- [ ] 建立 Generation 状态转换校验，终态不可回到运行态。
-- [ ] 建立面向业务的 Repository 协议，禁止 Feature 暴露 `ModelContext`。
-- [ ] 创建生产 `ModelContainer` factory 和测试用 in-memory factory。
-- [ ] 固化 V1 Schema 定义，禁止后续直接修改已发布版本类型。
+- [x] 为所有持久模型使用唯一、不可变、应用生成的 UUID。
+- [x] 为所有模型实现 `createdAt`、`updatedAt` 及所需 `archivedAt`。
+- [x] 按文档实现可选性、默认值、反向关系和 cascade/nullify 删除规则。
+- [x] 将可演进枚举持久化为稳定 String code，并保留未知 code。
+- [x] 建立默认人物、人物主图和 Try-On Slot 数量约束的 Service/Repository 边界。
+- [x] 建立 Generation 状态转换校验，终态不可回到运行态。
+- [x] 建立面向业务的 Repository 协议，禁止 Feature 暴露 `ModelContext`。
+- [x] 创建生产 `ModelContainer` factory 和测试用 in-memory factory。
+- [x] 固化 V1 Schema 定义，禁止后续直接修改已发布版本类型。
 
 ### Tests
 
-- [ ] 测试每个模型写入、保存、重新 fetch 和更新。
-- [ ] 测试 PersonProfile→PersonImage 与 Outfit→OutfitItem cascade。
-- [ ] 测试衣物/人物删除时 OutfitItem 与 Generation input 关系 nullify 且快照保留。
-- [ ] 测试稳定 UUID、默认值、未知枚举 code 和时间字段。
-- [ ] 测试默认人物/主图唯一性和 Try-On Slot 约束不只依赖 UI。
-- [ ] 运行 build 和全部现有 tests。
+- [x] 测试每个模型写入、保存、重新 fetch 和更新。
+- [x] 测试 PersonProfile→PersonImage 与 Outfit→OutfitItem cascade。
+- [x] 测试衣物/人物删除时 OutfitItem 与 Generation input 关系 nullify 且快照保留。
+- [x] 测试稳定 UUID、默认值、未知枚举 code 和时间字段。
+- [x] 测试默认人物/主图唯一性和 Try-On Slot 约束不只依赖 UI。
+- [x] 运行 build 和全部现有 tests。
 
 ### Acceptance Criteria
 
-- [ ] 模型覆盖 `PRODUCT_SPEC.md` 的 V1 数据需求。
-- [ ] 可以可靠写入、读取和更新测试数据。
-- [ ] 删除规则与 `DATA_MODEL.md` 完全一致。
-- [ ] SwiftData 中不存在完整图片 Data、密钥或绝对路径字段。
-- [ ] Repository 调用方不需要知道 SwiftData 实现细节。
+- [x] 模型覆盖 `PRODUCT_SPEC.md` 的 V1 数据需求。
+- [x] 可以可靠写入、读取和更新测试数据。
+- [x] 删除规则与 `DATA_MODEL.md` 完全一致。
+- [x] SwiftData 中不存在完整图片 Data、密钥或绝对路径字段。
+- [x] Repository 调用方不需要知道 SwiftData 实现细节。
 
 ### Documentation Updates
 
-- [ ] 任何字段、关系、默认值或删除规则差异已同步到 `docs/DATA_MODEL.md`。
-- [ ] 记录 V1 schemaVersion 和 ModelContainer 配置。
-- [ ] 在本 Stage 下记录测试 fixture 与命令结果。
+- [x] 任何字段、关系、默认值或删除规则差异已同步到 `docs/DATA_MODEL.md`。
+- [x] 记录 V1 schemaVersion 和 ModelContainer 配置。
+- [x] 在本 Stage 下记录测试 fixture 与命令结果。
+
+### Execution Record（2026-08-10）
+
+- Schema：`WardrobeSchemaV1` 的 `schemaVersion` 为 `1.0.0`，包含 8 个 V1 持久模型；`WardrobeMigrationPlan` 仅注册 V1，迁移 stage 为空，作为首个冻结基线。
+- ModelContainer：生产配置名为 `WardrobeV1`，使用 SwiftData 默认持久存储位置并在 App composition root 注入；测试配置名为 `WardrobeV1Tests`，使用独立 in-memory store。
+- Repository：Domain 定义 Clothing、Person、Outfit、Generation 业务协议；`SwiftDataWardrobeRepository` 在 Core/Database 封装 `ModelContext`，Feature/调用方不接触 SwiftData 查询或事务细节。
+- 约束：Repository/Service 边界执行活跃默认人物唯一、每人物主图唯一、单值 Try-On Slot 唯一、Accessories 多值，以及 Generation 终态不可回到运行态；未知枚举 code 保留原始字符串。
+- Fixture：每个测试创建独立内存 container，覆盖 8 个模型的写入、保存、重新 fetch、更新、时间字段、稳定 UUID、未知 code、cascade/nullify、历史快照、默认选择、槽位和状态转换。
+- Debug build：`xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath /tmp/WardrobeStage1DerivedData build` → `BUILD SUCCEEDED`。
+- 全部 tests：`xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath /tmp/WardrobeStage1DerivedData test` → `TEST SUCCEEDED`；9 个 Stage 1 persistence tests、2 个既有 Unit smoke tests 与 1 个 UI launch/navigation smoke test 通过。
+- 边界审计：持久模型未定义图片 `Data`、API Key 或绝对路径字段；资源引用均为相对 resource ID 字符串；未实现 Stage 2 的文件写入、图片处理或任何业务 CRUD UI。实现字段、默认值和删除规则与 `docs/DATA_MODEL.md` 一致，无需修改专项文档。
 
 ### Completion Checklist
 
-- [ ] Schema review 完成并冻结 `WardrobeSchemaV1` 基线。
-- [ ] Repository 与关系测试通过。
-- [ ] 人工确认删除规则与未来迁移策略后，才能进入依赖此 Schema 的 Stage。
+- [x] Schema review 完成并冻结 `WardrobeSchemaV1` 基线。
+- [x] Repository 与关系测试通过。
+- [x] 人工确认删除规则与未来迁移策略后，才能进入依赖此 Schema 的 Stage。
 
 ---
 
