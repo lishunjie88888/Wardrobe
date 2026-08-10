@@ -1,0 +1,512 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A00000000000000000000001 /* WardrobeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001 /* WardrobeApp.swift */; };
+		A00000000000000000000002 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000002 /* AppEnvironment.swift */; };
+		A00000000000000000000003 /* AppRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000003 /* AppRoute.swift */; };
+		A00000000000000000000004 /* WardrobeShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000004 /* WardrobeShellView.swift */; };
+		A00000000000000000000005 /* PlaceholderFeatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000005 /* PlaceholderFeatureView.swift */; };
+		A00000000000000000000006 /* WardrobeSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000006 /* WardrobeSmokeTests.swift */; };
+		A00000000000000000000007 /* WardrobeLaunchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000A /* WardrobeLaunchUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C00000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F00000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D00000000000000000000001;
+			remoteInfo = Wardrobe;
+		};
+		C00000000000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F00000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D00000000000000000000001;
+			remoteInfo = Wardrobe;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		B00000000000000000000001 /* WardrobeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeApp.swift; sourceTree = "<group>"; };
+		B00000000000000000000002 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		B00000000000000000000003 /* AppRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRoute.swift; sourceTree = "<group>"; };
+		B00000000000000000000004 /* WardrobeShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeShellView.swift; sourceTree = "<group>"; };
+		B00000000000000000000005 /* PlaceholderFeatureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderFeatureView.swift; sourceTree = "<group>"; };
+		B00000000000000000000006 /* WardrobeSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeSmokeTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000007 /* Wardrobe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wardrobe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000008 /* WardrobeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WardrobeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000009 /* WardrobeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WardrobeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0000000000000000000000A /* WardrobeLaunchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeLaunchUITests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E00000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E00000000000000000000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		G00000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				G00000000000000000000002 /* WardrobeApp */,
+				G00000000000000000000007 /* Tests */,
+				G00000000000000000000009 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		G00000000000000000000002 /* WardrobeApp */ = {
+			isa = PBXGroup;
+			children = (
+				G00000000000000000000003 /* App */,
+				G00000000000000000000004 /* Features */,
+				G0000000000000000000000A /* Domain */,
+				G0000000000000000000000B /* Core */,
+				G0000000000000000000000C /* AI */,
+				G0000000000000000000000D /* Resources */,
+			);
+			path = WardrobeApp;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000003 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000001 /* WardrobeApp.swift */,
+				B00000000000000000000002 /* AppEnvironment.swift */,
+				B00000000000000000000003 /* AppRoute.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000004 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				G00000000000000000000005 /* AppShell */,
+				G0000000000000000000000E /* Wardrobe */,
+				G0000000000000000000000F /* Person */,
+				G00000000000000000000010 /* TryOn */,
+				G00000000000000000000011 /* Outfit */,
+				G00000000000000000000012 /* GenerationHistory */,
+				G00000000000000000000013 /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000005 /* AppShell */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000004 /* WardrobeShellView.swift */,
+				B00000000000000000000005 /* PlaceholderFeatureView.swift */,
+			);
+			path = AppShell;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000007 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				G00000000000000000000008 /* WardrobeTests */,
+				G00000000000000000000014 /* WardrobeUITests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000008 /* WardrobeTests */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000006 /* WardrobeSmokeTests.swift */,
+			);
+			path = WardrobeTests;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000009 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000007 /* Wardrobe.app */,
+				B00000000000000000000008 /* WardrobeTests.xctest */,
+				B00000000000000000000009 /* WardrobeUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		G0000000000000000000000A /* Domain */ = {isa = PBXGroup; children = (); path = Domain; sourceTree = "<group>"; };
+		G0000000000000000000000B /* Core */ = {isa = PBXGroup; children = (); path = Core; sourceTree = "<group>"; };
+		G0000000000000000000000C /* AI */ = {isa = PBXGroup; children = (); path = AI; sourceTree = "<group>"; };
+		G0000000000000000000000D /* Resources */ = {isa = PBXGroup; children = (); path = Resources; sourceTree = "<group>"; };
+		G0000000000000000000000E /* Wardrobe */ = {isa = PBXGroup; children = (); path = Wardrobe; sourceTree = "<group>"; };
+		G0000000000000000000000F /* Person */ = {isa = PBXGroup; children = (); path = Person; sourceTree = "<group>"; };
+		G00000000000000000000010 /* TryOn */ = {isa = PBXGroup; children = (); path = TryOn; sourceTree = "<group>"; };
+		G00000000000000000000011 /* Outfit */ = {isa = PBXGroup; children = (); path = Outfit; sourceTree = "<group>"; };
+		G00000000000000000000012 /* GenerationHistory */ = {isa = PBXGroup; children = (); path = GenerationHistory; sourceTree = "<group>"; };
+		G00000000000000000000013 /* Settings */ = {isa = PBXGroup; children = (); path = Settings; sourceTree = "<group>"; };
+		G00000000000000000000014 /* WardrobeUITests */ = {isa = PBXGroup; children = (B0000000000000000000000A /* WardrobeLaunchUITests.swift */,); path = WardrobeUITests; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D00000000000000000000001 /* Wardrobe */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = H00000000000000000000002 /* Build configuration list for PBXNativeTarget "Wardrobe" */;
+			buildPhases = (
+				I00000000000000000000001 /* Sources */,
+				E00000000000000000000001 /* Frameworks */,
+				J00000000000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Wardrobe;
+			productName = Wardrobe;
+			productReference = B00000000000000000000007 /* Wardrobe.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D00000000000000000000002 /* WardrobeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = H00000000000000000000003 /* Build configuration list for PBXNativeTarget "WardrobeTests" */;
+			buildPhases = (
+				I00000000000000000000002 /* Sources */,
+				E00000000000000000000002 /* Frameworks */,
+				J00000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				K00000000000000000000001 /* PBXTargetDependency */,
+			);
+			name = WardrobeTests;
+			productName = WardrobeTests;
+			productReference = B00000000000000000000008 /* WardrobeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D00000000000000000000003 /* WardrobeUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = H00000000000000000000004 /* Build configuration list for PBXNativeTarget "WardrobeUITests" */;
+			buildPhases = (
+				I00000000000000000000003 /* Sources */,
+				E00000000000000000000003 /* Frameworks */,
+				J00000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				K00000000000000000000002 /* PBXTargetDependency */,
+			);
+			name = WardrobeUITests;
+			productName = WardrobeUITests;
+			productReference = B00000000000000000000009 /* WardrobeUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F00000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					D00000000000000000000001 = {CreatedOnToolsVersion = 26.6; };
+					D00000000000000000000002 = {CreatedOnToolsVersion = 26.6; TestTargetID = D00000000000000000000001; };
+					D00000000000000000000003 = {CreatedOnToolsVersion = 26.6; TestTargetID = D00000000000000000000001; };
+				};
+			};
+			buildConfigurationList = H00000000000000000000001 /* Build configuration list for PBXProject "Wardrobe" */;
+			compatibilityVersion = "Xcode 16.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = G00000000000000000000001;
+			productRefGroup = G00000000000000000000009 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D00000000000000000000001 /* Wardrobe */,
+				D00000000000000000000002 /* WardrobeTests */,
+				D00000000000000000000003 /* WardrobeUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		J00000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		J00000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		J00000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		I00000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000001 /* WardrobeApp.swift in Sources */,
+				A00000000000000000000002 /* AppEnvironment.swift in Sources */,
+				A00000000000000000000003 /* AppRoute.swift in Sources */,
+				A00000000000000000000004 /* WardrobeShellView.swift in Sources */,
+				A00000000000000000000005 /* PlaceholderFeatureView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		I00000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000006 /* WardrobeSmokeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		I00000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000007 /* WardrobeLaunchUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		K00000000000000000000001 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = D00000000000000000000001 /* Wardrobe */; targetProxy = C00000000000000000000001 /* PBXContainerItemProxy */; };
+		K00000000000000000000002 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = D00000000000000000000001 /* Wardrobe */; targetProxy = C00000000000000000000002 /* PBXContainerItemProxy */; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		L00000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("DEBUG=1", "$(inherited)");
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		L00000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		L00000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Wardrobe;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lishunjie.Wardrobe;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+			};
+			name = Debug;
+		};
+		L00000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Wardrobe;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lishunjie.Wardrobe;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+			};
+			name = Release;
+		};
+		L00000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lishunjie.WardrobeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Wardrobe.app/Contents/MacOS/Wardrobe";
+			};
+			name = Debug;
+		};
+		L00000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lishunjie.WardrobeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Wardrobe.app/Contents/MacOS/Wardrobe";
+			};
+			name = Release;
+		};
+		L00000000000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lishunjie.WardrobeUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = Wardrobe;
+			};
+			name = Debug;
+		};
+		L00000000000000000000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lishunjie.WardrobeUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = Wardrobe;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		H00000000000000000000001 /* Build configuration list for PBXProject "Wardrobe" */ = {isa = XCConfigurationList; buildConfigurations = (L00000000000000000000001 /* Debug */, L00000000000000000000002 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		H00000000000000000000002 /* Build configuration list for PBXNativeTarget "Wardrobe" */ = {isa = XCConfigurationList; buildConfigurations = (L00000000000000000000003 /* Debug */, L00000000000000000000004 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		H00000000000000000000003 /* Build configuration list for PBXNativeTarget "WardrobeTests" */ = {isa = XCConfigurationList; buildConfigurations = (L00000000000000000000005 /* Debug */, L00000000000000000000006 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		H00000000000000000000004 /* Build configuration list for PBXNativeTarget "WardrobeUITests" */ = {isa = XCConfigurationList; buildConfigurations = (L00000000000000000000007 /* Debug */, L00000000000000000000008 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = F00000000000000000000001 /* Project object */;
+}
