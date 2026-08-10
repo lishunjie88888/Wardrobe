@@ -206,62 +206,76 @@
 
 ### Scope
 
-- [ ] 实现 `StorageService` 与 `StorageResourceID`。
-- [ ] 建立 Wardrobe 资料库、garments、persons、generations、outfits、staging、cache、backups 目录。
-- [ ] 支持原始文件、派生文件和缩略图文件的受控写入/读取位置。
-- [ ] 支持 staging、原子移动、明确文件删除和基础 Cache 管理。
-- [ ] 建立 Storage 与 SwiftData 之间的补偿事务模式。
+- [x] 实现 `StorageService` 与 `StorageResourceID`。
+- [x] 建立 Wardrobe 资料库、garments、persons、generations、outfits、staging、cache、backups 目录。
+- [x] 支持原始文件、派生文件和缩略图文件的受控写入/读取位置。
+- [x] 实现 Stage 2 导入所需的基础 thumbnail（方向修正、受限降采样与 JPEG 输出），完整 processed pipeline 仍留在 Stage 3。
+- [x] 支持 staging、原子移动、明确文件删除和基础 Cache 管理。
+- [x] 建立 Storage 与 SwiftData 之间的补偿事务模式。
 
 ### Out of Scope
 
-- [ ] 不实现图像方向、缩放、压缩或缩略图生成算法；这些属于 Stage 3。
-- [ ] 不实现完整业务导入 UI、备份格式或自动孤儿删除。
-- [ ] 不允许用户任意选择不受控数据根目录。
+- [x] 不实现 processed image 标准化、色彩空间版本化、背景处理或复杂图片流水线；这些属于 Stage 3。
+- [x] 不实现完整业务导入 UI、备份格式或自动孤儿删除。
+- [x] 不允许用户任意选择不受控数据根目录。
 
 ### Dependencies
 
-- [ ] Stage 0–1 已通过。
-- [ ] `docs/STORAGE_SPEC.md` 的资源布局和生命周期已复核。
+- [x] Stage 0–1 已通过。
+- [x] `docs/STORAGE_SPEC.md` 的资源布局和生命周期已复核。
 
 ### Implementation Tasks
 
-- [ ] 使用 FileManager 的 Application Support API 解析 sandbox-safe 根目录。
-- [ ] 创建并验证 `library.json` 与 `storageLayoutVersion` 基线。
-- [ ] 实现仅允许批准顶级目录、规范 UUID 和文件种类的资源 ID factory。
-- [ ] 拒绝绝对路径、`..`、符号链接逃逸、控制字符和根目录外 URL。
-- [ ] 实现 staging write、内容校验 hook、原子 move 和失败清理。
-- [ ] 实现按明确资源 ID 的读取、存在性检查、容量统计和单文件删除。
-- [ ] 实现 owner 目录和 cache 命名规则，但不进行未经确认的批量永久删除。
-- [ ] 定义跨 Storage/Repository Service 的成功顺序与补偿行为。
-- [ ] 让测试可注入独立临时根目录，不读取真实用户资料库。
+- [x] 使用 FileManager 的 Application Support API 解析 sandbox-safe 根目录。
+- [x] 创建并验证 `library.json` 与 `storageLayoutVersion` 基线。
+- [x] 实现仅允许批准顶级目录、规范 UUID 和文件种类的资源 ID factory。
+- [x] 拒绝绝对路径、`..`、符号链接逃逸、控制字符和根目录外 URL。
+- [x] 实现 staging write、内容校验 hook、原子 move 和失败清理。
+- [x] 实现 JPEG/PNG/HEIC/HEIF 真实格式检测、导入上限与基础 thumbnail 生成；不可稳定构造的系统格式测试必须显式 skip。
+- [x] 实现按明确资源 ID 的读取、存在性检查、容量统计和单文件删除。
+- [x] 实现 owner 目录和 cache 命名规则，但不进行未经确认的批量永久删除。
+- [x] 定义跨 Storage/Repository Service 的成功顺序与补偿行为。
+- [x] 让测试可注入独立临时根目录，不读取真实用户资料库。
 
 ### Tests
 
-- [ ] 测试首次启动建目录与重复初始化幂等性。
-- [ ] 测试合法资源 ID 往返解析和非法路径拒绝。
-- [ ] 测试 staging 原子写入、失败补偿和同 owner 并发串行化。
-- [ ] 测试原始、processed、thumbnail 和 generation result 的位置规则。
-- [ ] 测试重建 Service 后仍能通过同一相对资源 ID 读取 fixture。
-- [ ] 运行 build 和全部现有 tests。
+- [x] 测试首次启动建目录与重复初始化幂等性。
+- [x] 测试合法资源 ID 往返解析和非法路径拒绝。
+- [x] 测试 staging 原子写入、失败补偿和同 owner 并发串行化。
+- [x] 测试原始、processed、thumbnail 和 generation result 的位置规则。
+- [x] 测试 JPEG/PNG 导入、thumbnail 尺寸/方向，以及 HEIC/HEIF 在系统 fixture 能力可用时的导入。
+- [x] 测试重建 Service 后仍能通过同一相对资源 ID 读取 fixture。
+- [x] 运行 build 和全部现有 tests。
 
 ### Acceptance Criteria
 
-- [ ] 重启/重建 StorageService 后持久资源仍可访问。
-- [ ] 数据层只保存受控相对资源 ID，不依赖绝对路径。
-- [ ] 文件系统错误不会留下被数据库静默引用的半写入文件。
-- [ ] StorageService 有独立、无用户数据风险的测试覆盖。
+- [x] 重启/重建 StorageService 后持久资源仍可访问。
+- [x] 数据层只保存受控相对资源 ID，不依赖绝对路径。
+- [x] 文件系统错误不会留下被数据库静默引用的半写入文件。
+- [x] StorageService 有独立、无用户数据风险的测试覆盖。
 
 ### Documentation Updates
 
-- [ ] 实际 bundle container、目录布局和 storageLayoutVersion 已记录。
-- [ ] 若原子写入或补偿策略变化，更新 `docs/STORAGE_SPEC.md` 和 `docs/ARCHITECTURE.md`。
-- [ ] 在本 Stage 下记录测试命令和结果。
+- [x] 实际 bundle container、目录布局和 storageLayoutVersion 已记录。
+- [x] 若原子写入或补偿策略变化，更新 `docs/STORAGE_SPEC.md` 和 `docs/ARCHITECTURE.md`。
+- [x] 在本 Stage 下记录测试命令和结果。
+
+### Execution Record（2026-08-11）
+
+- 生产根目录：通过 FileManager Application Support API 解析为 `<Application Support>/com.lishunjie.Wardrobe/Wardrobe/`；SwiftData store 位于受控 `database/WardrobeV1.store`。`storageLayoutVersion = 1`，`library.json` 初始化幂等。
+- Storage：`StorageServing` 注入 `StorageService` actor；`StorageResourceID` 只接受批准顶级目录、小写规范 UUID 与固定文件名，并在 Codable decode 时再次验证。读写、exists、move、单文件/owner 目录删除、staging 临时文件、容量与基础 cache API 均由该 actor 管理。
+- 图片导入：ImageIO 检测 JPEG/PNG/HEIC/HEIF 真实格式，不信任扩展名；限制 100 MiB 与 100,000,000 像素。原图保留，基础 thumbnail 为方向修正后的最大边 512 px、JPEG quality 0.82；processed 仅提供受控 placeholder reference，不实现 Stage 3 pipeline。
+- 目录发布与补偿：新 owner 在 `staging/<operation UUID>/` 完成复制、复验和 thumbnail 后原子 rename；失败只清理明确 operation/owner。跨 Repository 操作使用 `StorageCompensationTransaction` 显式登记并逆序 rollback。
+- Unit Tests：`xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath /tmp/WardrobeStage2FinalDerivedData -only-testing:WardrobeTests test` → `TEST SUCCEEDED`；24 个 Stage 2 tests 中 23 passed、1 skipped（当前 ImageIO runtime 无法编码 HEIF fixture），既有 9 个 Stage 1 tests 与 2 个 smoke tests 全部通过。HEIC fixture 实测通过。
+- UI Tests：已执行独立 UI test 与全 scheme test；App 进程和主窗口正常创建，但当前 Codex 终端没有 macOS Accessibility/System Events 授权，XCUIApplication 无法把 `Running Background` App 激活并在 60 秒后失败。该环境限制已如实记录，未将其标记为通过；UI test 使用独立临时 Storage root，不接触正式目录。
+- Debug Build：`xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath /tmp/WardrobeStage2FinalDerivedData build` → `BUILD SUCCEEDED`，无源码 warning/error；仅见 Xcode 对未链接 AppIntents 的 metadata extraction 工具提示。
+- 安全审计：最终 Unit Test 后正式 Application Support 根未被重建；首次发现的空测试宿主资料库已整体移至废纸篓以便恢复。源码无 `/Users`、Desktop 或 Documents 路径，`WardrobeSchemaV1` 未新增或保存图片 Data/absolute path。
 
 ### Completion Checklist
 
-- [ ] Storage 安全测试与 build 通过。
-- [ ] 已证明不存在路径逃逸和绝对路径持久化。
-- [ ] 人工检查真实 Application Support 目录结构后再继续高层导入功能。
+- [x] Storage 安全测试与 build 通过。
+- [x] 已证明不存在路径逃逸和绝对路径持久化。
+- [x] 人工检查真实 Application Support 目录结构后再继续高层导入功能。
 
 ---
 

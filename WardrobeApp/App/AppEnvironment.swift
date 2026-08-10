@@ -6,12 +6,28 @@ import SwiftData
 struct AppEnvironment: Sendable {
     let applicationName: String
     let modelContainer: ModelContainer
+    let storageService: any StorageServing
+
+    init(
+        applicationName: String,
+        modelContainer: ModelContainer,
+        storageService: any StorageServing
+    ) {
+        self.applicationName = applicationName
+        self.modelContainer = modelContainer
+        self.storageService = storageService
+    }
 
     @MainActor
     static func production() throws -> AppEnvironment {
-        AppEnvironment(
+        let storageConfiguration = try StorageConfiguration.production()
+        let storageService = try StorageService(configuration: storageConfiguration)
+        return AppEnvironment(
             applicationName: "Wardrobe",
-            modelContainer: try WardrobeModelContainerFactory.production()
+            modelContainer: try WardrobeModelContainerFactory.production(
+                databaseDirectory: storageConfiguration.rootURL.appendingPathComponent("database", isDirectory: true)
+            ),
+            storageService: storageService
         )
     }
 }

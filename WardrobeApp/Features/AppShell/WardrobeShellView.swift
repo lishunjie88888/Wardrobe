@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 struct WardrobeShellView: View {
@@ -22,5 +23,17 @@ struct WardrobeShellView: View {
 
 #Preview {
     let container = try! WardrobeModelContainerFactory.inMemory()
-    WardrobeShellView(environment: AppEnvironment(applicationName: "Wardrobe", modelContainer: container))
+    let storage = try! StorageService(
+        configuration: StorageConfiguration(
+            rootURL: FileManager.default.temporaryDirectory
+                .appendingPathComponent("WardrobePreview", isDirectory: true)
+        )
+    )
+    WardrobeShellView(
+        environment: AppEnvironment(
+            applicationName: "Wardrobe",
+            modelContainer: container,
+            storageService: storage
+        )
+    )
 }

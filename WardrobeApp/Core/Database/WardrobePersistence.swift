@@ -3,12 +3,13 @@ import SwiftData
 
 enum WardrobeModelContainerFactory {
     @MainActor
-    static func production() throws -> ModelContainer {
+    static func production(databaseDirectory: URL) throws -> ModelContainer {
         let schema = Schema(versionedSchema: WardrobeSchemaV1.self)
         let configuration = ModelConfiguration(
             "WardrobeV1",
             schema: schema,
-            isStoredInMemoryOnly: false
+            url: databaseDirectory.appendingPathComponent("WardrobeV1.store"),
+            cloudKitDatabase: .none
         )
         return try ModelContainer(
             for: schema,

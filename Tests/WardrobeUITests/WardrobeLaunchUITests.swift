@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class WardrobeLaunchUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -7,6 +8,14 @@ final class WardrobeLaunchUITests: XCTestCase {
 
     func testLaunchesAndNavigatesEverySidebarRoute() {
         let app = XCUIApplication()
+        let isolatedStorageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("WardrobeUITests-\(UUID().uuidString)", isDirectory: true)
+        app.launchEnvironment["WARDROBE_STORAGE_ROOT_OVERRIDE"] = isolatedStorageRoot.path
+        addTeardownBlock {
+            if FileManager.default.fileExists(atPath: isolatedStorageRoot.path) {
+                try FileManager.default.removeItem(at: isolatedStorageRoot)
+            }
+        }
         app.launch()
 
         XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 5))

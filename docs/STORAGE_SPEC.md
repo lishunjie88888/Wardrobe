@@ -12,6 +12,8 @@ V1 的资料库根目录建议为：
 
 真实根路径可能因 App Sandbox container 变化，因此数据库只能保存相对于 `Wardrobe/` 的受控资源 ID。
 
+当前实现通过 `FileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)` 获取根位置，并使用 bundle identifier `com.lishunjie.Wardrobe` 组成应用专属目录。生产数据库位于 `Wardrobe/database/WardrobeV1.store`；测试通过依赖注入或 Debug 测试进程覆盖使用独立临时根，不访问真实 Application Support。
+
 ## 2. 目录布局
 
 ```text
@@ -48,6 +50,7 @@ Wardrobe/
 - `library.json` 仅记录资料库格式、`storageLayoutVersion` 和非敏感标识，不复制业务数据。
 - `database/` 由 SwiftData container 管理，应用不得直接修改其内部文件。
 - owner 目录只使用规范化小写 UUID 字符串；文件名由 Storage Service 的资源种类决定，不接受任意用户输入。
+- 当前 `storageLayoutVersion` 为 `1`。`library.json` 包含该版本、稳定 `libraryID` 与创建时间；重复初始化保持 manifest 不变，遇到不支持版本时拒绝开放资料库。
 
 ## 3. 资源 ID
 
@@ -86,6 +89,7 @@ generations/89a1.../result.png
 - V1 建议 JPEG，使用固定最大像素边和质量配置，保留正确方向。
 - 业务 owner 下的 thumbnail 是持久派生资源，可随完整备份保存，也可在恢复后重建。
 - `cache/previews` 中的临时缩略图是可删除缓存，不进入备份。
+- Stage 2 基础实现使用 ImageIO 从文件 URL 降采样，最大边 `512` 像素，JPEG quality `0.82`，并启用 orientation transform。该实现避免为生成缩略图先完整解码原图；Stage 3 可在不改变资源 ID 和 Storage 边界的前提下扩展色彩空间、处理版本和更完整的图片流水线。
 
 ### 4.4 AI 生成图
 
@@ -112,6 +116,14 @@ generations/89a1.../result.png
 - 新资源写入成功但数据库保存失败时，删除本次操作创建的明确资源。
 - 数据库提交成功但后续清理失败时，保留一致的业务状态并记录待清理项，不回滚成悬空引用。
 - 同一 owner 的并发写入由 Storage actor 串行化；文件替换使用临时文件与原子 rename。
+- 新 owner 的图片导入在 `staging/<Operation UUID>/` 内完成真实格式检测、原图复制、再次解码校验和 thumbnail 生成，再将整个操作目录原子 rename 为 owner 目录。失败只清理该 operation 与本次明确 owner，不扫描或删除其他资源。
+- 跨 SwiftData 与文件系统的上层 Service 使用 `StorageCompensationTransaction` 记录本次创建的明确 resource/owner；Repository save 成功后 commit，失败则按逆序 rollback。清理失败作为独立 issue 返回，不能覆盖原始业务错误。
+
+### 5.1 导入验证基线
+
+- 接受 ImageIO 实际解码为 JPEG、PNG、HEIC 或 HEIF 的单帧/首帧图片；持久扩展名来自检测结果，不信任来源文件名。
+- 单文件上限为 100 MiB，首帧像素总数上限为 100,000,000，且宽高必须为正数。
+- 当前自动测试运行时可稳定编码/解码 JPEG、PNG、HEIC；HEIF encoder 不可用时测试明确 skip，不将其伪报为成功。运行时导入仍支持系统 ImageIO 能解码的 HEIF。
 
 ## 6. 删除与孤儿清理
 

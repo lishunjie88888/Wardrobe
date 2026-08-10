@@ -105,6 +105,9 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - `StorageService` 是 Application Support 中持久资源的唯一入口。
 - 负责生成受控资源 ID、路径解析、原子写入、读取、移动、删除、校验、容量统计和临时文件生命周期。
 - 外层只保存和传递资源 ID，不拼接绝对路径。详细规则见 [STORAGE_SPEC.md](STORAGE_SPEC.md)。
+- 当前实现为通过 `StorageServing` 注入的 `StorageService` actor，同一实例串行化 owner 写入。`StorageResourceID` 只接受批准的顶级目录、小写规范 UUID 和固定文件种类，解码持久引用时会重新验证。
+- 基础 `ImageIOThumbnailGenerator` 只负责格式/尺寸验证、方向修正降采样和 JPEG 编码；StorageService 负责 staging、目标命名和发布。Stage 3 在该边界上扩展完整 processed image pipeline，不把图片逻辑放入 View 或 Repository。
+- `StorageCompensationTransaction` 为跨 SwiftData/filesystem Service 提供显式补偿记录；它只回滚调用方注册的本次资源，不执行全库扫描。
 
 ### 4.6 AI Provider
 
@@ -120,7 +123,7 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 1. ViewModel 收集编辑草稿并调用导入用例。
 2. 用例验证元数据和输入图片。
 3. Storage 创建 owner UUID 对应的临时目录并原子写入原图。
-4. Image Processing 生成 processed 与 thumbnail。
+4. Stage 2 先生成基础 thumbnail 并保留 processed 受控位置；Stage 3 的 Image Processing 再生成版本化 processed 产物并可扩展 thumbnail 策略。
 5. Repository 保存仅含资源 ID 的 `ClothingItem`。
 6. 若数据库保存失败，Service 删除本次新建的明确资源；若清理失败，记录为可扫描孤儿，不隐藏主错误。
 
