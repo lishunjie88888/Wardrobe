@@ -70,7 +70,7 @@ enum StyleTag: String, CaseIterable, StableCodeValue {
     case other
 }
 
-enum TryOnSlot: String, CaseIterable, StableCodeValue {
+enum TryOnSlot: String, CaseIterable, StableCodeValue, Codable {
     case upperBody = "upper_body"
     case outerwear
     case lowerBody = "lower_body"

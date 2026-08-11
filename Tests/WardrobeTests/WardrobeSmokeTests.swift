@@ -9,7 +9,7 @@ final class WardrobeSmokeTests: XCTestCase {
             .appendingPathComponent("WardrobeSmokeTests-\(UUID().uuidString)", isDirectory: true)
         let storage = try StorageService(configuration: StorageConfiguration(rootURL: root))
         defer { try? FileManager.default.removeItem(at: root) }
-        let environment = AppEnvironment(
+        let environment = try AppEnvironment(
             applicationName: "Wardrobe",
             modelContainer: container,
             storageService: storage,

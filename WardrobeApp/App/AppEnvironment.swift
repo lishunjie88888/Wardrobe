@@ -15,6 +15,7 @@ struct AppEnvironment {
     let modelContainer: ModelContainer
     let wardrobe: WardrobeFeatureDependencies
     let person: PersonFeatureDependencies
+    let providerRegistry: ProviderRegistry
 
     @MainActor
     init(
@@ -22,9 +23,10 @@ struct AppEnvironment {
         modelContainer: ModelContainer,
         storageService: StorageService,
         imageProcessingService: any ImageProcessingServing
-    ) {
+    ) throws {
         self.applicationName = applicationName
         self.modelContainer = modelContainer
+        self.providerRegistry = try ProviderRegistry(providers: [MockVirtualTryOnProvider()])
         let repository = SwiftDataWardrobeRepository(container: modelContainer)
 #if DEBUG
         if ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_CLOTHING"] == "1" {
@@ -105,7 +107,7 @@ struct AppEnvironment {
     static func production() throws -> AppEnvironment {
         let storageConfiguration = try StorageConfiguration.production()
         let storageService = try StorageService(configuration: storageConfiguration)
-        return AppEnvironment(
+        return try AppEnvironment(
             applicationName: "Wardrobe",
             modelContainer: try WardrobeModelContainerFactory.production(
                 databaseDirectory: storageConfiguration.rootURL.appendingPathComponent("database", isDirectory: true)

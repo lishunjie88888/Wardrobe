@@ -37,7 +37,7 @@ struct WardrobeShellView: View {
         )
     )
     WardrobeShellView(
-        environment: AppEnvironment(
+        environment: try! AppEnvironment(
             applicationName: "Wardrobe",
             modelContainer: container,
             storageService: storage,

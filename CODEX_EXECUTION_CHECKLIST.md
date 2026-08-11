@@ -522,57 +522,69 @@
 
 ### Scope
 
-- [ ] `VirtualTryOnProvider`、`VirtualTryOnCapabilities` 和 Provider registry。
-- [ ] `VirtualTryOnRequest`、`ProviderImage`、`TryOnGarment`、`TryOnOptions`、`VirtualTryOnResult`。
-- [ ] `VirtualTryOnError`、能力校验、Prompt Builder 边界。
-- [ ] `MockVirtualTryOnProvider` 的成功、失败、延迟和取消模式。
+- [x] `VirtualTryOnProvider`、`VirtualTryOnCapabilities` 和 Provider registry。
+- [x] `VirtualTryOnRequest`、`ProviderImage`、`TryOnGarment`、`TryOnOptions`、`VirtualTryOnResult`。
+- [x] `VirtualTryOnError`、能力校验、Prompt Builder 边界。
+- [x] `MockVirtualTryOnProvider` 的成功、失败、延迟和取消模式。
 
 ### Out of Scope
 
-- [ ] 不调用 OpenAI 或任何真实/付费 API。
-- [ ] 不创建完整 GenerationRecord 编排；属于 Stage 10。
-- [ ] 不把供应商 SDK 类型放入 Domain 或 UI。
+- [x] 不调用 OpenAI 或任何真实/付费 API。
+- [x] 不创建完整 GenerationRecord 编排；属于 Stage 10。
+- [x] 不把供应商 SDK 类型放入 Domain 或 UI。
 
 ### Dependencies
 
-- [ ] Stage 0–1 已通过。
-- [ ] `docs/AI_ARCHITECTURE.md` 的协议、错误和能力模型已复核。
+- [x] Stage 0–1 已通过。
+- [x] `docs/AI_ARCHITECTURE.md` 的协议、错误和能力模型已复核。
 
 ### Implementation Tasks
 
-- [ ] 定义小而稳定、`Sendable` 的 Provider 协议与中立数据结构。
-- [ ] 定义人物图片数量、槽位、格式、大小、质量和取消能力。
-- [ ] 定义 TryOnOptions 的 schemaVersion 与 providerParameters allowlist 边界。
-- [ ] 定义稳定 Provider ID，展示名与持久 ID 分离。
-- [ ] 实现 ProviderRegistry，由 composition root 注册，不使用全局可变单例。
-- [ ] 实现 Mock Provider 固定结果、延迟、瞬时失败、永久失败与取消。
-- [ ] 实现 Provider contract test suite，供未来所有 Adapter 复用。
-- [ ] 确认日志不输出图片 Data、完整 Prompt 或敏感配置。
+- [x] 定义小而稳定、`Sendable` 的 Provider 协议与中立数据结构。
+- [x] 定义人物图片数量、槽位、格式、大小、质量和取消能力。
+- [x] 定义 TryOnOptions 的 schemaVersion 与 providerParameters allowlist 边界。
+- [x] 定义稳定 Provider ID，展示名与持久 ID 分离。
+- [x] 实现 ProviderRegistry，由 composition root 注册，不使用全局可变单例。
+- [x] 实现 Mock Provider 固定结果、延迟、瞬时失败、永久失败与取消。
+- [x] 实现 Provider contract test suite，供未来所有 Adapter 复用。
+- [x] 确认日志不输出图片 Data、完整 Prompt 或敏感配置。
 
 ### Tests
 
-- [ ] 测试 Request Codable/Sendable 设计所需行为和 options 版本化。
-- [ ] 测试能力不支持、多图超限、槽位超限和非法输入。
-- [ ] 测试 Mock 成功、失败、延迟、Task cancellation 和迟到结果。
-- [ ] 测试 Registry 选择、缺失 Provider 和重复 ID。
-- [ ] 运行 build 和全部现有 tests，确认无网络访问。
+- [x] 测试 Request Codable/Sendable 设计所需行为和 options 版本化。
+- [x] 测试能力不支持、多图超限、槽位超限和非法输入。
+- [x] 测试 Mock 成功、失败、延迟、Task cancellation 和迟到结果。
+- [x] 测试 Registry 选择、缺失 Provider 和重复 ID。
+- [x] 运行 build 和全部现有 tests，确认无网络访问。
 
 ### Acceptance Criteria
 
-- [ ] UI/Domain 可只依赖 Provider 中立类型。
-- [ ] Mock Provider 可完整驱动后续试衣 UI 和测试。
-- [ ] 新 Provider 可通过 Adapter 与 Registry 加入，不修改 Feature。
-- [ ] 自动测试不会调用真实 API。
+- [x] UI/Domain 可只依赖 Provider 中立类型。
+- [x] Mock Provider 可完整驱动后续试衣 UI 和测试。
+- [x] 新 Provider 可通过 Adapter 与 Registry 加入，不修改 Feature。
+- [x] 自动测试不会调用真实 API。
 
 ### Documentation Updates
 
-- [ ] 实际协议和 capability 字段同步到 `AI_ARCHITECTURE.md`。
-- [ ] 若依赖方向变化，更新 `ARCHITECTURE.md`。
-- [ ] 在本 Stage 下记录 contract tests 结果。
+- [x] 实际协议和 capability 字段同步到 `AI_ARCHITECTURE.md`。
+- [x] 若依赖方向变化，更新 `ARCHITECTURE.md`。
+- [x] 在本 Stage 下记录 contract tests 结果。
+
+### Execution Record（2026-08-11）
+
+- Provider API：新增 `ProviderID`/`ProviderDescriptor`、`VirtualTryOnProvider`、`VirtualTryOnCapabilities`、`VirtualTryOnRequest`、`ProviderImage`、`TryOnGarment`、版本化 `TryOnOptions`/`JSONValue`、`VirtualTryOnResult` 与稳定 `VirtualTryOnError`。值类型均为 Provider 中立的 `Sendable`；请求编码不包含 Storage resource ID、URL 或绝对路径。
+- Validation/Prompt：`VirtualTryOnRequestValidator` 先验证 Provider capability 定义，再验证人物/衣物图片、重复 ID、MIME、字节/像素、人物数量、槽位/逐槽位及总数限制、质量、宽高比、seed、Prompt 长度、options schemaVersion 与 provider parameter allowlist。`TryOnPromptBuilder` 使用语义槽位和稳定排序，模板版本为 `wardrobe-try-on-prompt-v1`。
+- Registry/Composition：`ProviderRegistry` 为 actor，初始化时拒绝非法/重复稳定 ID，缺失选择返回稳定错误；由 `AppEnvironment` composition root 持有且只注册 `mock`，没有全局可变单例。
+- Mock：`MockVirtualTryOnProvider` 为无文件/无网络 actor，固定返回 `wardrobe-mock-result-v1`；可注入 success、前 N 次 transient failure、permanent failure 与 Swift Concurrency delay。取消在延迟前后检查并规范化为 `.cancelled`，不会提交迟到结果。
+- Stage 6 focused tests：`xcodebuild ... -collect-test-diagnostics never -only-testing:WardrobeTests/Stage6VirtualTryOnProviderTests test` → `TEST SUCCEEDED`；15 passed，覆盖 Codable/version、Prompt、contract、capability/非法输入、成功/两类失败/重试/延迟/取消/迟到结果与 Registry。
+- 全量 Unit Tests：`xcodebuild ... -derivedDataPath /tmp/WardrobeStage6FinalDerivedData -collect-test-diagnostics never -only-testing:WardrobeTests test` → `TEST SUCCEEDED`；92 total，91 passed、1 skipped、0 failed。skip 为既有 HEIF encoder fixture 条件限制。
+- UI Tests：同一 project/scheme/destination/DerivedData，`-only-testing:WardrobeUITests test` → `TEST SUCCEEDED`；3 passed，保留 Stage 0–5 的导航、衣橱和人物隔离流程。Stage 6 按范围不实现 Stage 7 Try-On UI，因此没有新增试衣 UI test。
+- Debug Build：同一 project/scheme/destination/DerivedData 执行 `build` → `BUILD SUCCEEDED`；无源码 warning/error，仅 Unit test 构建出现既有 AppIntents metadata extraction 提示。Xcode 自动序列化的无语义 `Wardrobe.xcscheme` 差异已移除。
+- 安全审计：AI 源码未导入网络框架、未出现 OpenAI/API Key/Authorization/URLSession、未访问 Storage 或 SwiftData，也未提供 destructive API。`WardrobeSchemaV1` 和 Stage 7 Try-On Feature 未修改；正式 Application Support 的 manifest/业务目录时间仍停留在本阶段测试前，未产生测试资产。
 
 ### Completion Checklist
 
-- [ ] Provider API review 与 contract tests 通过。
+- [x] Provider API review 与 contract tests 通过。
 - [ ] 人工确认协议没有 OpenAI 特有语义泄漏后再实现 Try-On UI。
 
 ---

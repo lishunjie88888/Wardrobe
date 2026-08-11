@@ -136,6 +136,14 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - 两类人物删除 Service 都在 metadata 提交前收集完整候选资源，提交 cascade/nullify 后复用 `ResourceReferenceInspector` 检查 surviving references，并按 PersonImage owner 独立决定是否删除目录。cleanup failure 单独报告，不回滚已经一致的数据库状态。
 - `AppEnvironment` 只向 Person Feature 注入上述用例与只读加载器；完整 Storage 和 ImageProcessing 仍只存在于 composition root。
 
+### 4.9 Stage 6 AI Provider 基础边界
+
+- AI 层定义 `VirtualTryOnProvider` 和全套 Provider 中立、`Sendable` 的请求/结果/能力/错误类型；不依赖 SwiftUI、SwiftData、Storage 路径、Keychain、网络框架或任何供应商 SDK。
+- `VirtualTryOnRequestValidator` 集中验证 capability 定义、人物/衣物图片、语义槽位、数量、格式、尺寸、版本化选项及 Provider 参数 allowlist。Feature 和具体 Adapter 不复制这些通用规则。
+- `TryOnPromptBuilder` 输出带版本的 Provider 中立 Prompt；日志层没有接收图片字节或完整 Prompt 的接口。
+- `ProviderRegistry` 由 `AppEnvironment` 持有并在 composition root 注册 Provider；actor 提供并发安全的只读选择，不使用全局可变单例。当前只注册无网络的 `MockVirtualTryOnProvider`。
+- Mock Provider 以注入行为模拟确定性成功、瞬时失败、永久失败、延迟与取消，不写 GenerationRecord、不访问 Storage。完整生成持久化仍属于 Stage 10，试衣 UI 属于 Stage 7。
+
 ## 5. 关键流程
 
 ### 5.1 导入衣物

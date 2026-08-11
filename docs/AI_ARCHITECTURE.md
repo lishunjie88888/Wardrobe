@@ -26,13 +26,13 @@ VirtualTryOnService
 - Provider 只执行一次供应商调用并返回 Provider 中立结果。
 - Provider 不访问 SwiftData，不展示 UI，不决定文件永久存储位置。
 
-## 3. Provider 协议草案
+## 3. Provider 协议
 
-以下代码仅是接口设计示例，不是 API 实现：
+Stage 6 已实现以下稳定边界：
 
 ```swift
 protocol VirtualTryOnProvider: Sendable {
-    var id: String { get }
+    var descriptor: ProviderDescriptor { get }
     var capabilities: VirtualTryOnCapabilities { get }
 
     func validateConfiguration() async throws
@@ -41,6 +41,8 @@ protocol VirtualTryOnProvider: Sendable {
     ) async throws -> VirtualTryOnResult
 }
 ```
+
+`ProviderDescriptor` 将经过校验的稳定 `ProviderID` 与本地化展示名分离。`ProviderRegistry` 是 composition root 注入的 actor：初始化时拒绝非法/重复 ID，查询缺失 Provider 时返回稳定错误；它不是全局可变单例。当前生产组合根只注册 `mock`。
 
 协议保持小而稳定。进度流、任务查询或服务端取消只有在多个 Provider 都有明确需要时再通过独立可选协议扩展，避免把某家供应商语义写入基础接口。
 
@@ -52,6 +54,7 @@ struct VirtualTryOnRequest: Sendable {
     let personImages: [ProviderImage]
     let garments: [TryOnGarment]
     let prompt: String
+    let promptVersion: String
     let options: TryOnOptions
 }
 
@@ -59,6 +62,8 @@ struct ProviderImage: Sendable {
     let id: UUID
     let data: Data
     let mediaType: String
+    let pixelWidth: Int
+    let pixelHeight: Int
 }
 
 struct TryOnGarment: Sendable {
@@ -66,12 +71,13 @@ struct TryOnGarment: Sendable {
     let slot: TryOnSlot
     let image: ProviderImage
     let displayName: String
+    let sortOrder: Int
 }
 
 struct TryOnOptions: Codable, Sendable {
     let schemaVersion: Int
     let quality: OutputQuality
-    let aspectRatio: AspectRatio
+    let aspectRatio: TryOnAspectRatio
     let seed: Int?
     let providerParameters: [String: JSONValue]
 }
@@ -87,9 +93,10 @@ struct VirtualTryOnResult: Sendable {
 ```
 
 - `ProviderImage` 由 Service 通过 Storage 读取并校验后创建，不向 Provider 暴露永久文件路径。
+- `VirtualTryOnRequest`、`ProviderImage`、`TryOnGarment`、`TryOnOptions` 与 `VirtualTryOnResult` 均为 `Codable`、`Equatable`、`Sendable` 值类型；请求不包含 Storage resource ID、URL 或绝对路径。Stage 10 的 Service 才负责在调用前把受控 resource ID 解析为短生命周期图片字节。
 - `personImages` 允许多张参考图；Provider 的 `capabilities.maxPersonImages` 决定实际支持数量。Service 不得静默丢弃多余图片。
 - `garments` 使用语义 `TryOnSlot`；Provider Adapter 负责映射到供应商字段。
-- `providerParameters` 必须有 allowlist、可序列化并随 GenerationRecord 快照保存；禁止存入密钥。
+- `TryOnOptions.schemaVersion` 当前为 `1`；`providerParameters` 使用可 Codable 的 `JSONValue`，每个 Provider 通过 capability 声明 allowlist，未知 key 在调用前被拒绝，禁止存入密钥。
 - 大图片导致内存压力时，可在不改变业务边界的前提下引入受控流式 payload 或安全临时文件类型。
 
 Stage 5 提供轻量 `PersonReferenceSet` 查询边界：只从活跃默认人物取得明确的 primary image，并将其余图片按 `createdAt`、UUID 稳定排序为 additional images。后续 Try-On Service 应先使用该查询，再结合 Provider capability 决定是否接受全部参考图；不得在 SwiftUI 或 Provider Adapter 中重新猜测主图。若没有默认人物或主图，查询会明确返回 nil/空值，由后续输入校验提示用户。
@@ -104,6 +111,8 @@ Stage 5 提供轻量 `PersonReferenceSet` 查询边界：只从活跃默认人�
 - 是否支持 seed、负向 Prompt、服务端取消和幂等 request ID。
 - 文件大小与像素限制。
 
+Stage 6 的具体字段为：人物/衣物 MIME allowlist、单图字节和像素总数上限、人物图数量、支持槽位、逐槽位衣物上限、总衣物上限、质量、宽高比、seed、取消能力、Provider 参数 allowlist 与 Prompt 长度上限。`VirtualTryOnRequestValidator` 先验证 capability 定义自身，再统一验证请求；空输入、重复稳定 ID、非法尺寸、格式/数量/槽位/选项超限会映射为 `VirtualTryOnError`，不会依赖 UI 校验。
+
 UI 根据能力禁用不支持选项，并说明原因；最终校验仍必须由 Service 和 Provider 执行，不能只依赖 UI。
 
 ## 6. Prompt 设计
@@ -112,6 +121,8 @@ UI 根据能力禁用不支持选项，并说明原因；最终校验仍必须�
 - Prompt Builder 输出 Provider 中立语义；具体 Provider Adapter 可追加供应商格式要求，但应将最终发送版本或可诊断摘要写入 GenerationRecord。
 - Prompt 模板具有版本号，便于重现旧记录与分析结果差异。
 - 日志默认不记录完整 Prompt；历史记录可保存 Prompt，但设置与隐私说明需明确其用途。
+
+Stage 6 的 `TryOnPromptBuilding`/`TryOnPromptBuilder` 只根据语义槽位、稳定排序和可选用户指令生成 Provider 中立文本，模板版本为 `wardrobe-try-on-prompt-v1`。Provider Adapter 可以转换格式，但不能改变 Domain 的槽位含义。
 
 ## 7. 凭据与 Provider 配置
 
@@ -139,25 +150,22 @@ queued → preparing → running → succeeded
 
 ## 9. Error、Retry 与 Cancel
 
-建议规范化错误：
+Stage 6 已实现的基础规范化错误：
 
 ```swift
 enum VirtualTryOnError: Error, Sendable {
-    case invalidInput(reason: String)
-    case unsupportedCapability(reason: String)
-    case missingCredential(providerID: String)
-    case authenticationFailed
-    case rateLimited(retryAfter: Duration?)
-    case networkUnavailable
+    case invalidInput(VirtualTryOnInputViolation)
+    case unsupportedCapability(VirtualTryOnInputViolation)
+    case configurationUnavailable
+    case transientFailure
     case providerUnavailable
-    case rejected(reason: String?)
     case invalidResponse
-    case storageFailure
     case cancelled
-    case unknown
 }
 ```
 
+- `VirtualTryOnInputViolation` 使用稳定 code 区分空人物/衣物、重复 ID、非法图片、格式/数量/槽位/质量/宽高比/seed/参数/Prompt 限制。UI 在后续 Stage 将这些 code 映射为本地化文案，不直接显示内部错误字符串。
+- 鉴权、限流、网络、内容拒绝与 Storage 等更细错误只有在 Stage 8–10 建立对应基础设施和真实 Adapter 时才扩展；不得在尚无调用方时提前混入供应商 DTO。
 - Provider Adapter 将供应商错误映射为上述错误，保留脱敏诊断上下文。
 - 自动 Retry 由 Service 策略控制，仅针对明确瞬时错误，并使用指数退避、抖动和最大次数。
 - 鉴权失败、输入无效、内容拒绝和用户取消不自动重试。
@@ -173,6 +181,8 @@ enum VirtualTryOnError: Error, Sendable {
 - `MockProvider`：测试和 SwiftUI Preview 使用，可模拟延迟、失败、取消与固定图片结果。
 
 Provider 注册由 App composition root 中的 `ProviderRegistry` 完成。持久化只保存稳定 Provider ID；Provider 不可用时，历史仍可读取，设置页提示重新选择。
+
+Stage 6 的 `MockVirtualTryOnProvider` 是 actor，固定 ID 为 `mock`，输出固定 `wardrobe-mock-result-v1` fixture 和确定性 request ID，不访问网络或文件系统。可注入 success、前 N 次 transient failure、permanent failure 及任意 Swift `Duration` 延迟；延迟使用 Swift Concurrency，调用前后均检查 Task cancellation，取消规范化为 `.cancelled`，不返回迟到结果。
 
 ## 11. 测试与安全
 
