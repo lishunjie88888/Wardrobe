@@ -368,59 +368,73 @@
 
 ### Scope
 
-- [ ] 衣橱自适应 Grid、详情和添加/编辑表单。
-- [ ] 衣物图片导入、元数据保存、收藏、归档、恢复和永久删除流程。
-- [ ] 搜索、分类/收藏/属性筛选和排序。
-- [ ] ViewModel、Repository 和 Import/Deletion Service 编排。
+- [x] 衣橱自适应 Grid、详情和添加/编辑表单。
+- [x] 衣物图片导入、元数据保存、收藏、归档、恢复和永久删除流程。
+- [x] 搜索、分类/收藏/属性筛选和排序。
+- [x] ViewModel、Repository 和 Import/Deletion Service 编排。
 
 ### Out of Scope
 
-- [ ] 不实现人物、AI 生成、穿搭保存或批量导入。
-- [ ] 不实现自动标签、自动抠图或高级全文检索。
-- [ ] 不让 View 直接使用 ModelContext、Storage 或图片处理器。
+- [x] 不实现人物、AI 生成、穿搭保存或批量导入。
+- [x] 不实现自动标签、自动抠图或高级全文检索。
+- [x] 不让 View 直接使用 ModelContext、Storage 或图片处理器。
 
 ### Dependencies
 
-- [ ] Stage 1–3 已通过。
+- [x] Stage 1–3 已通过。
 
 ### Implementation Tasks
 
-- [ ] 实现 Wardrobe Repository 查询条件、分页/批次策略和稳定排序。
-- [ ] 实现 `ImportClothingService`：验证→Storage→ImageProcessing→Repository→补偿。
-- [ ] 实现 @MainActor ViewModel/State，区分 loading、empty、filtered-empty、content 和 error。
-- [ ] 实现符合 `UI_SPEC.md` 的 LazyVGrid、Toolbar、Inspector/detail 与系统文件导入。
-- [ ] 实现全部 ClothingItem 元数据编辑和输入规范化。
-- [ ] 实现收藏、软归档、归档区恢复和永久删除影响预检。
-- [ ] 实现搜索防抖、组合筛选、最近添加/修改/名称/收藏排序。
-- [ ] 实现图片缺失/损坏占位和可操作错误，不在 View 拼路径。
+- [x] 实现 Wardrobe Repository 查询条件、分页/批次策略和稳定排序。
+- [x] 实现 `ImportClothingService`：验证→Storage→ImageProcessing→Repository→补偿。
+- [x] 实现 @MainActor ViewModel/State，区分 loading、empty、filtered-empty、content 和 error。
+- [x] 实现符合 `UI_SPEC.md` 的 LazyVGrid、Toolbar、Inspector/detail 与系统文件导入。
+- [x] 实现全部 ClothingItem 元数据编辑和输入规范化。
+- [x] 实现收藏、软归档、归档区恢复和永久删除影响预检。
+- [x] 实现搜索防抖、组合筛选、最近添加/修改/名称/收藏排序。
+- [x] 实现图片缺失/损坏占位和可操作错误，不在 View 拼路径。
 
 ### Tests
 
-- [ ] 测试 ClothingItem 创建、读取、编辑、收藏、归档、恢复和永久删除。
-- [ ] 测试导入各步骤失败时数据库/文件补偿一致。
-- [ ] 测试搜索、组合筛选、排序和未知 code 展示。
-- [ ] 测试永久删除保留被 Outfit/Generation 快照引用的资源策略。
-- [ ] UI 测试添加衣物→重启 App→再次打开衣物详情。
-- [ ] 运行 build 和全部现有 tests。
+- [x] 测试 ClothingItem 创建、读取、编辑、收藏、归档、恢复和永久删除。
+- [x] 测试导入各步骤失败时数据库/文件补偿一致。
+- [x] 测试搜索、组合筛选、排序和未知 code 展示。
+- [x] 测试永久删除保留被 Outfit/Generation 快照引用的资源策略。
+- [x] UI 测试添加衣物→重启 App→再次打开衣物详情。
+- [x] 运行 build 和全部现有 tests。
 
 ### Acceptance Criteria
 
-- [ ] 完整衣物 CRUD、收藏、归档、搜索、筛选和排序可用。
-- [ ] 导入后重启 App 图片和元数据仍可访问。
-- [ ] 普通删除默认归档，永久删除有明确影响说明和确认。
-- [ ] UI 无数据库、图片处理或文件系统业务逻辑。
+- [x] 完整衣物 CRUD、收藏、归档、搜索、筛选和排序可用。
+- [x] 导入后重启 App 图片和元数据仍可访问。
+- [x] 普通删除默认归档，永久删除有明确影响说明和确认。
+- [x] UI 无数据库、图片处理或文件系统业务逻辑。
 
 ### Documentation Updates
 
-- [ ] 实际搜索字段、筛选组合和永久删除行为已与 `PRODUCT_SPEC.md`/`UI_SPEC.md` 一致。
-- [ ] 新增 Service 或 Repository 边界时更新 `ARCHITECTURE.md`。
-- [ ] 在本 Stage 下记录 build/test 与人工流程结果。
+- [x] 实际搜索字段、筛选组合和永久删除行为已与 `PRODUCT_SPEC.md`/`UI_SPEC.md` 一致。
+- [x] 新增 Service 或 Repository 边界时更新 `ARCHITECTURE.md`。
+- [x] 在本 Stage 下记录 build/test 与人工流程结果。
+
+### Execution Record（2026-08-11）
+
+- Feature 架构：新增 `ClothingQuery`/`ClothingDraft`/`ClothingRecord` 展示与输入模型，`WardrobeViewModel` 只持有 Stage 4 use cases 和只读图片加载器。UI 使用原生 toolbar、search、filter/sort menu、adaptive LazyVGrid、详情栏、sheet、系统文件选择器与 destructive confirmation；不引用 ModelContext、Storage 路径或图片处理器。
+- Import：`ImportClothingService` 先规范化全部 metadata 并生成稳定 Clothing UUID，再执行 Storage staging import、ImageProcessing garment pipeline、ClothingItem 构造与 Repository save。数据库提交前失败会清理本次明确 owner 目录；主错误与 cleanup issue 分离，取消保持 CancellationError；提交后不再执行可能删除已发布文件的补偿步骤。
+- Delete/retention：`ResourceReferenceInspector` 覆盖 Clothing、Person、Outfit、OutfitItem、GenerationRecord、GenerationPersonInput 与 GenerationGarmentInput 的全部资源字段。`ClothingDeletionService` 在 metadata/nullify 保存后检查 surviving references；任一资源仍被引用则保留完整 owner 目录，全部无引用才执行目录清理；cleanup failure 不回滚数据库。
+- Query：搜索名称、品牌、颜色、材质、普通标签，250 ms 防抖；组合筛选分类、季节、风格、颜色、收藏和 active/archived/all；排序为最近添加、最近修改、名称、收藏优先，UUID 提供稳定 tie-breaker，单次批次上限 250。
+- Grid：只按 processed→thumbnail→placeholder 加载，不在 Grid 解码 original；资源缺失或损坏显示统一占位。编辑 metadata 不重新导入或处理图片，Stage 4 不开放图片替换。
+- App 边界：`AppEnvironment` 只向 Wardrobe Feature 注入 `WardrobeFeatureDependencies`；完整 `StorageServing`/`ImageProcessingServing` 留在 composition root。导入、目录清理和只读加载分别通过窄能力协议使用，Feature 无法直接调用 destructive Storage API。
+- Stage 4 Unit Tests：新增 14 个测试，覆盖 JPEG/PNG/HEIC、metadata、重建 container/storage、edit/favorite/archive/restore、搜索筛选排序、Storage/Processing/Repository failure rollback、无引用删除、Outfit/Generation snapshot retention、unrelated resource、cleanup failure 与全字段 ResourceReferenceInspector。
+- 全量 Unit Tests：`xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath /tmp/WardrobeStage4FinalDerivedData -only-testing:WardrobeTests test` → `TEST SUCCEEDED`；63 total，62 passed、1 skipped、0 failed。skip 仍为既有 HEIF encoder 条件限制；Stage 4 HEIC fixture 实测通过。
+- UI Tests：同一 project/scheme/destination/DerivedData，`-only-testing:WardrobeUITests test` → `TEST SUCCEEDED`；2 passed。保留五项 Sidebar navigation smoke，并新增隔离 fixture 流程：衣物详情→收藏→编辑→关闭/重启 App（不重复注入）→重新打开持久化详情→归档。
+- Debug Build：同一 project/scheme/destination/DerivedData 执行 `build` → `BUILD SUCCEEDED`；无源码 warning/error，测试构建仅见 Xcode 对未链接 AppIntents 的 metadata extraction 提示。
+- 数据安全：Unit Tests 使用 in-memory/persistent temporary container 与临时 Storage；UI Tests 使用 `WARDROBE_STORAGE_ROOT_OVERRIDE` 隔离根。正式 Application Support 的 manifest/database 文件时间仍停留在 14:49–14:50，garments/persons/generations/outfits/staging 均无子项，本阶段测试未污染正式资料库。源码未加入真实网络、AI Provider、Schema V2 或 Stage 5 功能。
 
 ### Completion Checklist
 
-- [ ] 衣物端到端流程和错误路径均通过。
-- [ ] 无硬编码绝对路径或图片 Data 入库。
-- [ ] 人工验收衣橱 CRUD 和永久删除提示后再进入依赖衣橱的 Stage。
+- [x] 衣物端到端流程和错误路径均通过。
+- [x] 无硬编码绝对路径或图片 Data 入库。
+- [x] 人工验收衣橱 CRUD 和永久删除提示后再进入依赖衣橱的 Stage。
 
 ---
 

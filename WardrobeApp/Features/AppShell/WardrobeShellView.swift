@@ -15,7 +15,12 @@ struct WardrobeShellView: View {
             }
             .navigationTitle(environment.applicationName)
         } detail: {
-            PlaceholderFeatureView(route: selection ?? .wardrobe)
+            switch selection ?? .wardrobe {
+            case .wardrobe:
+                WardrobeView(dependencies: environment.wardrobe)
+            case let route:
+                PlaceholderFeatureView(route: route)
+            }
         }
         .frame(minWidth: 720, minHeight: 480)
     }

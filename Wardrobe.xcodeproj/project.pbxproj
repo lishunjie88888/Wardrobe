@@ -28,6 +28,11 @@
 		A00000000000000000000013 /* ImageProcessingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* ImageProcessingModels.swift */; };
 		A00000000000000000000014 /* ImageProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000017 /* ImageProcessingService.swift */; };
 		A00000000000000000000015 /* Stage3ImageProcessingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* Stage3ImageProcessingTests.swift */; };
+		A00000000000000000000016 /* ClothingFeatureModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000019 /* ClothingFeatureModels.swift */; };
+		A00000000000000000000017 /* ClothingServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001A /* ClothingServices.swift */; };
+		A00000000000000000000018 /* WardrobeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001B /* WardrobeViewModel.swift */; };
+		A00000000000000000000019 /* WardrobeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001C /* WardrobeView.swift */; };
+		A0000000000000000000001A /* Stage4ClothingManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001D /* Stage4ClothingManagementTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +77,11 @@
 		B00000000000000000000016 /* ImageProcessingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessingModels.swift; sourceTree = "<group>"; };
 		B00000000000000000000017 /* ImageProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessingService.swift; sourceTree = "<group>"; };
 		B00000000000000000000018 /* Stage3ImageProcessingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage3ImageProcessingTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000019 /* ClothingFeatureModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingFeatureModels.swift; sourceTree = "<group>"; };
+		B0000000000000000000001A /* ClothingServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingServices.swift; sourceTree = "<group>"; };
+		B0000000000000000000001B /* WardrobeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeViewModel.swift; sourceTree = "<group>"; };
+		B0000000000000000000001C /* WardrobeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeView.swift; sourceTree = "<group>"; };
+		B0000000000000000000001D /* Stage4ClothingManagementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage4ClothingManagementTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -170,6 +180,7 @@
 				B00000000000000000000010 /* Stage1PersistenceTests.swift */,
 				B00000000000000000000014 /* Stage2StorageTests.swift */,
 				B00000000000000000000018 /* Stage3ImageProcessingTests.swift */,
+				B0000000000000000000001D /* Stage4ClothingManagementTests.swift */,
 			);
 			path = WardrobeTests;
 			sourceTree = "<group>";
@@ -206,16 +217,16 @@
 		};
 		G0000000000000000000000C /* AI */ = {isa = PBXGroup; children = (); path = AI; sourceTree = "<group>"; };
 		G0000000000000000000000D /* Resources */ = {isa = PBXGroup; children = (); path = Resources; sourceTree = "<group>"; };
-		G0000000000000000000000E /* Wardrobe */ = {isa = PBXGroup; children = (); path = Wardrobe; sourceTree = "<group>"; };
+		G0000000000000000000000E /* Wardrobe */ = {isa = PBXGroup; children = (B0000000000000000000001B /* WardrobeViewModel.swift */, B0000000000000000000001C /* WardrobeView.swift */,); path = Wardrobe; sourceTree = "<group>"; };
 		G0000000000000000000000F /* Person */ = {isa = PBXGroup; children = (); path = Person; sourceTree = "<group>"; };
 		G00000000000000000000010 /* TryOn */ = {isa = PBXGroup; children = (); path = TryOn; sourceTree = "<group>"; };
 		G00000000000000000000011 /* Outfit */ = {isa = PBXGroup; children = (); path = Outfit; sourceTree = "<group>"; };
 		G00000000000000000000012 /* GenerationHistory */ = {isa = PBXGroup; children = (); path = GenerationHistory; sourceTree = "<group>"; };
 		G00000000000000000000013 /* Settings */ = {isa = PBXGroup; children = (); path = Settings; sourceTree = "<group>"; };
 		G00000000000000000000014 /* WardrobeUITests */ = {isa = PBXGroup; children = (B0000000000000000000000A /* WardrobeLaunchUITests.swift */,); path = WardrobeUITests; sourceTree = "<group>"; };
-		G00000000000000000000015 /* Models */ = {isa = PBXGroup; children = (B0000000000000000000000B /* DomainCodes.swift */, B0000000000000000000000C /* WardrobeSchemaV1.swift */,); path = Models; sourceTree = "<group>"; };
+		G00000000000000000000015 /* Models */ = {isa = PBXGroup; children = (B0000000000000000000000B /* DomainCodes.swift */, B0000000000000000000000C /* WardrobeSchemaV1.swift */, B00000000000000000000019 /* ClothingFeatureModels.swift */,); path = Models; sourceTree = "<group>"; };
 		G00000000000000000000016 /* Repositories */ = {isa = PBXGroup; children = (B0000000000000000000000D /* WardrobeRepositories.swift */,); path = Repositories; sourceTree = "<group>"; };
-		G00000000000000000000017 /* Services */ = {isa = PBXGroup; children = (B0000000000000000000000E /* WardrobeDataRules.swift */,); path = Services; sourceTree = "<group>"; };
+		G00000000000000000000017 /* Services */ = {isa = PBXGroup; children = (B0000000000000000000000E /* WardrobeDataRules.swift */, B0000000000000000000001A /* ClothingServices.swift */,); path = Services; sourceTree = "<group>"; };
 		G00000000000000000000018 /* Database */ = {isa = PBXGroup; children = (B0000000000000000000000F /* WardrobePersistence.swift */,); path = Database; sourceTree = "<group>"; };
 		G00000000000000000000019 /* Storage */ = {isa = PBXGroup; children = (B00000000000000000000011 /* StorageResourceID.swift */, B00000000000000000000012 /* StorageService.swift */, B00000000000000000000015 /* StorageCompensationTransaction.swift */,); path = Storage; sourceTree = "<group>"; };
 		G0000000000000000000001A /* ImageProcessing */ = {isa = PBXGroup; children = (B00000000000000000000013 /* ImageThumbnailGenerator.swift */, B00000000000000000000016 /* ImageProcessingModels.swift */, B00000000000000000000017 /* ImageProcessingService.swift */,); path = ImageProcessing; sourceTree = "<group>"; };
@@ -337,6 +348,10 @@
 				A00000000000000000000013 /* ImageProcessingModels.swift in Sources */,
 				A00000000000000000000014 /* ImageProcessingService.swift in Sources */,
 				A00000000000000000000012 /* StorageCompensationTransaction.swift in Sources */,
+				A00000000000000000000016 /* ClothingFeatureModels.swift in Sources */,
+				A00000000000000000000017 /* ClothingServices.swift in Sources */,
+				A00000000000000000000018 /* WardrobeViewModel.swift in Sources */,
+				A00000000000000000000019 /* WardrobeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -348,6 +363,7 @@
 				A0000000000000000000000D /* Stage1PersistenceTests.swift in Sources */,
 				A00000000000000000000011 /* Stage2StorageTests.swift in Sources */,
 				A00000000000000000000015 /* Stage3ImageProcessingTests.swift in Sources */,
+				A0000000000000000000001A /* Stage4ClothingManagementTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

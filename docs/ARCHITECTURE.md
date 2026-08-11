@@ -120,6 +120,14 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - Provider 不更新 SwiftData、不决定 UI、不直接管理历史记录；这些由 `VirtualTryOnService` 编排。
 - API Key 通过 `CredentialStore` 的 Keychain 实现按需提供，不能进入 Provider 配置文件或日志。
 
+### 4.7 Stage 4 衣橱业务边界
+
+- `WardrobeView` 只依赖 `WardrobeViewModel`；ViewModel 只调用 `ClothingManagementService`、`ImportClothingService`、`ClothingDeletionService` 与只读 `ClothingImageLoading`。
+- `ImportClothingService` 在 MainActor 上协调 Repository 状态，并 await Storage actor 与 detached ImageProcessing worker：先生成稳定 Clothing UUID，再导入 original、生成 processed/thumbnail、最后提交 SwiftData。数据库提交前任一步失败都会删除本次明确 owner 目录；cleanup issue 单独返回，不覆盖主错误。
+- `ResourceReferenceInspector` 从 Repository 获取全模型持久资源引用集合，覆盖 Clothing、Person、Outfit 与 Generation 的当前引用和 snapshot 字段。它不是 Clothing 三列的专用检查器，可供后续人物、穿搭与历史删除流程复用。
+- `ClothingDeletionService` 先收集候选和影响摘要，再删除并保存 metadata；SwiftData `.nullify` 保留 Outfit/Generation snapshot。保存成功后才检查 surviving references：任一候选仍被引用时保留完整 owner 目录，全部无引用时才请求受控目录删除。cleanup 失败不回滚已安全提交的数据库状态。
+- `AppEnvironment` 不再向 Feature 暴露完整 `StorageServing` 或 `ImageProcessingServing`。组合根把具体 Storage 拆成导入、删除与只读图片加载窄能力并只注入 Service；Wardrobe Feature 无法取得 `deleteResourceDirectory`。
+
 ## 5. 关键流程
 
 ### 5.1 导入衣物

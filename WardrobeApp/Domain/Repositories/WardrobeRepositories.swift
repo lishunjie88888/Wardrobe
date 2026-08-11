@@ -13,6 +13,13 @@ protocol ClothingRepository {
     func insert(_ item: ClothingItem) throws
     func clothingItem(id: UUID) throws -> ClothingItem?
     func allClothingItems() throws -> [ClothingItem]
+    func clothingItems(matching query: ClothingQuery) throws -> [ClothingRecord]
+    func insertAndSave(_ item: ClothingItem) throws
+    func updateClothing(id: UUID, draft: ClothingDraft, at date: Date) throws -> ClothingRecord
+    func setClothingFavorite(id: UUID, isFavorite: Bool, at date: Date) throws -> ClothingRecord
+    func setClothingArchived(id: UUID, archived: Bool, at date: Date) throws -> ClothingRecord
+    func clothingDeleteImpact(id: UUID) throws -> ClothingDeleteImpact
+    func allPersistedResourceIDStrings() throws -> Set<String>
     func deleteClothingItem(id: UUID) throws
     func save() throws
 }
