@@ -20,6 +20,8 @@ struct WardrobeShellView: View {
                 WardrobeView(dependencies: environment.wardrobe)
             case .person:
                 PersonView(dependencies: environment.person)
+            case .tryOn:
+                TryOnView(dependencies: environment.tryOn)
             case let route:
                 PlaceholderFeatureView(route: route)
             }

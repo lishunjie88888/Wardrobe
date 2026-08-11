@@ -100,6 +100,10 @@ Sidebar
 - 失败显示脱敏错误、可行修复方式与重试/重新生成入口；失败记录仍进入历史。
 - 重新生成创建新记录，可沿用并允许调整 Prompt/选项；旧结果不被覆盖。
 
+Stage 7 实际工作区使用 macOS `HSplitView` 三栏：左栏为复用 Clothing query 的 active 衣橱浏览器（搜索、分类、收藏），中栏为 Person picker、aspect-fit 主图、reference selector 和 Mock 状态，右栏为五个 Slots 与生成操作。衣物卡使用稳定 UUID `Transferable`，可拖到兼容 Slot或中央画布自动路由；卡片“添加”按钮和 context menu 提供键盘/VoiceOver 等价路径。
+
+单值槽位 drop 后直接替换，Accessories 允许多值、稳定排序与逐项移除；“清空”只清衣物并保留人物。人物切换保留衣物，取消当前生成并清除旧结果。界面区分 validating、generating、success、failure、cancelled；失败/取消可用当前 Session 重试，Mock success 明确说明不是真实 AI 图片。无人物、人物无主图、无衣物、筛选无结果、资源失效及 Provider 错误均有解释性状态。列表图片只用 processed→thumbnail，人物画布用 processed→original，Provider 输入用 processed→original。
+
 ## 6. 穿搭
 
 - 使用网格或列表展示名称、衣物缩略图组合、收藏和修改时间。

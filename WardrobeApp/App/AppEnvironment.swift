@@ -16,6 +16,7 @@ struct AppEnvironment {
     let wardrobe: WardrobeFeatureDependencies
     let person: PersonFeatureDependencies
     let providerRegistry: ProviderRegistry
+    let tryOn: TryOnFeatureDependencies
 
     @MainActor
     init(
@@ -26,7 +27,8 @@ struct AppEnvironment {
     ) throws {
         self.applicationName = applicationName
         self.modelContainer = modelContainer
-        self.providerRegistry = try ProviderRegistry(providers: [MockVirtualTryOnProvider()])
+        let mockProvider = MockVirtualTryOnProvider(behavior: .success(delay: .milliseconds(350)))
+        self.providerRegistry = try ProviderRegistry(providers: [mockProvider])
         let repository = SwiftDataWardrobeRepository(container: modelContainer)
 #if DEBUG
         if ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_CLOTHING"] == "1" {
@@ -65,6 +67,9 @@ struct AppEnvironment {
                 try? repository.save()
             }
         }
+        if ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_TRYON"] == "1" {
+            Self.seedTryOnFixture(repository: repository)
+        }
 #endif
         let inspector = ResourceReferenceInspector(repository: repository)
         let clothingStorage = storageService
@@ -101,7 +106,50 @@ struct AppEnvironment {
             ),
             imageLoader: clothingStorage
         )
+#if DEBUG
+        let tryOnLoader: any TryOnResourceLoading = ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_TRYON"] == "1"
+            ? UITestTryOnImageLoader(base: clothingStorage)
+            : clothingStorage
+#else
+        let tryOnLoader: any TryOnResourceLoading = clothingStorage
+#endif
+        self.tryOn = TryOnFeatureDependencies(
+            clothing: ClothingManagementService(repository: repository),
+            person: PersonManagementService(repository: repository),
+            imageLoader: tryOnLoader,
+            provider: mockProvider
+        )
     }
+
+#if DEBUG
+    @MainActor
+    private static func seedTryOnFixture(repository: SwiftDataWardrobeRepository) {
+        let profileID = UUID(uuidString: "00000000-0000-0000-0000-000000000707")!
+        let imageID = UUID(uuidString: "00000000-0000-0000-0000-000000000711")!
+        if (try? repository.personProfile(id: profileID)) == nil,
+           let original = try? StorageResourceID(owner: StorageOwner(kind: .person, id: imageID), kind: .original(fileExtension: "png")),
+           let processed = try? StorageResourceID(owner: StorageOwner(kind: .person, id: imageID), kind: .processed) {
+            let profile = PersonProfile(id: profileID, name: "试衣测试人物", isDefault: true)
+            let image = PersonImage(id: imageID, profile: profile, isPrimary: true, originalResourceID: original.rawValue, processedResourceID: processed.rawValue, pixelWidth: 1, pixelHeight: 1)
+            try? repository.insert(profile)
+            try? repository.insert(image)
+        }
+        let fixtures: [(String, ClothingCategory, String)] = [
+            ("00000000-0000-0000-0000-000000000721", .tops, "试衣测试上衣"),
+            ("00000000-0000-0000-0000-000000000722", .bottoms, "试衣测试下装"),
+            ("00000000-0000-0000-0000-000000000723", .footwear, "试衣测试鞋履"),
+        ]
+        for (rawID, category, name) in fixtures {
+            let id = UUID(uuidString: rawID)!
+            guard (try? repository.clothingItem(id: id)) == nil,
+                  let original = try? StorageResourceID(owner: StorageOwner(kind: .garment, id: id), kind: .original(fileExtension: "png")),
+                  let processed = try? StorageResourceID(owner: StorageOwner(kind: .garment, id: id), kind: .processed)
+            else { continue }
+            try? repository.insert(ClothingItem(id: id, name: name, categoryCode: category.rawValue, originalResourceID: original.rawValue, processedResourceID: processed.rawValue))
+        }
+        try? repository.save()
+    }
+#endif
 
     @MainActor
     static func production() throws -> AppEnvironment {
@@ -117,3 +165,16 @@ struct AppEnvironment {
         )
     }
 }
+
+#if DEBUG
+private struct UITestTryOnImageLoader: TryOnResourceLoading {
+    let base: any TryOnResourceLoading
+
+    func data(for resourceID: StorageResourceID) async throws -> Data {
+        if resourceID.owner.id.uuidString.hasPrefix("00000000-0000-0000-0000-0000000007") {
+            return Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")!
+        }
+        return try await base.data(for: resourceID)
+    }
+}
+#endif

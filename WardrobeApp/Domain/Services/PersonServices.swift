@@ -19,6 +19,7 @@ protocol PersonManagingPersisting {
     func setDefaultPersonProfile(id: UUID, at date: Date) throws
     func setPrimaryPersonImage(id: UUID, for profileID: UUID, at date: Date) throws
     func defaultPersonReferenceSet() throws -> PersonReferenceSet?
+    func personReferenceSet(profileID: UUID) throws -> PersonReferenceSet?
 }
 
 extension SwiftDataWardrobeRepository: PersonImportPersisting, PersonManagingPersisting {}
@@ -62,6 +63,10 @@ final class PersonManagementService {
 
     func defaultReferenceSet() throws -> PersonReferenceSet? {
         try repository.defaultPersonReferenceSet()
+    }
+
+    func referenceSet(profileID: UUID) throws -> PersonReferenceSet? {
+        try repository.personReferenceSet(profileID: profileID)
     }
 }
 

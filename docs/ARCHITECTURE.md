@@ -144,6 +144,14 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - `ProviderRegistry` 由 `AppEnvironment` 持有并在 composition root 注册 Provider；actor 提供并发安全的只读选择，不使用全局可变单例。当前只注册无网络的 `MockVirtualTryOnProvider`。
 - Mock Provider 以注入行为模拟确定性成功、瞬时失败、永久失败、延迟与取消，不写 GenerationRecord、不访问 Storage。完整生成持久化仍属于 Stage 10，试衣 UI 属于 Stage 7。
 
+### 4.10 Stage 7 试衣工作区边界
+
+- `TryOnSession` 是 MainActor Feature 所拥有的 transient UUID 状态：人物、明确选择的人物图片及五类语义槽位；不写入 SwiftData，也不修改 `ClothingItem`、`PersonProfile` 或 `PersonImage` 来表达当前选择。
+- `ClothingToTryOnSlotMapper` 集中映射 tops/outerwear/bottoms/footwear/accessories；dresses、other 与未知 code 明确返回 unsupported。单值槽位原子替换，Accessories 多值且保持稳定顺序。
+- Try-On 复用 Stage 4 `ClothingManagementService` 的 active query 和 Stage 5 `PersonManagementService` 的 Default/Primary reference 规则。按 profile UUID 查询 reference set 是 Stage 5 use case 的兼容扩展，View 不遍历 SwiftData relationship。
+- `VirtualTryOnRequestBuilder` 通过只读 `TryOnResourceLoading` 获取受控资源；人物与衣物均采用 processed→original，解码后创建短生命周期 `ProviderImage`。Feature 没有目录删除、写入或路径解析能力。
+- `TryOnViewModel` 管理 idle/validating/generating/success/failure/cancelled，并以 token 丢弃取消或人物切换后的迟到结果。Stage 7 不创建 GenerationRecord，不保存 Mock result。
+
 ## 5. 关键流程
 
 ### 5.1 导入衣物

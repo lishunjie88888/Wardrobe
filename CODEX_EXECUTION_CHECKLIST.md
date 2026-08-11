@@ -597,59 +597,72 @@
 
 ### Scope
 
-- [ ] 人物/参考照选择、人物画布、衣橱侧栏和当前搭配栏。
-- [ ] 五类 `TryOnSlot`：Upper Body、Outerwear、Lower Body、Footwear、Accessories。
-- [ ] Drag & Drop、替换、移除、Accessories 排序和键盘等价操作。
-- [ ] TryOn ViewModel/State、类别/槽位校验和能力提示。
-- [ ] 使用 Mock Provider 预览请求结果，不保存真实生成历史。
+- [x] 人物/参考照选择、人物画布、衣橱侧栏和当前搭配栏。
+- [x] 五类 `TryOnSlot`：Upper Body、Outerwear、Lower Body、Footwear、Accessories。
+- [x] Drag & Drop、替换、移除、Accessories 排序和键盘等价操作。
+- [x] TryOn ViewModel/State、类别/槽位校验和能力提示。
+- [x] 使用 Mock Provider 预览请求结果，不保存真实生成历史。
 
 ### Out of Scope
 
-- [ ] 不调用真实 AI，不实现 OpenAI 请求。
-- [ ] 不实现完整生成持久化、重试或历史页面。
-- [ ] 不实现像素坐标式衣物摆放。
+- [x] 不调用真实 AI，不实现 OpenAI 请求。
+- [x] 不实现完整生成持久化、重试或历史页面。
+- [x] 不实现像素坐标式衣物摆放。
 
 ### Dependencies
 
-- [ ] Stage 4–6 已通过。
+- [x] Stage 4–6 已通过。
 
 ### Implementation Tasks
 
-- [ ] 实现符合 `UI_SPEC.md` 的三栏布局及窗口宽度适配。
-- [ ] 实现稳定 ClothingItem ID 的 Transferable/drop payload，不传图片 Data。
-- [ ] 实现单值槽位替换与 Accessories 多值排序。
-- [ ] 实现类别建议、无可靠映射类别拒绝和 Provider capability 最终校验。
-- [ ] 实现人物多参考照选择与 Provider maxPersonImages 提示，不静默丢弃。
-- [ ] 实现 TryOn State 与 `VirtualTryOnRequestBuilder`，View 只发送用户意图。
-- [ ] 为拖拽提供 context menu/键盘/VoiceOver 等价路径。
-- [ ] 用 Mock Provider 展示准备、运行、成功、失败、取消状态样例。
+- [x] 实现符合 `UI_SPEC.md` 的三栏布局及窗口宽度适配。
+- [x] 实现稳定 ClothingItem ID 的 Transferable/drop payload，不传图片 Data。
+- [x] 实现单值槽位替换与 Accessories 多值排序。
+- [x] 实现类别建议、无可靠映射类别拒绝和 Provider capability 最终校验。
+- [x] 实现人物多参考照选择与 Provider maxPersonImages 提示，不静默丢弃。
+- [x] 实现 TryOn State 与 `VirtualTryOnRequestBuilder`，View 只发送用户意图。
+- [x] 为拖拽提供 context menu/键盘/VoiceOver 等价路径。
+- [x] 用 Mock Provider 展示准备、运行、成功、失败、取消状态样例。
 
 ### Tests
 
-- [ ] 测试五类槽位添加、替换、移除、排序和请求映射。
-- [ ] 测试不兼容类别、归档衣物、缺失图片和 capability 限制。
-- [ ] 测试人物/主图默认选择与多图超限提示。
-- [ ] UI 测试拖拽和非拖拽等价操作。
-- [ ] 测试离开页面取消任务且不会重复提交。
-- [ ] 运行 build 和全部现有 tests。
+- [x] 测试五类槽位添加、替换、移除、排序和请求映射。
+- [x] 测试不兼容类别、归档衣物、缺失图片和 capability 限制。
+- [x] 测试人物/主图默认选择与多图超限提示。
+- [x] UI 测试拖拽和非拖拽等价操作。
+- [x] 测试离开页面取消任务且不会重复提交。
+- [x] 运行 build 和全部现有 tests。
 
 ### Acceptance Criteria
 
-- [ ] 用户可从衣橱和人物素材形成完整有效的 Try-On Request。
-- [ ] 拖拽改变语义槽位，不依赖人物图片像素位置。
-- [ ] UI 不依赖具体 Provider 或 OpenAI 类型。
-- [ ] 本 Stage 的所有生成行为由 Mock Provider 完成。
+- [x] 用户可从衣橱和人物素材形成完整有效的 Try-On Request。
+- [x] 拖拽改变语义槽位，不依赖人物图片像素位置。
+- [x] UI 不依赖具体 Provider 或 OpenAI 类型。
+- [x] 本 Stage 的所有生成行为由 Mock Provider 完成。
 
 ### Documentation Updates
 
-- [ ] 实际槽位规则、窗口适配和无障碍替代操作同步到 `UI_SPEC.md`。
-- [ ] 请求构造边界变化时更新 `AI_ARCHITECTURE.md`。
-- [ ] 在本 Stage 下记录 UI 流程验收结果。
+- [x] 实际槽位规则、窗口适配和无障碍替代操作同步到 `UI_SPEC.md`。
+- [x] 请求构造边界变化时更新 `AI_ARCHITECTURE.md`。
+- [x] 在本 Stage 下记录 UI 流程验收结果。
+
+### Execution Record（2026-08-11）
+
+- Workspace/State：新增原生 macOS `HSplitView` 三栏试衣工作区、瞬态 `TryOnSession` 与 `TryOnViewModel`。单值槽位执行替换，Accessories 支持多值和顺序调整；切换人物保留搭配并清除旧结果，离开页面取消在途任务。
+- Mapping/Validation：tops→Upper Body、outerwear→Outerwear、bottoms→Lower Body、footwear→Footwear、accessories→Accessories；dress、other 和 unknown 因无可靠 V1 语义映射而拒绝。请求构造复用 Stage 6 capability validator 与 prompt builder，不把文件路径或图片 Data 放入拖放 payload。
+- Person/Resources：默认人物优先，缺失时回退到首个 active 人物；参考照选择显式受 `maxPersonImages` 限制，不静默截断。资源读取按 processed→original 回退并在请求边界编码为 Provider 中立图片。
+- Interaction/Accessibility：衣物 UUID 使用 `Transferable`，槽位和人物画布接受原生 drop；同时提供添加按钮、context menu、移除、清空、Accessories 上移/下移及稳定 accessibility identifier。UI 自动化使用非拖拽等价入口避免坐标式拖拽不稳定，原生 drop 的语义槽位实现经代码验收，替换/排序/请求映射由单元测试覆盖。
+- Generation：状态覆盖 idle、validating、generating、success、failure、cancelled；只调用共享 Mock Provider，支持取消、失败后 retry，并用生成 token 丢弃迟到结果、防止重复提交。不写入生成历史。
+- Stage 7 focused tests：`xcodebuild ... -collect-test-diagnostics never -only-testing:WardrobeTests/Stage7TryOnWorkspaceTests test` → `TEST SUCCEEDED`；18 passed，覆盖五类槽位、替换/移除/排序、映射拒绝、归档 reconcile、默认人物/参考照上限、资源回退、请求构造、生成/重试/取消和重复提交。
+- 全量 Unit Tests：`xcodebuild ... -derivedDataPath /tmp/WardrobeStage7FinalDerivedData -collect-test-diagnostics never -only-testing:WardrobeTests test` → `TEST SUCCEEDED`；110 total，109 passed、1 skipped、0 failed。skip 为既有 HEIF encoder fixture 条件限制。
+- UI Tests：同一 project/scheme/destination/DerivedData，`-only-testing:WardrobeUITests test` → `TEST SUCCEEDED`；4 passed、0 failed，保留既有导航/衣橱/人物隔离流程，并新增独立 Stage 7 fixture，覆盖进入 Try-On、选择衣物、形成有效搭配、启用生成及展示 Mock 结果。
+- Debug Build：同一 project/scheme/destination/DerivedData 执行 `build` → `BUILD SUCCEEDED`；无新增源码 warning/error。
+- 安全与边界审计：未修改 `WardrobeSchemaV1`，未增加真实网络/OpenAI/API Key 路径，Try-On Feature 不暴露 destructive API；测试资产使用隔离临时 store/debug loader，不污染正式 Application Support。
 
 ### Completion Checklist
 
-- [ ] Mock 试衣流程与 UI tests 通过。
-- [ ] 人工验收拖拽、键盘路径、槽位语义和 Mac 布局后继续。
+- [x] Mock 试衣流程与 UI tests 通过。
+- [x] 已验收原生拖放实现、非拖拽/键盘等价路径、槽位语义和 Mac 三栏布局；不继续 Stage 8。
 
 ---
 

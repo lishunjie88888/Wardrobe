@@ -316,6 +316,15 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
     func defaultPersonReferenceSet() throws -> PersonReferenceSet? {
         let profiles = try context.fetch(FetchDescriptor<PersonProfile>())
         guard let profile = profiles.first(where: { $0.archivedAt == nil && $0.isDefault }) else { return nil }
+        return try Self.referenceSet(for: profile)
+    }
+
+    func personReferenceSet(profileID: UUID) throws -> PersonReferenceSet? {
+        guard let profile = try personProfile(id: profileID), profile.archivedAt == nil else { return nil }
+        return try Self.referenceSet(for: profile)
+    }
+
+    private static func referenceSet(for profile: PersonProfile) throws -> PersonReferenceSet {
         let images = try profile.images.map(Self.personImageRecord).sorted(by: Self.personImageOrder)
         let primary = images.first(where: \.isPrimary)
         return PersonReferenceSet(

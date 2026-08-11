@@ -1,0 +1,289 @@
+import Foundation
+import Observation
+
+struct TryOnFeatureDependencies {
+    let clothing: ClothingManagementService
+    let person: PersonManagementService
+    let imageLoader: any TryOnResourceLoading
+    let provider: any VirtualTryOnProvider
+}
+
+struct MockTryOnPreview: Equatable, Sendable {
+    let providerName: String
+    let personName: String
+    let garmentsBySlot: [TryOnSlot: [String]]
+    let requestID: UUID
+}
+
+@MainActor
+@Observable
+final class TryOnViewModel {
+    enum GenerationState: Equatable {
+        case idle
+        case validating
+        case generating
+        case success(MockTryOnPreview)
+        case failure(String)
+        case cancelled
+    }
+
+    private let dependencies: TryOnFeatureDependencies
+    private let mapper = ClothingToTryOnSlotMapper()
+    private let requestBuilder: VirtualTryOnRequestBuilder
+    private var generationTask: Task<Void, Never>?
+    private var generationToken: UUID?
+
+    var session = TryOnSession()
+    var clothing: [ClothingRecord] = []
+    private var allActiveClothing: [ClothingRecord] = []
+    var profiles: [PersonProfileRecord] = []
+    var currentReferences: PersonReferenceSet?
+    var searchText = ""
+    var categoryCode: String?
+    var favoritesOnly = false
+    var generationState: GenerationState = .idle
+    var message: String?
+    var omittedReferenceCount = 0
+
+    init(dependencies: TryOnFeatureDependencies) {
+        self.dependencies = dependencies
+        self.requestBuilder = VirtualTryOnRequestBuilder(loader: dependencies.imageLoader)
+    }
+
+    var provider: any VirtualTryOnProvider { dependencies.provider }
+    var imageLoader: any TryOnResourceLoading { dependencies.imageLoader }
+    var selectedProfile: PersonProfileRecord? { profiles.first { $0.id == session.personProfileID } }
+    var isGenerating: Bool { if case .generating = generationState { true } else { false } }
+    var canGenerate: Bool {
+        session.personProfileID != nil && !session.selectedPersonImageIDs.isEmpty && session.garmentCount > 0 && !isGenerating
+    }
+
+    func load() {
+        do {
+            var query = ClothingQuery()
+            query.searchText = searchText
+            query.categoryCode = categoryCode
+            query.favoritesOnly = favoritesOnly
+            query.archive = .active
+            clothing = try dependencies.clothing.clothing(matching: query)
+            allActiveClothing = try dependencies.clothing.clothing(matching: ClothingQuery())
+            profiles = try dependencies.person.profiles(archive: .active)
+            session.reconcile(activeClothingIDs: Set(allActiveClothing.map(\.id)))
+
+            let requestedProfileID = session.personProfileID
+            let defaultSet = try dependencies.person.defaultReferenceSet()
+            let resolvedProfileID: UUID?
+            if let requestedProfileID, profiles.contains(where: { $0.id == requestedProfileID }) {
+                resolvedProfileID = requestedProfileID
+            } else if let defaultSet {
+                resolvedProfileID = defaultSet.profileID
+            } else {
+                resolvedProfileID = profiles.first?.id
+            }
+            if resolvedProfileID != session.personProfileID {
+                selectPerson(resolvedProfileID)
+            } else if let resolvedProfileID {
+                refreshReferences(profileID: resolvedProfileID, preserveSelection: true)
+            } else {
+                session.selectPerson(profileID: nil, referenceImageIDs: [])
+                currentReferences = nil
+            }
+        } catch {
+            message = "无法载入试衣工作区，请稍后重试。"
+        }
+    }
+
+    func filtersChanged() { load() }
+
+    func selectPerson(_ profileID: UUID?) {
+        cancelGeneration(setCancelledState: false)
+        generationState = .idle
+        guard let profileID else {
+            session.selectPerson(profileID: nil, referenceImageIDs: [])
+            currentReferences = nil
+            return
+        }
+        refreshReferences(profileID: profileID, preserveSelection: false)
+    }
+
+    func toggleReference(_ imageID: UUID) {
+        if session.selectedPersonImageIDs.contains(imageID) {
+            guard session.selectedPersonImageIDs.count > 1 else {
+                message = "至少保留一张人物参考照。"
+                return
+            }
+            session.selectedPersonImageIDs.removeAll { $0 == imageID }
+        } else if session.selectedPersonImageIDs.count < provider.capabilities.maxPersonImages {
+            session.selectedPersonImageIDs.append(imageID)
+        } else {
+            message = "当前 Provider 最多支持 \(provider.capabilities.maxPersonImages) 张人物参考照。"
+        }
+        invalidateResult()
+    }
+
+    @discardableResult
+    func addClothing(_ clothingID: UUID, to requestedSlot: TryOnSlot? = nil) -> Bool {
+        guard let item = clothing.first(where: { $0.id == clothingID }), !item.isArchived else {
+            message = "这件衣物已不可用，已从当前搭配中移除。"
+            session.reconcile(activeClothingIDs: Set(allActiveClothing.map(\.id)))
+            return false
+        }
+        guard case let .supported(mappedSlot) = mapper.slot(for: item.draft.categoryCode, subcategoryCode: item.draft.subcategoryCode) else {
+            message = "“\(item.draft.name)”暂时无法可靠映射到试衣槽位。"
+            return false
+        }
+        let slot = requestedSlot ?? mappedSlot
+        guard slot == mappedSlot else {
+            message = "“\(item.draft.name)”不适用于这个槽位。"
+            return false
+        }
+        guard provider.capabilities.supportedSlots.contains(slot) else {
+            message = "当前 Provider 不支持这个槽位。"
+            return false
+        }
+        let limit = provider.capabilities.maxGarmentsBySlot[slot] ?? 0
+        if slot.permitsMultipleItems, session.garmentIDs(in: slot).count >= limit {
+            message = "这个槽位最多可放入 \(limit) 件衣物。"
+            return false
+        }
+        session.add(clothingID: clothingID, to: slot)
+        invalidateResult()
+        return true
+    }
+
+    func removeClothing(_ clothingID: UUID, from slot: TryOnSlot) {
+        session.remove(clothingID: clothingID, from: slot)
+        invalidateResult()
+    }
+
+    func moveAccessories(fromOffsets: IndexSet, toOffset: Int) {
+        session.moveAccessory(fromOffsets: fromOffsets, toOffset: toOffset)
+        invalidateResult()
+    }
+
+    func clearOutfit() {
+        session.clearGarments()
+        invalidateResult()
+    }
+
+    func generate() {
+        guard generationTask == nil else { return }
+        let token = UUID()
+        generationToken = token
+        generationState = .validating
+        generationTask = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                if generationToken == token {
+                    generationTask = nil
+                    generationToken = nil
+                }
+            }
+            do {
+                guard let references = currentReferences, let profile = selectedProfile else {
+                    throw TryOnWorkspaceError.noPerson
+                }
+                let request = try await requestBuilder.build(
+                    session: session,
+                    person: references,
+                    clothing: allActiveClothing,
+                    capabilities: provider.capabilities
+                )
+                try Task.checkCancellation()
+                guard generationToken == token else { return }
+                generationState = .generating
+                try await provider.validateConfiguration()
+                _ = try await provider.generate(request: request)
+                try Task.checkCancellation()
+                guard generationToken == token else { return }
+                generationState = .success(MockTryOnPreview(
+                    providerName: provider.descriptor.displayName,
+                    personName: profile.draft.name,
+                    garmentsBySlot: garmentNamesBySlot(),
+                    requestID: request.requestID
+                ))
+            } catch is CancellationError {
+                if generationToken == token { generationState = .cancelled }
+            } catch let error as VirtualTryOnError where error == .cancelled {
+                if generationToken == token { generationState = .cancelled }
+            } catch {
+                if generationToken == token { generationState = .failure(Self.message(for: error)) }
+            }
+        }
+    }
+
+    func retry() { generate() }
+
+    func cancelGeneration(setCancelledState: Bool = true) {
+        guard generationTask != nil else { return }
+        generationTask?.cancel()
+        generationToken = nil
+        generationTask = nil
+        if setCancelledState { generationState = .cancelled }
+    }
+
+    func clothingRecord(id: UUID) -> ClothingRecord? { allActiveClothing.first { $0.id == id } }
+
+    private func refreshReferences(profileID: UUID, preserveSelection: Bool) {
+        do {
+            guard let set = try dependencies.person.referenceSet(profileID: profileID) else {
+                session.selectPerson(profileID: profileID, referenceImageIDs: [])
+                currentReferences = nil
+                message = "当前人物没有可用参考照片。"
+                return
+            }
+            currentReferences = set
+            let ordered = [set.primaryImage].compactMap { $0 } + set.additionalImages
+            let availableIDs = Set(ordered.map(\.id))
+            let selected: [UUID]
+            if preserveSelection {
+                let preserved = session.selectedPersonImageIDs.filter(availableIDs.contains)
+                selected = preserved.isEmpty ? Array(ordered.prefix(provider.capabilities.maxPersonImages).map(\.id)) : preserved
+            } else {
+                selected = Array(ordered.prefix(provider.capabilities.maxPersonImages).map(\.id))
+            }
+            omittedReferenceCount = max(0, ordered.count - provider.capabilities.maxPersonImages)
+            session.selectPerson(profileID: profileID, referenceImageIDs: selected)
+        } catch {
+            session.selectPerson(profileID: profileID, referenceImageIDs: [])
+            currentReferences = nil
+            message = "无法读取人物参考照。"
+        }
+    }
+
+    private func invalidateResult() {
+        cancelGeneration(setCancelledState: false)
+        generationState = .idle
+    }
+
+    private func garmentNamesBySlot() -> [TryOnSlot: [String]] {
+        Dictionary(uniqueKeysWithValues: TryOnSlot.allCases.map { slot in
+            (slot, session.garmentIDs(in: slot).compactMap { clothingRecord(id: $0)?.draft.name })
+        })
+    }
+
+    private static func message(for error: any Error) -> String {
+        switch error {
+        case TryOnWorkspaceError.noPerson: "请选择人物。"
+        case TryOnWorkspaceError.personHasNoReference: "当前人物没有可用参考照片。"
+        case TryOnWorkspaceError.noGarments: "请至少加入一件衣物。"
+        case TryOnWorkspaceError.clothingUnavailable: "当前搭配中有衣物已不可用。"
+        case TryOnWorkspaceError.garmentResourceUnavailable, TryOnWorkspaceError.personResourceUnavailable, TryOnWorkspaceError.invalidImageResource: "参考图片不可用，请重新导入或选择其他素材。"
+        case TryOnWorkspaceError.referenceLimitExceeded(let maximum): "当前 Provider 最多支持 \(maximum) 张人物参考照。"
+        case TryOnWorkspaceError.unsupportedClothing, TryOnWorkspaceError.incompatibleSlot: "衣物与试衣槽位不兼容。"
+        case TryOnWorkspaceError.provider(let providerError): providerMessage(providerError)
+        case let providerError as VirtualTryOnError: providerMessage(providerError)
+        default: "Mock 生成失败，请检查当前素材后重试。"
+        }
+    }
+
+    private static func providerMessage(_ error: VirtualTryOnError) -> String {
+        switch error {
+        case .transientFailure: "Mock Provider 暂时不可用，可以重试。"
+        case .providerUnavailable, .configurationUnavailable: "Mock Provider 当前不可用。"
+        case .cancelled: "生成已取消。"
+        case .invalidInput, .unsupportedCapability: "当前人物、衣物或选项不满足 Provider 要求。"
+        case .invalidResponse: "Mock Provider 返回了无效结果。"
+        }
+    }
+}

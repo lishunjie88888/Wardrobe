@@ -38,6 +38,7 @@ protocol PersonRepository {
     func setDefaultPersonProfile(id: UUID, at date: Date) throws
     func setPrimaryPersonImage(id: UUID, for profileID: UUID, at date: Date) throws
     func defaultPersonReferenceSet() throws -> PersonReferenceSet?
+    func personReferenceSet(profileID: UUID) throws -> PersonReferenceSet?
     func personImageDeleteImpact(id: UUID) throws -> PersonImageDeleteImpact
     func personProfileDeleteImpact(id: UUID) throws -> PersonProfileDeleteImpact
     func deletePersonImage(id: UUID, at date: Date) throws

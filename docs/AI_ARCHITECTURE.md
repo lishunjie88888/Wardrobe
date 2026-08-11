@@ -101,6 +101,8 @@ struct VirtualTryOnResult: Sendable {
 
 Stage 5 提供轻量 `PersonReferenceSet` 查询边界：只从活跃默认人物取得明确的 primary image，并将其余图片按 `createdAt`、UUID 稳定排序为 additional images。后续 Try-On Service 应先使用该查询，再结合 Provider capability 决定是否接受全部参考图；不得在 SwiftUI 或 Provider Adapter 中重新猜测主图。若没有默认人物或主图，查询会明确返回 nil/空值，由后续输入校验提示用户。
 
+Stage 7 在相同 use case 上增加按活跃 profile UUID 取得 `PersonReferenceSet`，用于人物切换；排序和 Primary 语义仍由 Repository 统一决定。工作区默认选择 primary 及按稳定顺序排列的 additional，最多选择 `capabilities.maxPersonImages`，其余图片在 UI 明确显示为未选择而不是静默加入请求。
+
 ## 5. 能力协商
 
 `VirtualTryOnCapabilities` 至少描述：
@@ -183,6 +185,8 @@ enum VirtualTryOnError: Error, Sendable {
 Provider 注册由 App composition root 中的 `ProviderRegistry` 完成。持久化只保存稳定 Provider ID；Provider 不可用时，历史仍可读取，设置页提示重新选择。
 
 Stage 6 的 `MockVirtualTryOnProvider` 是 actor，固定 ID 为 `mock`，输出固定 `wardrobe-mock-result-v1` fixture 和确定性 request ID，不访问网络或文件系统。可注入 success、前 N 次 transient failure、permanent failure 及任意 Swift `Duration` 延迟；延迟使用 Swift Concurrency，调用前后均检查 Task cancellation，取消规范化为 `.cancelled`，不返回迟到结果。
+
+Stage 7 的 `VirtualTryOnRequestBuilder` 是 Session→Stage 6 Request 的唯一适配层。人物和衣物资源优先使用 processed、缺失时 fallback original；受控 resource ID 经只读 loader 转成图片 Data、MIME 和尺寸后才进入 `ProviderImage`，request 不包含 resource ID、URL 或绝对路径。Builder 复用 `TryOnPromptBuilder` 与 `VirtualTryOnRequestValidator`，不复制 Provider validation。当前 UI 只调用已注册的 Mock Provider，并明确把结果标记为测试预览。
 
 ## 11. 测试与安全
 

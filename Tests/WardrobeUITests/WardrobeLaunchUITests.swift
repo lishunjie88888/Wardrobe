@@ -18,11 +18,9 @@ final class WardrobeLaunchUITests: XCTestCase {
             }
         }
         app.launch()
-        app.activate()
+        ensureWindow(app)
 
-        XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 5))
-
-        for route in ["wardrobe", "person", "tryOn", "outfits", "generationHistory", "settings"] {
+        for route in ["wardrobe", "person", "outfits", "generationHistory", "settings", "tryOn"] {
             let sidebarItem = app.descendants(matching: .any)
                 .matching(identifier: "sidebar.route.\(route)")
                 .firstMatch
@@ -33,8 +31,8 @@ final class WardrobeLaunchUITests: XCTestCase {
                 XCTAssertTrue(app.staticTexts["我的衣橱"].waitForExistence(timeout: 2))
             } else if route == "person" {
                 XCTAssertTrue(app.staticTexts["我的形象"].waitForExistence(timeout: 3))
-            } else {
-                XCTAssertTrue(app.descendants(matching: .any)["placeholder.\(route)"].waitForExistence(timeout: 2))
+            } else if route == "tryOn" {
+                XCTAssertTrue(app.staticTexts["AI 试衣间"].waitForExistence(timeout: 3))
             }
         }
     }
@@ -52,7 +50,7 @@ final class WardrobeLaunchUITests: XCTestCase {
             }
         }
         app.launch()
-        app.activate()
+        ensureWindow(app)
 
         let card = app.descendants(matching: .any)["wardrobe.item.00000000-0000-0000-0000-000000000404"]
         XCTAssertTrue(card.waitForExistence(timeout: 5))
@@ -73,6 +71,7 @@ final class WardrobeLaunchUITests: XCTestCase {
         app.launchEnvironment["WARDROBE_UI_TEST_SELECT_CLOTHING"] = "00000000-0000-0000-0000-000000000404"
         app.terminate()
         app.launch()
+        ensureWindow(app)
         let persistedCard = app.descendants(matching: .any)["wardrobe.item.00000000-0000-0000-0000-000000000404"]
         XCTAssertTrue(persistedCard.waitForExistence(timeout: 10))
         let archive = app.buttons["wardrobe.detail.archive"]
@@ -95,7 +94,7 @@ final class WardrobeLaunchUITests: XCTestCase {
             }
         }
         app.launch()
-        app.activate()
+        ensureWindow(app)
         app.descendants(matching: .any)["sidebar.route.person"].click()
         let profile = app.descendants(matching: .any).matching(identifier: "person.profile.00000000-0000-0000-0000-000000000505").firstMatch
         XCTAssertTrue(profile.waitForExistence(timeout: 5))
@@ -110,9 +109,42 @@ final class WardrobeLaunchUITests: XCTestCase {
 
         app.launchEnvironment.removeValue(forKey: "WARDROBE_UI_TEST_SEED_PERSON")
         app.launchEnvironment["WARDROBE_UI_TEST_SELECT_PERSON"] = "00000000-0000-0000-0000-000000000505"
-        app.terminate(); app.launch()
+        app.terminate(); app.launch(); ensureWindow(app)
         app.descendants(matching: .any)["sidebar.route.person"].click()
         XCTAssertTrue(app.staticTexts["已编辑人物"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.buttons["person.detail.default"].waitForExistence(timeout: 3))
+    }
+
+    func testTryOnFixtureBuildsOutfitAndShowsMockSuccess() {
+        let app = XCUIApplication()
+        let isolatedStorageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("WardrobeUITryOnFlow-\(UUID().uuidString)", isDirectory: true)
+        app.launchEnvironment["WARDROBE_STORAGE_ROOT_OVERRIDE"] = isolatedStorageRoot.path
+        app.launchEnvironment["WARDROBE_UI_TEST_SEED_TRYON"] = "1"
+        addTeardownBlock { app.terminate() }
+        app.launch()
+        ensureWindow(app)
+        let tryOnRoute = app.descendants(matching: .any).matching(identifier: "sidebar.route.tryOn").firstMatch
+        XCTAssertTrue(tryOnRoute.waitForExistence(timeout: 5))
+        tryOnRoute.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+
+        XCTAssertTrue(app.descendants(matching: .any)["tryon.person.canvas"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["试衣测试人物"].waitForExistence(timeout: 2))
+        let clothing = app.descendants(matching: .any)["tryon.clothing.00000000-0000-0000-0000-000000000721"]
+        XCTAssertTrue(clothing.waitForExistence(timeout: 3))
+        let add = app.descendants(matching: .any)["tryon.add.00000000-0000-0000-0000-000000000721"]
+        XCTAssertTrue(add.waitForExistence(timeout: 3)); add.click()
+        let generate = app.buttons["tryon.generate"]
+        XCTAssertTrue(generate.waitForExistence(timeout: 2)); XCTAssertTrue(generate.isEnabled); generate.click()
+        XCTAssertTrue(app.descendants(matching: .any)["tryon.mock.result"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Mock 试穿已完成"].exists)
+    }
+
+    private func ensureWindow(_ app: XCUIApplication) {
+        app.activate()
+        if !app.windows.firstMatch.waitForExistence(timeout: 1) {
+            app.typeKey("n", modifierFlags: .command)
+        }
+        XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 6))
     }
 }
