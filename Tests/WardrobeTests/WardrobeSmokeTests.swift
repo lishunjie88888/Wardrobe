@@ -12,7 +12,8 @@ final class WardrobeSmokeTests: XCTestCase {
         let environment = AppEnvironment(
             applicationName: "Wardrobe",
             modelContainer: container,
-            storageService: storage
+            storageService: storage,
+            imageProcessingService: ImageProcessingService(storage: storage)
         )
         XCTAssertEqual(environment.applicationName, "Wardrobe")
     }

@@ -7,15 +7,18 @@ struct AppEnvironment: Sendable {
     let applicationName: String
     let modelContainer: ModelContainer
     let storageService: any StorageServing
+    let imageProcessingService: any ImageProcessingServing
 
     init(
         applicationName: String,
         modelContainer: ModelContainer,
-        storageService: any StorageServing
+        storageService: any StorageServing,
+        imageProcessingService: any ImageProcessingServing
     ) {
         self.applicationName = applicationName
         self.modelContainer = modelContainer
         self.storageService = storageService
+        self.imageProcessingService = imageProcessingService
     }
 
     @MainActor
@@ -27,7 +30,8 @@ struct AppEnvironment: Sendable {
             modelContainer: try WardrobeModelContainerFactory.production(
                 databaseDirectory: storageConfiguration.rootURL.appendingPathComponent("database", isDirectory: true)
             ),
-            storageService: storageService
+            storageService: storageService,
+            imageProcessingService: ImageProcessingService(storage: storageService)
         )
     }
 }

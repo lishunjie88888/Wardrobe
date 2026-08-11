@@ -107,6 +107,10 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - 外层只保存和传递资源 ID，不拼接绝对路径。详细规则见 [STORAGE_SPEC.md](STORAGE_SPEC.md)。
 - 当前实现为通过 `StorageServing` 注入的 `StorageService` actor，同一实例串行化 owner 写入。`StorageResourceID` 只接受批准的顶级目录、小写规范 UUID 和固定文件种类，解码持久引用时会重新验证。
 - 基础 `ImageIOThumbnailGenerator` 只负责格式/尺寸验证、方向修正降采样和 JPEG 编码；StorageService 负责 staging、目标命名和发布。Stage 3 在该边界上扩展完整 processed image pipeline，不把图片逻辑放入 View 或 Repository。
+- Stage 3 由 `ImageProcessingServing`/`ImageProcessingService` 提供 async 图片标准化入口，`ImageProcessingPreset` 显式区分 garment、person 与预留 generated result 策略；Feature 不接触 ImageIO、文件 URL 或 magic number。生产实例只依赖窄接口 `ImageProcessingStorageServing` 与 `BackgroundRemovalProviding`，不依赖 SwiftUI、SwiftData Repository、AI Provider 或衣服 CRUD。
+- `ImageProcessingService` 请求 Storage 创建受控 staging workspace，在 detached worker 中以 ImageIO 先校验再按目标尺寸降采样、修正 orientation、绘制到 sRGB、编码 processed PNG 和 thumbnail JPEG，最后回到 Storage actor 发布。Task cancellation 在各重处理边界传播为 `CancellationError`；取消/失败只清理当前 operation，不发布半成品。
+- `BackgroundRemovalProviding` 当前注入 `DisabledBackgroundRemovalProvider`，行为是 deterministic no-op 且无网络依赖；未来 Apple Vision、AI 或测试 provider 可在不改变 Feature/Storage 边界的情况下替换。Stage 3 不提供真实背景分离。
+- pipeline constant `wardrobe-image-v1` 同时出现在结果 metadata 与 PNG `Software` 字段。已发布 `processed.png` 默认不可覆盖；未来重新处理由生命周期 Service 在引用预检后采用版本化资源策略，不能由图片层自行删除或替换历史引用。
 - `StorageCompensationTransaction` 为跨 SwiftData/filesystem Service 提供显式补偿记录；它只回滚调用方注册的本次资源，不执行全库扫描。
 
 ### 4.6 AI Provider

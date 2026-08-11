@@ -94,11 +94,6 @@ struct ImageIOThumbnailGenerator: ImageThumbnailGenerating {
         ] as CFDictionary), CGImageSourceGetCount(source) > 0 else {
             throw ImageValidationError.unreadableImage
         }
-        guard let typeIdentifier = CGImageSourceGetType(source) as String?,
-              let format = SupportedImageFormat(typeIdentifier: typeIdentifier)
-        else {
-            throw ImageValidationError.unsupportedFormat
-        }
         guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
               let width = properties[kCGImagePropertyPixelWidth] as? Int,
               let height = properties[kCGImagePropertyPixelHeight] as? Int,
@@ -109,6 +104,11 @@ struct ImageIOThumbnailGenerator: ImageThumbnailGenerating {
         let (pixelCount, overflow) = Int64(width).multipliedReportingOverflow(by: Int64(height))
         guard !overflow, pixelCount <= Self.maximumPixelCount else {
             throw ImageValidationError.pixelCountTooLarge(maximumPixels: Self.maximumPixelCount)
+        }
+        guard let typeIdentifier = CGImageSourceGetType(source) as String?,
+              let format = SupportedImageFormat(typeIdentifier: typeIdentifier)
+        else {
+            throw ImageValidationError.unsupportedFormat
         }
         return ImageMetadata(format: format, pixelWidth: width, pixelHeight: height, fileSize: fileSize)
     }

@@ -25,6 +25,9 @@
 		A00000000000000000000010 /* ImageThumbnailGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* ImageThumbnailGenerator.swift */; };
 		A00000000000000000000011 /* Stage2StorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000014 /* Stage2StorageTests.swift */; };
 		A00000000000000000000012 /* StorageCompensationTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000015 /* StorageCompensationTransaction.swift */; };
+		A00000000000000000000013 /* ImageProcessingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* ImageProcessingModels.swift */; };
+		A00000000000000000000014 /* ImageProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000017 /* ImageProcessingService.swift */; };
+		A00000000000000000000015 /* Stage3ImageProcessingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* Stage3ImageProcessingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +69,9 @@
 		B00000000000000000000013 /* ImageThumbnailGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageThumbnailGenerator.swift; sourceTree = "<group>"; };
 		B00000000000000000000014 /* Stage2StorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage2StorageTests.swift; sourceTree = "<group>"; };
 		B00000000000000000000015 /* StorageCompensationTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageCompensationTransaction.swift; sourceTree = "<group>"; };
+		B00000000000000000000016 /* ImageProcessingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessingModels.swift; sourceTree = "<group>"; };
+		B00000000000000000000017 /* ImageProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessingService.swift; sourceTree = "<group>"; };
+		B00000000000000000000018 /* Stage3ImageProcessingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage3ImageProcessingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +169,7 @@
 				B00000000000000000000006 /* WardrobeSmokeTests.swift */,
 				B00000000000000000000010 /* Stage1PersistenceTests.swift */,
 				B00000000000000000000014 /* Stage2StorageTests.swift */,
+				B00000000000000000000018 /* Stage3ImageProcessingTests.swift */,
 			);
 			path = WardrobeTests;
 			sourceTree = "<group>";
@@ -211,7 +218,7 @@
 		G00000000000000000000017 /* Services */ = {isa = PBXGroup; children = (B0000000000000000000000E /* WardrobeDataRules.swift */,); path = Services; sourceTree = "<group>"; };
 		G00000000000000000000018 /* Database */ = {isa = PBXGroup; children = (B0000000000000000000000F /* WardrobePersistence.swift */,); path = Database; sourceTree = "<group>"; };
 		G00000000000000000000019 /* Storage */ = {isa = PBXGroup; children = (B00000000000000000000011 /* StorageResourceID.swift */, B00000000000000000000012 /* StorageService.swift */, B00000000000000000000015 /* StorageCompensationTransaction.swift */,); path = Storage; sourceTree = "<group>"; };
-		G0000000000000000000001A /* ImageProcessing */ = {isa = PBXGroup; children = (B00000000000000000000013 /* ImageThumbnailGenerator.swift */,); path = ImageProcessing; sourceTree = "<group>"; };
+		G0000000000000000000001A /* ImageProcessing */ = {isa = PBXGroup; children = (B00000000000000000000013 /* ImageThumbnailGenerator.swift */, B00000000000000000000016 /* ImageProcessingModels.swift */, B00000000000000000000017 /* ImageProcessingService.swift */,); path = ImageProcessing; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -327,6 +334,8 @@
 				A0000000000000000000000E /* StorageResourceID.swift in Sources */,
 				A0000000000000000000000F /* StorageService.swift in Sources */,
 				A00000000000000000000010 /* ImageThumbnailGenerator.swift in Sources */,
+				A00000000000000000000013 /* ImageProcessingModels.swift in Sources */,
+				A00000000000000000000014 /* ImageProcessingService.swift in Sources */,
 				A00000000000000000000012 /* StorageCompensationTransaction.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -338,6 +347,7 @@
 				A00000000000000000000006 /* WardrobeSmokeTests.swift in Sources */,
 				A0000000000000000000000D /* Stage1PersistenceTests.swift in Sources */,
 				A00000000000000000000011 /* Stage2StorageTests.swift in Sources */,
+				A00000000000000000000015 /* Stage3ImageProcessingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

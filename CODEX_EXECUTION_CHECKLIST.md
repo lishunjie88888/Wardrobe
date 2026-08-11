@@ -287,62 +287,76 @@
 
 ### Scope
 
-- [ ] 图像解码、UTType/MIME 校验和 EXIF 方向规范化。
-- [ ] 像素尺寸限制、缩放、色彩空间统一和压缩。
-- [ ] JPEG thumbnail 生成与 PNG processed image 生成。
-- [ ] 处理配置和算法版本化。
-- [ ] 背景去除扩展协议预留，默认使用 no-op/未启用实现。
-- [ ] 图片处理错误、取消和内存压力处理。
+- [x] 图像解码、UTType/MIME 校验和 EXIF 方向规范化。
+- [x] 像素尺寸限制、缩放、色彩空间统一和压缩。
+- [x] JPEG thumbnail 生成与 PNG processed image 生成。
+- [x] 处理配置和算法版本化。
+- [x] 背景去除扩展协议预留，默认使用 no-op/未启用实现。
+- [x] 图片处理错误、取消和内存压力处理。
 
 ### Out of Scope
 
-- [ ] 不调用第三方云图片 API。
-- [ ] 不实现自动标签、颜色识别或 AI 抠图。
-- [ ] 不在 SwiftUI View 中直接使用处理 API。
+- [x] 不调用第三方云图片 API。
+- [x] 不实现自动标签、颜色识别或 AI 抠图。
+- [x] 不在 SwiftUI View 中直接使用处理 API。
 
 ### Dependencies
 
-- [ ] Stage 2 已通过。
-- [ ] 目标输入/输出格式与最大尺寸已经从 Storage 与 AI 文档确认。
+- [x] Stage 2 已通过。
+- [x] 目标输入/输出格式与最大尺寸已经从 Storage 与 AI 文档确认。
 
 ### Implementation Tasks
 
-- [ ] 定义 `ImageProcessingService` 协议、输入、输出和稳定错误类型。
-- [ ] 实现方向修正、尺寸计算、缩放和色彩空间标准化。
-- [ ] 实现 thumbnail 与 processed 输出参数，避免重复解码同一源图。
-- [ ] 实现超大图降采样，避免先完整展开造成峰值内存失控。
-- [ ] 将处理产物通过 StorageService 写入，不直接拼路径。
-- [ ] 为处理配置加入版本号，旧历史引用的派生资源不可静默覆盖。
-- [ ] 加入 Task cancellation 检查和临时文件清理。
-- [ ] 定义可选 BackgroundRemovalService 协议，但不提供云实现。
+- [x] 定义 `ImageProcessingService` 协议、输入、输出和稳定错误类型。
+- [x] 实现方向修正、尺寸计算、缩放和色彩空间标准化。
+- [x] 实现 thumbnail 与 processed 输出参数，避免重复解码同一源图。
+- [x] 实现超大图降采样，避免先完整展开造成峰值内存失控。
+- [x] 将处理产物通过 StorageService 写入，不直接拼路径。
+- [x] 为处理配置加入版本号，旧历史引用的派生资源不可静默覆盖。
+- [x] 加入 Task cancellation 检查和临时文件清理。
+- [x] 定义可选 BackgroundRemovalService 协议，但不提供云实现。
 
 ### Tests
 
-- [ ] 使用不同 EXIF 方向、尺寸、格式和色彩空间 fixture 测试。
-- [ ] 测试 thumbnail 像素边、宽高比、格式和可解码性。
-- [ ] 测试损坏文件、伪造扩展名、超大图和不支持格式。
-- [ ] 测试取消后不提交产物且 staging 被清理。
-- [ ] 测试相同输入和配置生成稳定规格的输出。
-- [ ] 运行 build 和全部现有 tests。
+- [x] 使用不同 EXIF 方向、尺寸、格式和色彩空间 fixture 测试。
+- [x] 测试 thumbnail 像素边、宽高比、格式和可解码性。
+- [x] 测试损坏文件、伪造扩展名、超大图和不支持格式。
+- [x] 测试取消后不提交产物且 staging 被清理。
+- [x] 测试相同输入和配置生成稳定规格的输出。
+- [x] 运行 build 和全部现有 tests。
 
 ### Acceptance Criteria
 
-- [ ] 原图保持不变，processed 与 thumbnail 可可靠生成和读取。
-- [ ] 方向、尺寸和压缩规则符合 `STORAGE_SPEC.md`。
-- [ ] 错误可被 Service/UI 映射，且不会留下半成品元数据。
-- [ ] 无真实云 API 依赖。
+- [x] 原图保持不变，processed 与 thumbnail 可可靠生成和读取。
+- [x] 方向、尺寸和压缩规则符合 `STORAGE_SPEC.md`。
+- [x] 错误可被 Service/UI 映射，且不会留下半成品元数据。
+- [x] 无真实云 API 依赖。
 
 ### Documentation Updates
 
-- [ ] 在 `docs/STORAGE_SPEC.md` 记录实际格式、尺寸、质量和处理版本。
-- [ ] 在 `docs/ARCHITECTURE.md` 记录处理服务边界与并发策略。
-- [ ] 在本 Stage 下记录 fixture 和测试结果。
+- [x] 在 `docs/STORAGE_SPEC.md` 记录实际格式、尺寸、质量和处理版本。
+- [x] 在 `docs/ARCHITECTURE.md` 记录处理服务边界与并发策略。
+- [x] 在本 Stage 下记录 fixture 和测试结果。
+
+### Execution Record（2026-08-11）
+
+- Abstraction：新增 `ImageProcessingServing`/`ImageProcessingService`、显式 `ImageProcessingPreset`/`ImageProcessingOptions`、稳定 `ImageProcessingError` 与 async `BackgroundRemovalProviding`；composition root 注入生产 service。图片层不依赖 SwiftUI、SwiftData Repository、AI Provider 或衣服 CRUD。
+- Preset/输出：`garment` 为最长边 2048 px、保留 alpha、thumbnail 512 px / JPEG 0.82；`person` 为最长边 4096 px、白底去 alpha、thumbnail 512 px / JPEG 0.86；预留 `generatedResult` 为 3072 px / JPEG 0.84。全部保持宽高比、不裁剪，processed 为 orientation up 的 8-bit sRGB PNG。
+- Version/metadata：pipeline version 为 `wardrobe-image-v1`，写入结果 metadata 和 PNG `Software` 字段；来源 EXIF/定位/相机/色彩 metadata 不复制。固定 `processed.png` 已存在时拒绝覆盖，未来重处理由生命周期 Service 先做引用预检并采用受控版本资源策略；未修改冻结的 `WardrobeSchemaV1`。
+- Storage/原子性：新增窄接口 `ImageProcessingStorageServing`。Storage 从 original 创建受控 staging workspace，验证 processed PNG/thumbnail JPEG 后在 actor 内发布；若替换 Stage 2 thumbnail 失败则恢复旧文件。取消/失败清理明确 operation，不向图片服务或 View 暴露通用删除能力，original bytes 在测试中保持不变。
+- Memory/Concurrency：在 bitmap 创建前复用 100 MiB、100,000,000 pixel 和真实格式校验；ImageIO source cache 关闭，`CGImageSourceCreateThumbnailAtIndex` 直接做 orientation transform 与目标尺寸降采样。处理在 detached worker 上执行，并在校验、降采样、背景 provider、颜色转换、编码与发布前检查 cancellation；取消保持 `CancellationError` 语义。
+- Background removal：`DisabledBackgroundRemovalProvider` 是 deterministic no-op，无 Vision 私有/高版本 API、第三方 SDK、网络或真实 AI 调用；协议可由未来 Apple Vision、AI 与 Mock provider 替换。
+- Fixtures/Unit Tests：新增 14 个 Stage 3 tests，覆盖 rotated JPEG、透明 PNG、HEIC、processed/thumbnail 解码、preset 尺寸/宽高比、sRGB/alpha/version、Stage 2 thumbnail 协作、15MP 降采样、超过 100M pixel 的低内存 PNG fixture、非图片、取消、失败/取消无半成品、不可覆盖与 service/storage 重建读取。
+- 全部 Unit Tests：`xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath /tmp/WardrobeStage3FinalDerivedData -only-testing:WardrobeTests test` → `TEST SUCCEEDED`；49 total，48 passed、1 skipped、0 failed。skip 为 Stage 2 已记录的 HEIF encoder 条件限制；Stage 3 HEIC fixture 实测通过。
+- UI Tests：同一 project/scheme/destination/DerivedData，`-only-testing:WardrobeUITests test` → `TEST SUCCEEDED`；1 个 launch/sidebar smoke test passed。UI test 注入独立临时 Storage root。
+- Debug Build：同一 project/scheme/destination/DerivedData 执行 `build` → `BUILD SUCCEEDED`，无源码 warning/error；测试构建仅见既有 Xcode AppIntents metadata extraction 提示。
+- 安全审计：正式 Application Support 根在本轮测试前已存在（文件时间 14:49，测试从 14:54 后执行），最终 garments/persons/generations/staging 均无子项且时间未被本轮测试更新；Stage 3 tests/UITests 使用 `/tmp` 隔离 root。源码未新增网络调用、衣服 CRUD、永久删除路径、Schema V2 或 Stage 4 功能。
 
 ### Completion Checklist
 
-- [ ] 图片 fixture 测试、内存基本检查和 build 通过。
-- [ ] processed/thumbnail 生成责任只存在于 ImageProcessingService。
-- [ ] 未引入云依赖或业务 UI。
+- [x] 图片 fixture 测试、内存基本检查和 build 通过。
+- [x] processed/thumbnail 生成责任只存在于 ImageProcessingService。
+- [x] 未引入云依赖或业务 UI。
 
 ---
 

@@ -33,7 +33,8 @@ struct WardrobeShellView: View {
         environment: AppEnvironment(
             applicationName: "Wardrobe",
             modelContainer: container,
-            storageService: storage
+            storageService: storage,
+            imageProcessingService: ImageProcessingService(storage: storage)
         )
     )
 }

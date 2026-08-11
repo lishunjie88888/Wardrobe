@@ -115,7 +115,7 @@ protocol StorageServing: Sendable {
     func storageRootLocation() async -> URL
 }
 
-actor StorageService: StorageServing {
+actor StorageService: StorageServing, ImageProcessingStorageServing {
     private static let managedDirectories = [
         "database", "garments", "persons", "generations", "outfits", "staging", "cache", "backups",
     ]
@@ -333,6 +333,97 @@ actor StorageService: StorageServing {
         try removeIfExists(directory)
     }
 
+    func beginImageProcessing(
+        originalResourceID: StorageResourceID
+    ) throws -> ImageProcessingWorkspace {
+        try Task.checkCancellation()
+        let owner = originalResourceID.owner
+        guard owner.kind == .garment || owner.kind == .person,
+              originalResourceID.rawValue.split(separator: "/").last?.hasPrefix("original.") == true
+        else {
+            throw ImageProcessingError.invalidOriginalResource
+        }
+
+        let source = try existingResolvedURL(for: originalResourceID)
+        _ = try thumbnailGenerator.inspectImage(at: source)
+        let operationID = UUID()
+        let directory = processingWorkspaceDirectory(operationID)
+        let input = directory.appendingPathComponent(
+            "input.\(source.pathExtension.lowercased())",
+            isDirectory: false
+        )
+        do {
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: false)
+            try fileManager.copyItem(at: source, to: input)
+            try Task.checkCancellation()
+            return ImageProcessingWorkspace(
+                operationID: operationID,
+                originalResourceID: originalResourceID,
+                inputURL: input,
+                processedOutputURL: directory.appendingPathComponent("processed.png"),
+                thumbnailOutputURL: directory.appendingPathComponent("thumbnail.jpg")
+            )
+        } catch {
+            try? removeIfExists(directory)
+            throw error
+        }
+    }
+
+    func publishImageProcessingOutputs(
+        from workspace: ImageProcessingWorkspace
+    ) throws -> PublishedImageProcessingResources {
+        try Task.checkCancellation()
+        let directory = try validatedProcessingWorkspace(workspace)
+        try ensureNoSymbolicLinkInExistingPath(to: workspace.processedOutputURL)
+        try ensureNoSymbolicLinkInExistingPath(to: workspace.thumbnailOutputURL)
+        let processedMetadata = try thumbnailGenerator.inspectImage(at: workspace.processedOutputURL)
+        let thumbnailMetadata = try thumbnailGenerator.inspectImage(at: workspace.thumbnailOutputURL)
+        guard processedMetadata.format == .png, thumbnailMetadata.format == .jpeg else {
+            throw ImageProcessingError.outputValidationFailed
+        }
+
+        let owner = workspace.originalResourceID.owner
+        let processed = try StorageResourceID(owner: owner, kind: .processed)
+        let thumbnail = try StorageResourceID(owner: owner, kind: .thumbnail)
+        let processedDestination = try resolvedURL(for: processed)
+        let thumbnailDestination = try resolvedURL(for: thumbnail)
+        guard !fileManager.fileExists(atPath: processedDestination.path) else {
+            throw StorageError.resourceAlreadyExists(processed)
+        }
+
+        let previousThumbnail = directory.appendingPathComponent("previous-thumbnail.jpg")
+        var movedPreviousThumbnail = false
+        var publishedProcessed = false
+        var publishedThumbnail = false
+        do {
+            try Task.checkCancellation()
+            if fileManager.fileExists(atPath: thumbnailDestination.path) {
+                try ensureNoSymbolicLinkInExistingPath(to: thumbnailDestination)
+                try fileManager.moveItem(at: thumbnailDestination, to: previousThumbnail)
+                movedPreviousThumbnail = true
+            }
+            try fileManager.moveItem(at: workspace.processedOutputURL, to: processedDestination)
+            publishedProcessed = true
+            try fileManager.moveItem(at: workspace.thumbnailOutputURL, to: thumbnailDestination)
+            publishedThumbnail = true
+            try removeIfExists(directory)
+            return PublishedImageProcessingResources(processed: processed, thumbnail: thumbnail)
+        } catch {
+            if publishedThumbnail { try? removeIfExists(thumbnailDestination) }
+            if publishedProcessed { try? removeIfExists(processedDestination) }
+            if movedPreviousThumbnail,
+               fileManager.fileExists(atPath: previousThumbnail.path),
+               !fileManager.fileExists(atPath: thumbnailDestination.path) {
+                try? fileManager.moveItem(at: previousThumbnail, to: thumbnailDestination)
+            }
+            throw error
+        }
+    }
+
+    func discardImageProcessingWorkspace(_ operationID: UUID) throws {
+        try removeIfExists(processingWorkspaceDirectory(operationID))
+    }
+
     func writeCache(_ data: Data, namespace: String, key: UUID) throws {
         guard namespace == "previews" || namespace == "provider" else { throw StorageError.invalidCacheKey }
         let directory = cacheDirectory.appendingPathComponent(namespace, isDirectory: true)
@@ -440,6 +531,22 @@ actor StorageService: StorageServing {
 
     private var cacheDirectory: URL {
         configuration.rootURL.appendingPathComponent("cache", isDirectory: true)
+    }
+
+    private func processingWorkspaceDirectory(_ operationID: UUID) -> URL {
+        stagingDirectory.appendingPathComponent(operationID.uuidString.lowercased(), isDirectory: true)
+    }
+
+    private func validatedProcessingWorkspace(_ workspace: ImageProcessingWorkspace) throws -> URL {
+        let expectedDirectory = processingWorkspaceDirectory(workspace.operationID).standardizedFileURL
+        guard workspace.inputURL.deletingLastPathComponent().standardizedFileURL == expectedDirectory,
+              workspace.processedOutputURL.standardizedFileURL == expectedDirectory.appendingPathComponent("processed.png"),
+              workspace.thumbnailOutputURL.standardizedFileURL == expectedDirectory.appendingPathComponent("thumbnail.jpg")
+        else {
+            throw StorageError.unsafeResolvedPath
+        }
+        try ensureNoSymbolicLinkInExistingPath(to: expectedDirectory)
+        return expectedDirectory
     }
 
     private func ownerDirectory(for owner: StorageOwner) throws -> URL {

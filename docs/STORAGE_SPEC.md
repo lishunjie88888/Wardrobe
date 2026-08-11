@@ -80,9 +80,13 @@ generations/89a1.../result.png
 
 ### 4.2 处理后图片
 
-- 用于 AI 输入或一致显示的标准化版本，V1 建议 PNG；尺寸、色彩空间和方向规则由 Image Processing Service 版本化。
+- 用于 AI 输入或一致显示的标准化版本。Stage 3 的正式格式为 PNG，pipeline version 为 `wardrobe-image-v1`；输出固定为 orientation `up`、8-bit sRGB，不保留 EXIF、相机、定位或来源色彩 metadata，只在 PNG `Software` 字段写入非敏感 pipeline version。
+- `original` 是不可破坏的源素材。处理过程只从 Storage 签发的只读 staging 副本解码，绝不修改或覆盖 original resource。
+- `garment` preset 最长边为 `2048` px，保持宽高比、不裁剪并保留 alpha，为未来背景去除保留透明通道；当前背景去除 provider 为 deterministic disabled/no-op，不调用网络。
+- `person` preset 最长边为 `4096` px，保持宽高比、不裁剪，透明区域合成到白色并输出不带 alpha 的 PNG，避免人物参考图发生意外透明；该 preset 以保留 AI reference detail 为优先。
+- `generatedResult` preset 预留最长边 `3072` px、保留 alpha；Stage 3 不接入生成业务流程。
 - 它是派生资产但可能被历史请求的 `resourceIDSnapshot` 引用，因此不能被普通缓存清理删除。
-- 处理算法变化时创建新版本或受控替换；若替换已被生成历史引用的资源，需保留旧资源或复制到生成输入快照区域。V1 优先保持引用资源不可变。
+- Stage 3 对已经存在的 `processed.png` 拒绝覆盖，确保固定 resource ID 不被静默改变；PNG 内嵌版本可在重启后识别生成算法。未来重新处理必须由衣服/人物生命周期 Service 先做 surviving-reference 预检，再通过新的受控版本资源命名或 Storage layout migration 发布；Stage 3 不提前实现该业务协调，也不修改 `WardrobeSchemaV1`。
 
 ### 4.3 缩略图
 
@@ -90,6 +94,7 @@ generations/89a1.../result.png
 - 业务 owner 下的 thumbnail 是持久派生资源，可随完整备份保存，也可在恢复后重建。
 - `cache/previews` 中的临时缩略图是可删除缓存，不进入备份。
 - Stage 2 基础实现使用 ImageIO 从文件 URL 降采样，最大边 `512` 像素，JPEG quality `0.82`，并启用 orientation transform。该实现避免为生成缩略图先完整解码原图；Stage 3 可在不改变资源 ID 和 Storage 边界的前提下扩展色彩空间、处理版本和更完整的图片流水线。
+- Stage 3 canonical pipeline 由同一次受限 processed decode 派生 JPEG thumbnail，最长边仍为 `512` px、不裁剪、orientation `up`、sRGB/不带 alpha。`garment` quality 为 `0.82`，`person` 为 `0.86`，预留的 `generatedResult` 为 `0.84`。若 Stage 2 导入已生成基础 thumbnail，Storage 仅在 processed 与新 thumbnail 均校验成功后替换它；失败时恢复旧 thumbnail。
 
 ### 4.4 AI 生成图
 
@@ -116,6 +121,7 @@ generations/89a1.../result.png
 - 新资源写入成功但数据库保存失败时，删除本次操作创建的明确资源。
 - 数据库提交成功但后续清理失败时，保留一致的业务状态并记录待清理项，不回滚成悬空引用。
 - 同一 owner 的并发写入由 Storage actor 串行化；文件替换使用临时文件与原子 rename。
+- Stage 3 通过 `ImageProcessingStorageServing` 请求受控 workspace：Storage 把 original 复制到 `staging/<Operation UUID>/input.*`，处理器只写固定的 `processed.png` 与 `thumbnail.jpg`。发布在 Storage actor 内完成；发布前失败或取消只删除该 operation，发布中错误回滚新 processed 并恢复旧 thumbnail，不向图片服务暴露通用删除 API。
 - 新 owner 的图片导入在 `staging/<Operation UUID>/` 内完成真实格式检测、原图复制、再次解码校验和 thumbnail 生成，再将整个操作目录原子 rename 为 owner 目录。失败只清理该 operation 与本次明确 owner，不扫描或删除其他资源。
 - 跨 SwiftData 与文件系统的上层 Service 使用 `StorageCompensationTransaction` 记录本次创建的明确 resource/owner；Repository save 成功后 commit，失败则按逆序 rollback。清理失败作为独立 issue 返回，不能覆盖原始业务错误。
 
@@ -124,6 +130,13 @@ generations/89a1.../result.png
 - 接受 ImageIO 实际解码为 JPEG、PNG、HEIC 或 HEIF 的单帧/首帧图片；持久扩展名来自检测结果，不信任来源文件名。
 - 单文件上限为 100 MiB，首帧像素总数上限为 100,000,000，且宽高必须为正数。
 - 当前自动测试运行时可稳定编码/解码 JPEG、PNG、HEIC；HEIF encoder 不可用时测试明确 skip，不将其伪报为成功。运行时导入仍支持系统 ImageIO 能解码的 HEIF。
+
+### 5.2 Stage 3 解码与内存基线
+
+- pipeline 在创建 bitmap 前复用 100 MiB、100,000,000 pixel 和真实格式校验；像素乘法使用 overflow-safe 计算。
+- 生产处理不把 original 读成 `Data`，而是从受控 file URL 使用 `CGImageSource` 且关闭 source cache；`CGImageSourceCreateThumbnailAtIndex` 同时完成 orientation transform 与目标最长边降采样，避免先建立 full-resolution bitmap。
+- 峰值长期对象限于一个 preset 尺寸的 sRGB processed bitmap 和一个 512 px thumbnail bitmap；original、processed 与 thumbnail 不会作为三个完整 bitmap 同时驻留。
+- CPU/解码/编码工作在 detached worker 上执行，不占用 SwiftUI MainActor；在校验、降采样、可选背景处理、颜色转换、两次编码和发布前检查 Task cancellation。
 
 ## 6. 删除与孤儿清理
 
