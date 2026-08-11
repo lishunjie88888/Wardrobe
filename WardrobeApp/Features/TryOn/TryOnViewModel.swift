@@ -6,6 +6,27 @@ struct TryOnFeatureDependencies {
     let person: PersonManagementService
     let imageLoader: any TryOnResourceLoading
     let provider: any VirtualTryOnProvider
+    let externalWorkflow: ExternalGenerationWorkflow?
+    let resultImporter: ExternalGenerationResultImporter?
+    let injectedResultURL: URL?
+
+    init(
+        clothing: ClothingManagementService,
+        person: PersonManagementService,
+        imageLoader: any TryOnResourceLoading,
+        provider: any VirtualTryOnProvider,
+        externalWorkflow: ExternalGenerationWorkflow? = nil,
+        resultImporter: ExternalGenerationResultImporter? = nil,
+        injectedResultURL: URL? = nil
+    ) {
+        self.clothing = clothing
+        self.person = person
+        self.imageLoader = imageLoader
+        self.provider = provider
+        self.externalWorkflow = externalWorkflow
+        self.resultImporter = resultImporter
+        self.injectedResultURL = injectedResultURL
+    }
 }
 
 struct MockTryOnPreview: Equatable, Sendable {
@@ -27,6 +48,15 @@ final class TryOnViewModel {
         case cancelled
     }
 
+    enum ExternalState: Equatable {
+        case idle
+        case preparing
+        case ready(ExternalGenerationWorkflow.PreparationResult)
+        case importing(ExternalGenerationPackage)
+        case imported(ExternalGenerationPackage, ImportedExternalGeneration)
+        case failure(String)
+    }
+
     private let dependencies: TryOnFeatureDependencies
     private let mapper = ClothingToTryOnSlotMapper()
     private let requestBuilder: VirtualTryOnRequestBuilder
@@ -42,6 +72,7 @@ final class TryOnViewModel {
     var categoryCode: String?
     var favoritesOnly = false
     var generationState: GenerationState = .idle
+    var externalState: ExternalState = .idle
     var message: String?
     var omittedReferenceCount = 0
 
@@ -55,8 +86,21 @@ final class TryOnViewModel {
     var selectedProfile: PersonProfileRecord? { profiles.first { $0.id == session.personProfileID } }
     var isGenerating: Bool { if case .generating = generationState { true } else { false } }
     var canGenerate: Bool {
-        session.personProfileID != nil && !session.selectedPersonImageIDs.isEmpty && session.garmentCount > 0 && !isGenerating
+        session.personProfileID != nil && !session.selectedPersonImageIDs.isEmpty && session.garmentCount > 0 && !isGenerating && !isPreparingExternal
     }
+
+    var isPreparingExternal: Bool { if case .preparing = externalState { true } else { false } }
+    var preparedPackage: ExternalGenerationPackage? {
+        switch externalState {
+        case .ready(let result): result.package
+        case .importing(let package), .imported(let package, _): package
+        default: nil
+        }
+    }
+    var importedResult: ImportedExternalGeneration? {
+        if case .imported(_, let result) = externalState { result } else { nil }
+    }
+    var injectedResultURL: URL? { dependencies.injectedResultURL }
 
     func load() {
         do {
@@ -214,6 +258,69 @@ final class TryOnViewModel {
 
     func retry() { generate() }
 
+    func prepareExternalGeneration() {
+        guard canGenerate, let references = currentReferences, let workflow = dependencies.externalWorkflow else { return }
+        externalState = .preparing
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let result = try await workflow.prepare(
+                    session: session,
+                    person: references,
+                    clothing: allActiveClothing
+                )
+                externalState = .ready(result)
+            } catch {
+                let failureMessage = Self.externalMessage(for: error)
+                externalState = .failure(failureMessage)
+                message = failureMessage
+            }
+        }
+    }
+
+    func copyPreparedPrompt() {
+        guard let package = preparedPackage else { return }
+        if dependencies.externalWorkflow?.copyPrompt(from: package) != true {
+            message = "自动复制提示词失败，可在素材文件夹中打开 prompt.txt 手动复制。"
+        }
+    }
+
+    func openChatGPT() {
+        if dependencies.externalWorkflow?.openChatGPT() != true { message = "无法打开 ChatGPT，请手动打开应用或网页。" }
+    }
+
+    func revealPreparedPackage() {
+        guard let package = preparedPackage else { return }
+        if dependencies.externalWorkflow?.reveal(package) != true { message = "无法在 Finder 中显示素材，请稍后重试。" }
+    }
+
+    func importExternalResult(from sourceURL: URL) {
+        guard let package = preparedPackage, let importer = dependencies.resultImporter else { return }
+        externalState = .importing(package)
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let result = try await importer.importResult(from: sourceURL, package: package)
+                externalState = .imported(package, result)
+            } catch {
+                externalState = .ready(.init(package: package, promptCopied: false, chatGPTOpened: false, finderOpened: false))
+                message = Self.externalMessage(for: error)
+            }
+        }
+    }
+
+    func cleanPreparedPackage() {
+        guard let package = preparedPackage, let workflow = dependencies.externalWorkflow else { return }
+        Task { [weak self] in
+            do {
+                try await workflow.delete(package)
+                self?.externalState = .idle
+            } catch {
+                self?.message = "无法清理这次临时素材，正式人物、衣物和生成结果未受影响。"
+            }
+        }
+    }
+
     func cancelGeneration(setCancelledState: Bool = true) {
         guard generationTask != nil else { return }
         generationTask?.cancel()
@@ -254,6 +361,7 @@ final class TryOnViewModel {
     private func invalidateResult() {
         cancelGeneration(setCancelledState: false)
         generationState = .idle
+        externalState = .idle
     }
 
     private func garmentNamesBySlot() -> [TryOnSlot: [String]] {
@@ -284,6 +392,20 @@ final class TryOnViewModel {
         case .cancelled: "生成已取消。"
         case .invalidInput, .unsupportedCapability: "当前人物、衣物或选项不满足 Provider 要求。"
         case .invalidResponse: "Mock Provider 返回了无效结果。"
+        }
+    }
+
+    private static func externalMessage(for error: any Error) -> String {
+        switch error {
+        case ExternalGenerationError.noPerson: "请选择人物。"
+        case ExternalGenerationError.personHasNoReference: "当前人物没有可用参考照片。"
+        case ExternalGenerationError.noGarments: "请至少加入一件衣物。"
+        case ExternalGenerationError.missingResource: "人物或衣物参考图片缺失，请重新选择素材。"
+        case ExternalGenerationError.invalidResultImage: "所选文件不是可正常解码的图片。"
+        case ExternalGenerationError.packageCreationFailed: "无法准备 ChatGPT 素材，请检查可用磁盘空间后重试。"
+        case ExternalGenerationError.resultStorageFailed: "无法保存生成图片，请检查本地存储后重试。"
+        case ExternalGenerationError.generationRecordFailed: "无法保存生成记录，未保留不完整的结果文件。"
+        default: "外部 ChatGPT 工作流未完成，请稍后重试。"
         }
     }
 }

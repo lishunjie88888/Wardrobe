@@ -116,6 +116,7 @@ protocol StorageServing: Sendable {
 }
 
 actor StorageService: StorageServing, ImageProcessingStorageServing {
+    nonisolated let libraryRootURL: URL
     private static let managedDirectories = [
         "database", "garments", "persons", "generations", "outfits", "staging", "cache", "backups",
     ]
@@ -131,6 +132,7 @@ actor StorageService: StorageServing, ImageProcessingStorageServing {
         thumbnailGenerator: any ImageThumbnailGenerating = ImageIOThumbnailGenerator(),
         thumbnailConfiguration: ThumbnailConfiguration = .wardrobeDefault
     ) throws {
+        self.libraryRootURL = configuration.rootURL.standardizedFileURL
         self.configuration = configuration
         self.fileManager = fileManager
         self.thumbnailGenerator = thumbnailGenerator

@@ -4,7 +4,7 @@
 
 AI 虚拟试穿是可选能力，必须通过 Provider 抽象接入。应用的衣橱、人物、穿搭和历史领域模型不依赖 OpenAI 或任何特定供应商；切换 Provider 不应要求修改 SwiftUI View 或迁移核心业务数据。
 
-本文只定义边界和数据流，不接入真实 API。
+本文定义 Provider 与外部交接两条边界；当前不接入真实付费 API。
 
 ## 2. 模块边界
 
@@ -187,6 +187,16 @@ Provider 注册由 App composition root 中的 `ProviderRegistry` 完成。持�
 Stage 6 的 `MockVirtualTryOnProvider` 是 actor，固定 ID 为 `mock`，输出固定 `wardrobe-mock-result-v1` fixture 和确定性 request ID，不访问网络或文件系统。可注入 success、前 N 次 transient failure、permanent failure 及任意 Swift `Duration` 延迟；延迟使用 Swift Concurrency，调用前后均检查 Task cancellation，取消规范化为 `.cancelled`，不返回迟到结果。
 
 Stage 7 的 `VirtualTryOnRequestBuilder` 是 Session→Stage 6 Request 的唯一适配层。人物和衣物资源优先使用 processed、缺失时 fallback original；受控 resource ID 经只读 loader 转成图片 Data、MIME 和尺寸后才进入 `ProviderImage`，request 不包含 resource ID、URL 或绝对路径。Builder 复用 `TryOnPromptBuilder` 与 `VirtualTryOnRequestValidator`，不复制 Provider validation。当前 UI 只调用已注册的 Mock Provider，并明确把结果标记为测试预览。
+
+### 10.1 External ChatGPT Generation Workflow（Stage 8）
+
+外部交接不是 Provider 调用：`TryOnSession → ExternalGenerationPackageBuilder → package + prompt → 用户在 ChatGPT 正常 UI 人工发送 → ResultImporter`。`VirtualTryOnProvider`、`MockVirtualTryOnProvider` 与 `ProviderRegistry` 不删除、不改造成 fake ChatGPT provider，并继续作为未来 OpenAI、Seedream、Qwen、Tencent VTON 或 LocalVTON 的扩展点。
+
+`ExternalChatGPTPromptFormatter` 复用相同人物/槽位语义，并按 PackageBuilder 的有序附件生成“图1、图2……”映射。模板版本为 `wardrobe-external-chatgpt-prompt-v1`；`prompt.txt` 与 clipboard 文本完全相同。manifest source 为 `chatgpt-manual`，导入后的 GenerationRecord providerID/source 为 `external-chatgpt-manual`。
+
+稳定流程只使用公开 macOS 能力：Pasteboard、NSWorkspace app/web open、Finder reveal 和系统 file importer。不读取 ChatGPT cookie、credential、token、历史或输入框，不使用 private URL scheme/internal API，不上传图片，也不自动发送。ChatGPT 未安装、clipboard 或 launcher 失败时 package 仍然有效。
+
+实验性 Accessibility auto-fill 本 Stage 不实现。未来实现必须独立于 package/clipboard/launcher/finder 核心，默认关闭、显式授权、write-only、只处理当前 package、失败安全 fallback，并严格停在用户点击 Send 之前。
 
 ## 11. 测试与安全
 

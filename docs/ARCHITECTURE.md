@@ -152,6 +152,15 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - `VirtualTryOnRequestBuilder` 通过只读 `TryOnResourceLoading` 获取受控资源；人物与衣物均采用 processed→original，解码后创建短生命周期 `ProviderImage`。Feature 没有目录删除、写入或路径解析能力。
 - `TryOnViewModel` 管理 idle/validating/generating/success/failure/cancelled，并以 token 丢弃取消或人物切换后的迟到结果。Stage 7 不创建 GenerationRecord，不保存 Mock result。
 
+### 4.11 Stage 8 外部 ChatGPT 交接边界
+
+- 外部交接与 Provider generation 并列：`TryOnViewModel → ExternalGenerationWorkflow → ExternalGenerationPackageBuilder → Clipboard/Launcher/Finder`。它不实现或伪装成 `VirtualTryOnProvider`，Stage 6 registry 与 Mock 保持不变。
+- PackageBuilder 只依赖 `TryOnResourceLoading` 和 `ExternalGenerationWorkspaceServing`，没有正式资源删除、SwiftData、网络或任意路径写入能力。导出始终 copy processed→original，不 move/改写源资源。
+- `ExternalGenerationWorkspace` 只在受控 `external-generations/ChatGPT-TryOn-<UUID>/` 发布 package；绝对目录仅存在于 transient package handle，manifest 和数据库不保存绝对路径。
+- `ClipboardServing` 与 `ExternalAILaunching` 可注入。生产实现使用 `NSPasteboard`、`NSWorkspace`、ChatGPT app bundle lookup、正常 Web fallback 和 Finder reveal；失败只形成可恢复提示，不销毁 package。
+- `ExternalGenerationResultImporter` 是独立边界，真实解码用户选择的图片后调用窄的 generation result Storage 能力，再保存 V1 GenerationRecord 与输入快照；数据库失败会补偿删除本次 generation owner，不触碰人物、衣物或 package 外资源。
+- Stage 8 未实现 Accessibility auto-fill。若未来加入，必须作为默认关闭的实验 adapter，失败回退到上述稳定流程，且永远不执行 Send。
+
 ## 5. 关键流程
 
 ### 5.1 导入衣物

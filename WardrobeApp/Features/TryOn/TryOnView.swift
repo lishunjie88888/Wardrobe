@@ -16,6 +16,8 @@ private extension UTType {
 
 struct TryOnView: View {
     @State private var model: TryOnViewModel
+    @State private var showsExternalPackage = false
+    @State private var importsExternalResult = false
 
     init(dependencies: TryOnFeatureDependencies) {
         _model = State(initialValue: TryOnViewModel(dependencies: dependencies))
@@ -31,6 +33,17 @@ struct TryOnView: View {
         .accessibilityIdentifier("tryon.feature")
         .task { model.load() }
         .onDisappear { model.cancelGeneration(setCancelledState: false) }
+        .onChange(of: model.externalState) { _, state in
+            switch state {
+            case .ready, .imported: showsExternalPackage = true
+            default: break
+            }
+        }
+        .sheet(isPresented: $showsExternalPackage) { externalPackageSheet }
+        .fileImporter(isPresented: $importsExternalResult, allowedContentTypes: [.image], allowsMultipleSelection: false) { result in
+            if case .success(let urls) = result, let url = urls.first { model.importExternalResult(from: url) }
+            else if case .failure = result { model.message = "无法读取所选图片，请重新选择。" }
+        }
         .alert("试衣间提示", isPresented: Binding(
             get: { model.message != nil },
             set: { if !$0 { model.message = nil } }
@@ -115,6 +128,15 @@ struct TryOnView: View {
                     ContentUnavailableView("当前人物没有可用参考照片", systemImage: "photo.badge.exclamationmark", description: Text("请先为此人物添加并设置主参考照。"))
                 }
                 generationStatus
+                if let imported = model.importedResult {
+                    VStack(spacing: 6) {
+                        TryOnAssetImage(resources: [imported.resultResourceID], loader: model.imageLoader)
+                            .frame(maxWidth: 340, maxHeight: 340)
+                        Label("ChatGPT 手动生成 · 已导入", systemImage: "square.and.arrow.down")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    .accessibilityIdentifier("tryon.external.imported-result")
+                }
             }
         }
         .padding(.vertical)
@@ -213,16 +235,58 @@ struct TryOnView: View {
                     Button("取消生成", role: .cancel) { model.cancelGeneration() }
                         .accessibilityIdentifier("tryon.cancel")
                 default:
-                    Button("生成试穿") { model.generate() }
+                    Button("使用 ChatGPT 生成") { model.prepareExternalGeneration() }
                         .buttonStyle(.borderedProminent)
                         .disabled(!model.canGenerate)
+                        .keyboardShortcut("g", modifiers: [.command])
+                        .accessibilityIdentifier("tryon.external.generate")
+#if DEBUG
+                    Button("Mock 测试生成") { model.generate() }
+                        .disabled(!model.canGenerate)
+                        .keyboardShortcut("g", modifiers: [.command, .shift])
                         .accessibilityIdentifier("tryon.generate")
+#endif
                 }
-                Text("使用 Mock Provider · 不访问网络").font(.caption).foregroundStyle(.secondary)
+                if model.isPreparingExternal { ProgressView("正在准备本地素材…") }
+                Text("ChatGPT 手动交接 · Wardrobe 不上传图片、不调用 API").font(.caption).foregroundStyle(.secondary)
             }
             .padding()
         }
         .background(.background)
+    }
+
+    @ViewBuilder private var externalPackageSheet: some View {
+        if let package = model.preparedPackage {
+            VStack(alignment: .leading, spacing: 16) {
+                Label("AI 试衣素材已准备完成", systemImage: "checkmark.circle.fill")
+                    .font(.title2.bold()).foregroundStyle(.green)
+                Text("已准备 \(package.personAttachmentCount) 张人物参考图、\(package.garmentAttachmentCount) 件衣物。Prompt 已写入 prompt.txt。")
+                Text("下一步：\n1. 将素材图片按文件名顺序拖入 ChatGPT\n2. 粘贴 Prompt\n3. 检查无误后由你亲自发送\n4. 生成完成后返回 Wardrobe 导入结果")
+                    .foregroundStyle(.secondary)
+                if case .ready(let result) = model.externalState, !result.promptCopied {
+                    Label("自动复制提示词失败，可从 prompt.txt 手动复制。", systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                }
+                HStack {
+                    Button("打开 ChatGPT") { model.openChatGPT() }.accessibilityIdentifier("tryon.external.open-chatgpt")
+                    Button("在 Finder 中显示素材") { model.revealPreparedPackage() }.accessibilityIdentifier("tryon.external.reveal")
+                    Button("再次复制 Prompt") { model.copyPreparedPrompt() }.accessibilityIdentifier("tryon.external.copy-prompt")
+                }
+                HStack {
+                    Button("导入生成结果") {
+                        if let injected = model.injectedResultURL { model.importExternalResult(from: injected) }
+                        else { importsExternalResult = true }
+                    }.buttonStyle(.borderedProminent).keyboardShortcut("i", modifiers: [.command]).accessibilityIdentifier("tryon.external.import")
+                    Button("清理此临时素材") { model.cleanPreparedPackage(); showsExternalPackage = false }.accessibilityIdentifier("tryon.external.cleanup")
+                    Spacer()
+                    Button("完成") { showsExternalPackage = false }.keyboardShortcut(.defaultAction)
+                }
+            }
+            .padding(24)
+            .frame(minWidth: 620)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("tryon.external.ready-sheet")
+        }
     }
 }
 

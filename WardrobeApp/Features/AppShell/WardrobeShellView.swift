@@ -27,6 +27,13 @@ struct WardrobeShellView: View {
             }
         }
         .frame(minWidth: 720, minHeight: 480)
+        .task {
+#if DEBUG
+            if ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_INITIAL_ROUTE"] == AppRoute.tryOn.rawValue {
+                selection = .tryOn
+            }
+#endif
+        }
     }
 }
 

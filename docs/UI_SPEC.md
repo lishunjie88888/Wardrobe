@@ -104,6 +104,10 @@ Stage 7 实际工作区使用 macOS `HSplitView` 三栏：左栏为复用 Clothi
 
 单值槽位 drop 后直接替换，Accessories 允许多值、稳定排序与逐项移除；“清空”只清衣物并保留人物。人物切换保留衣物，取消当前生成并清除旧结果。界面区分 validating、generating、success、failure、cancelled；失败/取消可用当前 Session 重试，Mock success 明确说明不是真实 AI 图片。无人物、人物无主图、无衣物、筛选无结果、资源失效及 Provider 错误均有解释性状态。列表图片只用 processed→thumbnail，人物画布用 processed→original，Provider 输入用 processed→original。
 
+Stage 8 的主按钮改为“使用 ChatGPT 生成”（推荐）；Debug 构建保留“Mock 测试生成”，Release 不展示不可工作的未来 Provider。准备完成 sheet 直接提供“打开 ChatGPT”“在 Finder 中显示素材”“再次复制 Prompt”“导入生成结果”“清理此临时素材”和“完成”，并显示人物/衣物数量及四步人工操作说明。系统 file importer 只接受可真实解码的图片；导入后中央区域显示并标记“ChatGPT 手动生成 · 已导入”。
+
+稳定模式不会通过 Accessibility 控制 ChatGPT，也不会自动发送。所有新增按钮均有稳定 accessibility identifier；UI 测试可注入 clipboard/launcher/result fixture，运行时不打开真实 ChatGPT、不访问网络或控制其他 App。
+
 ## 6. 穿搭
 
 - 使用网格或列表展示名称、衣物缩略图组合、收藏和修改时间。

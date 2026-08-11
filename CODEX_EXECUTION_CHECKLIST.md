@@ -26,9 +26,9 @@
 | 5 | 人物照片管理 | 1–3 | 是 |
 | 6 | AI Provider 基础架构 | 0–1 | 是 |
 | 7 | AI 试衣间 UI | 4–6 | 是 |
-| 8 | 设置与安全 | 2、6 | 是 |
-| 9 | OpenAI Provider | 3、6、8 | 是 |
-| 10 | AI 生成流程 | 2–3、5–9 | 是 |
+| 8 | External ChatGPT Generation Workflow | 2–7 | 是 |
+| 9 | 未来 API Provider（可选） | 3、6、未来设置安全 | 是 |
+| 10 | Provider AI 生成流程 | 2–3、5–7；9 可选 | 是 |
 | 11 | 穿搭管理 | 4、7 | 否 |
 | 12 | 生成历史 | 5、10 | 是 |
 | 13 | Schema Migration 加固 | 1、已冻结的 V1 Schema | 是 |
@@ -666,74 +666,94 @@
 
 ---
 
-## Stage 8：设置与安全
+## Stage 8：External ChatGPT Generation Workflow
 
 ### Goal
 
-在接入真实 Provider 前建立安全的凭据、Provider 选择和非敏感设置基础。
+把 Stage 7 的 Person、Garments、TryOnSession 与 TryOnRequest 转换为顺手、安全、完全不调用付费 API 的外部 ChatGPT 手动生图交接工作流，并把用户导回的结果保存为正式 Generation 资产与 V1 快照。
 
 ### Scope
 
-- [ ] Provider 设置、默认质量/宽高比/通用参数。
-- [ ] `CredentialStore` 协议与 macOS Keychain 实现。
-- [ ] API Key 新增、替换、删除和配置状态显示。
-- [ ] Storage 位置/容量信息与安全的 Cache 清理入口。
-- [ ] Settings Repository 和原生 Settings scene/window。
+- [x] `ExternalGenerationPackage`、稳定 package UUID、manifest 与有序 attachments。
+- [x] 从当前 Session 复制 processed→original 人物/衣物参考图到受控导出 workspace。
+- [x] 生成与实际附件顺序严格一致的 ChatGPT Prompt，并写入 UTF-8 `prompt.txt`。
+- [x] 自动复制 Prompt、打开 ChatGPT app/Web fallback、Finder reveal；失败不销毁 package。
+- [x] 使用系统 file importer 导入真实图片，保存正式 generation result/thumbnail 与 V1 GenerationRecord 输入快照。
+- [x] Try-On 准备完成 sheet、真实结果预览、显式单 package 清理及可注入测试替身。
 
 ### Out of Scope
 
-- [ ] 不调用真实 Provider 验证付费请求。
-- [ ] 不回显完整 API Key，不把密钥放入 UserDefaults/SwiftData。
-- [ ] 不实现备份恢复或任意资料库根目录切换。
+- [x] 不调用 OpenAI、Seedream、Qwen、Tencent 或其他云端生图 API，不新增 API Key。
+- [x] 不读取 ChatGPT credential、cookie、token、数据库、历史或私有接口，不逆向 ChatGPT。
+- [x] 不自动上传、不自动点击 Send；稳定模式不使用 Accessibility 控制 ChatGPT。
+- [x] 不实现 Local VTON/Python/PyTorch、完整 Generation History、Schema V2、备份恢复或 Stage 9。
+- [x] 不删除/替换 Stage 6 Provider architecture、Mock Provider 或 Stage 7 workspace。
 
 ### Dependencies
 
-- [ ] Stage 2 与 Stage 6 已通过。
+- [x] Stage 2–7 已通过；Stage 7 已能构造稳定 Session、人物 reference set 与槽位选择。
 
 ### Implementation Tasks
 
-- [ ] 定义 CredentialStore，Keychain service/account 使用稳定标识。
-- [ ] 实现 Keychain 写入、读取存在状态、替换和删除，处理用户拒绝/锁定错误。
-- [ ] 实现版本化非敏感 Settings 模型和 Repository。
-- [ ] 实现 Provider 选择与 capability 驱动参数 UI，避免具体 Provider 条件散落。
-- [ ] API Key UI 只显示已配置/未配置和掩码，不提供完整回读。
-- [ ] 显示受控 Application Support 资料库位置、持久资源与 Cache 大小。
-- [ ] Cache 清理只调用 StorageService 的受控 API，不影响持久资源。
-- [ ] 确认日志、崩溃信息、备份入口和 UI state 不包含密钥。
+- [x] 定义 package/manifest/source/attachment 值类型；长期 identity 不使用绝对路径。
+- [x] PackageBuilder 消费 Stage 7 明确选择，不重新猜 default、primary 或 slot；空 slot 不导出。
+- [x] 确定性命名人物 `01/02/03...` 与衣物 `10/20/30/40/50+`，Prompt 按实际 attachments 重新编号“图 N”。
+- [x] PackageBuilder 只获得只读 resource loading 与受控 export workspace，copy 不 move，不能删除正式资源。
+- [x] `ClipboardServing`、`ExternalAILaunching` 与 Finder reveal 使用公开 macOS API 并可注入 fake。
+- [x] ChatGPT app 使用公开 bundle lookup；未安装时打开 `https://chatgpt.com/`，不依赖 undocumented URL scheme。
+- [x] 导入图片以 ImageIO 真实解码为准，正式结果经 Storage 原子写入 `generations/<UUID>/`。
+- [x] 复用 V1 GenerationRecord/PersonInput/GarmentInput 保存 `external-chatgpt-manual`、Prompt 与资源快照；不修改 Schema。
+- [x] 数据库保存失败补偿本次 generation owner；package 单独清理不影响正式人物、衣物或结果。
+- [x] Release 主入口为 ChatGPT 手动交接；Mock 只在 Debug 用于测试。
+- [x] Experimental Accessibility auto-fill 未实现；稳定流程不依赖它，长期规则为永不自动发送。
 
 ### Tests
 
-- [ ] 使用内存 CredentialStore 测试 ViewModel 与 Provider 配置流程。
-- [ ] 在可控测试环境验证 Keychain add/update/delete 和错误映射。
-- [ ] 测试设置版本解码、未知参数保留/忽略策略和默认值。
-- [ ] 测试 Cache 清理不删除 garments/persons/generations。
-- [ ] 运行源码/构建产物敏感字符串检查、build 和全部 tests。
+- [x] Package/Prompt：单/多人物、多槽位、空 optional slot、processed fallback、稳定文件名及 attachment/“图 N”顺序。
+- [x] Validation/manifest：无人物、无衣物、缺资源、合法 JSON、正确 ID/source、无绝对路径和 API Key。
+- [x] Clipboard/launcher：成功或失败均不破坏已创建 package；UI tests 注入 fake，不打开真实 ChatGPT。
+- [x] Result import：PNG、JPEG、HEIC（runtime 可用）、无效文件、正式 result/thumbnail、GenerationRecord 及人物/衣物快照。
+- [x] Cleanup：删除明确 package，不影响正式 generation result、Clothing 或 Person resources。
+- [x] UI fixture：准备 package、显示完成 sheet/count、注入结果并显示“ChatGPT 手动生成”预览。
+- [ ] 最终执行 focused/full Unit、全量 UI、Debug build、`git diff --check` 与正式 Application Support 检查。
 
 ### Acceptance Criteria
 
-- [ ] API Key 只存在 Keychain，应用不回显完整值。
-- [ ] 无 Key 时本地功能正常，生成入口给出可操作提示。
-- [ ] Provider/质量设置通过抽象层影响请求，不渗透 View。
-- [ ] Cache 清理安全且资料库路径只读展示。
+- [x] 用户可准备有序素材与 Prompt，手动在 ChatGPT 确认发送，再导入真实结果。
+- [x] Wardrobe 本身无 AI API request、无 API Key、无自动上传、无 ChatGPT credential/cookie/token 读取。
+- [x] manifest/persistence 无绝对路径，original/processed resources 不被修改。
+- [x] 导入结果属于正式 Generation Storage，并可从 V1 快照追溯 Person、Garments、Slots 与 Prompt。
+- [x] Stable workflow 不依赖 Accessibility；任何 launcher/clipboard 失败均保留可手动完成的 package。
 
 ### Documentation Updates
 
-- [ ] 实际 Keychain 标识和设置字段以不含秘密的方式记录到 `AI_ARCHITECTURE.md`。
-- [ ] 设置界面差异同步到 `UI_SPEC.md`。
-- [ ] 在本 Stage 下记录安全检查与测试结果。
+- [x] 更新 PRODUCT_SPEC、ARCHITECTURE、AI_ARCHITECTURE、UI_SPEC、STORAGE_SPEC 与本 checklist。
+- [x] 记录从付费 API 方向转为 external ChatGPT handoff 的原因、Provider 保留、package layout、fallback 与结果生命周期。
+- [x] 在本 Stage 下补充 build/test、安全审计、跳过项与 commit 记录。
+
+### Execution Record（2026-08-12）
+
+- Baseline：任务开始时工作树干净，实际 HEAD 为 `12fd5d6 chore: configure repository ignores`；本 Stage 未 amend 历史提交、未 push、未执行 Stage 9。
+- Interim build：Stage 8 核心实现完成后曾执行 Debug build，结果为 `BUILD SUCCEEDED`。此结果早于最后的 launcher fallback、Accessibility 标记和文档微调，不视为最终构建验收。
+- Focused unit：`Stage8ExternalGenerationTests` 曾执行 8 项并全部通过，覆盖 package/prompt/manifest、失败保留、cleanup、PNG/JPEG/HEIC 导入与 V1 快照。该结果早于最后的轻微代码调整，未再次运行。
+- UI automation：已添加可注入 clipboard/launcher/result fixture 的 Stage 8 UI 用例；调试运行中曾遇到窗口布局/Accessibility 元素发现问题，最后一次运行按用户“跳过测试”的明确指令中止，因此没有成功的 Stage 8 UI 自动化结果。
+- User-directed skip：用户明确要求跳过测试；此后未再执行 build、focused/full unit、全量 UI 或人工稳定模式闭环。以上未验证项不得报告为通过。
+- Static audit：`git diff --check` 通过；生产 Application Support 仅做只读目录检查，`external-generations` 为空且未删除/移动正式人物、衣物或 generation 资源；Swift 源码未发现 URLSession、Bearer/API Key、cookie、AXUIElement、CGEvent、AppleScript/osascript 等实现。
+- Commit：本记录随独立 Stage 8 commit 落盘；最终 hash 以 `git log -1` 为准。
 
 ### Completion Checklist
 
-- [ ] Security review、Keychain tests 和 build 通过。
-- [ ] 人工确认密钥生命周期和 Cache 清理范围后，才能接入真实 Provider。
+- [ ] 最终自动测试、最终 Debug build与稳定模式人工验收完成（按用户指令跳过；保留为未完成 Gate）。
+- [x] 隐私/Storage 静态审计完成。
+- [x] 创建独立 Stage 8 commit；不 amend 历史提交、不 push、不执行 Stage 9。
 
 ---
 
-## Stage 9：OpenAI Provider
+## Stage 9：未来 API Provider（可选，当前产品方向不执行）
 
 ### Goal
 
-在不污染 Domain/UI 的前提下实现可选 OpenAI Adapter；只有官方 API 在实现时确实支持所需输入与输出时才启用。
+仅在用户未来明确选择承担 API 费用时，在不污染 Domain/UI 的前提下评估并实现可选 API Adapter。Stage 8 完成不依赖本 Stage。
 
 ### Scope
 
@@ -750,7 +770,7 @@
 
 ### Dependencies
 
-- [ ] Stage 3、6、8 已通过。
+- [ ] Stage 3、6 已通过；设置/凭据安全能力需在本 Stage 前另行明确规划，Stage 8 external workflow 不是 API 前置。
 - [ ] 实现当天已查阅 OpenAI 官方文档并记录日期、模型/API 与能力结论。
 - [ ] 已确认 OpenAI API 能合法、稳定地处理 V1 人物/衣物参考输入；否则本 Stage 标记 blocked 并评估 SpecializedVTONProvider。
 
@@ -795,7 +815,7 @@
 
 ---
 
-## Stage 10：AI 生成流程
+## Stage 10：Provider AI 生成流程
 
 ### Goal
 
@@ -816,7 +836,7 @@
 
 ### Dependencies
 
-- [ ] Stage 2–3、5–9 已通过；若 Stage 9 blocked，Mock Provider 链路仍可推进，但不能宣称真实 AI 可用。
+- [ ] Stage 2–3、5–7 已通过；Stage 9 仅对真实 API 路径可选。Stage 8 已负责 external manual result 持久化，Stage 10 不重复实现该 handoff。
 
 ### Implementation Tasks
 
@@ -1364,8 +1384,8 @@
 2. **衣橱与人物顺延**：原 Stage 3/4 调整为 Stage 4/5，以 Storage 和 ImageProcessing 的稳定接口为基础。
 3. **Provider 基础架构提前**：原 Stage 7 调整为 Stage 6，位于试衣间 UI 之前。试衣 UI 需要中立 Request、capabilities 和 Mock Provider，不能先依赖尚未定义的抽象。
 4. **试衣间 UI 顺延**：原 Stage 6 调整为 Stage 7，且仅由 Mock Provider 驱动。
-5. **设置与安全提前**：原 Stage 12 调整为 Stage 8。OpenAI Provider 在读取 API Key 前必须先有 CredentialStore/Keychain 和安全边界；不能在 Provider 内临时保存密钥。
-6. **OpenAI 与完整生成链顺延**：原 Stage 8/9 调整为 Stage 9/10，以 Provider、Keychain、Storage 和图片处理为前置。
+5. **Stage 8 产品方向调整**：个人自用场景不再以付费 API/Keychain 为当前前置；Stage 8 改为 External ChatGPT Generation Workflow，由用户在 ChatGPT 正常 UI 人工确认发送，Wardrobe 只准备本地 package 并导入结果。
+6. **Provider 架构保留、API 延后可选**：Stage 6/7 的 Provider/Mock 不变；Stage 9 改为未来可选 API Provider，只有用户再次明确授权费用与凭据方案时才执行。Stage 10 仅指 Provider 完整生成链，不重复 Stage 8 manual handoff。
 7. **穿搭与生成历史顺延**：原 Stage 10/11 调整为 Stage 11/12，与完整生成流程保持顺序一致。
 8. **Schema Migration 提前于备份恢复**：原 Stage 14 调整为 Stage 13，原 Stage 13 调整为 Stage 14。备份 manifest 和恢复流程依赖正式 schemaVersion、storageLayoutVersion 与迁移 harness。
 9. **VersionedSchema 基线不延后**：尽管 Migration 加固位于 Stage 13，`WardrobeSchemaV1` 和空的/基线 `SchemaMigrationPlan` 必须在 Stage 1 创建，避免先发布无版本数据库再补迁移。

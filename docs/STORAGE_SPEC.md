@@ -40,6 +40,8 @@ Wardrobe/
 │       └── cover.jpg
 ├── staging/
 │   └── <Operation UUID>/
+├── external-generations/
+│   └── ChatGPT-TryOn-<Package UUID>/
 ├── cache/
 │   ├── previews/
 │   └── provider/
@@ -51,6 +53,7 @@ Wardrobe/
 - `database/` 由 SwiftData container 管理，应用不得直接修改其内部文件。
 - owner 目录只使用规范化小写 UUID 字符串；文件名由 Storage Service 的资源种类决定，不接受任意用户输入。
 - 当前 `storageLayoutVersion` 为 `1`。`library.json` 包含该版本、稳定 `libraryID` 与创建时间；重复初始化保持 manifest 不变，遇到不支持版本时拒绝开放资料库。
+- `external-generations/` 是 Stage 8 的用户可访问临时导出 workspace，不是 `StorageResourceID` 顶级目录，也不进入 SwiftData。每个 package 使用独立 UUID，包含有序参考图、UTF-8 `prompt.txt` 与版本化 `manifest.json`；manifest 不含绝对路径、Home 路径、密钥或图片内嵌数据。
 
 ## 3. 资源 ID
 
@@ -113,6 +116,13 @@ generations/89a1.../result.png
 - 仅保存可从持久数据或远端响应重新构建的内容。
 - Cache 需要版本、容量上限和最近访问清理策略；清理 Cache 不更新 SwiftData 业务记录。
 - 清理动作不得遍历删除未经 Storage Service 验证的路径。
+
+### 4.7 External ChatGPT packages
+
+- 图片只从当前 TryOnSession 选中的人物与衣物资源复制，人物/衣物均优先 processed、缺失时 fallback original；不使用 thumbnail 作为默认 AI 输入。
+- 文件顺序固定为人物 `01/02/03...`，衣物 `10-upper-body`、`20-outerwear`、`30-lower-body`、`40-footwear`、`50+ accessories`；空槽位不创建文件。Prompt 的“图 N”按实际附件数组顺序，而不是文件名前缀编号。
+- package 可按明确 package UUID 单独清理。清理只允许命中 `external-generations/ChatGPT-TryOn-<UUID>`，不得影响 garments、persons 或 generations。V1 提供当前 package 的显式清理入口，不引入后台 scheduler。
+- 导入结果必须另存到正式 `generations/<Generation UUID>/result.*` 与 `thumbnail.jpg`。package 不是正式结果的唯一副本，删除 package 不影响已导入结果。
 
 ## 5. 写入一致性
 

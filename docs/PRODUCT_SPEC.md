@@ -8,11 +8,11 @@ V1 的目标是建立可靠的本地数据与核心闭环，而不是一次覆�
 
 ## 2. 核心使用流程
 
-1. 用户首次启动应用，应用初始化受控的 Application Support 资料库；用户可查看其位置，并可稍后配置 AI Provider 与 API Key。
+1. 用户首次启动应用，应用初始化受控的 Application Support 资料库；V1 默认无需 API Key。
 2. 用户导入衣服照片，填写分类、品牌、颜色、季节、风格、材质、标签等元数据。
 3. 用户创建人物档案，导入多张全身参考照，并设置默认人物与默认参考照。
 4. 用户进入 AI 试衣间，选择人物，将衣服拖入语义化试穿槽位，检查当前搭配。
-5. 用户发起生成；应用保存请求快照、Provider、Prompt、参数、状态与生成结果。失败也必须留下可诊断记录。
+5. 用户默认选择“使用 ChatGPT 生成”：应用在本地准备人物/衣物素材与 Prompt，用户在 ChatGPT 正常界面中人工上传和发送，再将结果导回应用；导入后保存输入快照、Prompt、来源与生成结果。
 6. 用户可重新生成、保存当前衣服组合为穿搭、收藏穿搭，并在生成历史中查看过去结果。
 7. 用户定期导出完整备份，并可通过验证和预览后恢复数据。
 
@@ -47,6 +47,8 @@ Stage 5 的默认选择规则为：全局至多一个活跃默认人物；归档
 - 支持基于既有请求重新生成；重新生成创建新记录，并关联来源记录，不覆盖旧结果。
 
 Stage 7 已完成不持久化历史的 Mock 工作区：默认进入活跃 Default Person，并允许切换其他活跃人物；人物切换保留当前衣物、取消进行中的任务并使旧结果失效。衣物以稳定 UUID 加入 transient `TryOnSession`，单值槽位替换、Accessories 多值排序、移除和清空均不修改真实衣橱。当前生成只构造 Provider 中立请求并调用无网络 Mock Provider；GenerationRecord、真实结果文件和生成历史仍属于 Stage 10/12。
+
+Stage 8 将默认生成体验调整为 External ChatGPT Generation Workflow。Wardrobe 只在本地复制当前 Session 真正使用的 processed→original 参考图、生成按实际附件顺序编号的 Prompt，并打开 ChatGPT 与 Finder；它不调用 OpenAI API、不读取 ChatGPT 凭据/cookie、不自动上传，也绝不自动发送。用户导入结果后，应用把真实图片保存到正式 Generation Storage，并用现有 V1 `GenerationRecord` 及人物/衣物输入快照记录来源 `external-chatgpt-manual`。Provider 架构与 Debug Mock 保留，未来仍可独立加入本地或 API Provider。
 
 ### 3.4 穿搭
 

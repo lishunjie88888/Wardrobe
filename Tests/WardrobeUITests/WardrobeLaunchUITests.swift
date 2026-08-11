@@ -121,13 +121,10 @@ final class WardrobeLaunchUITests: XCTestCase {
             .appendingPathComponent("WardrobeUITryOnFlow-\(UUID().uuidString)", isDirectory: true)
         app.launchEnvironment["WARDROBE_STORAGE_ROOT_OVERRIDE"] = isolatedStorageRoot.path
         app.launchEnvironment["WARDROBE_UI_TEST_SEED_TRYON"] = "1"
+        app.launchEnvironment["WARDROBE_UI_TEST_INITIAL_ROUTE"] = "tryOn"
         addTeardownBlock { app.terminate() }
         app.launch()
         ensureWindow(app)
-        let tryOnRoute = app.descendants(matching: .any).matching(identifier: "sidebar.route.tryOn").firstMatch
-        XCTAssertTrue(tryOnRoute.waitForExistence(timeout: 5))
-        tryOnRoute.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
-
         XCTAssertTrue(app.descendants(matching: .any)["tryon.person.canvas"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["试衣测试人物"].waitForExistence(timeout: 2))
         let clothing = app.descendants(matching: .any)["tryon.clothing.00000000-0000-0000-0000-000000000721"]
@@ -135,9 +132,33 @@ final class WardrobeLaunchUITests: XCTestCase {
         let add = app.descendants(matching: .any)["tryon.add.00000000-0000-0000-0000-000000000721"]
         XCTAssertTrue(add.waitForExistence(timeout: 3)); add.click()
         let generate = app.buttons["tryon.generate"]
-        XCTAssertTrue(generate.waitForExistence(timeout: 2)); XCTAssertTrue(generate.isEnabled); generate.click()
+        XCTAssertTrue(generate.waitForExistence(timeout: 2)); XCTAssertTrue(generate.isEnabled)
+        app.typeKey("g", modifierFlags: [.command, .shift])
         XCTAssertTrue(app.descendants(matching: .any)["tryon.mock.result"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Mock 试穿已完成"].exists)
+    }
+
+    func testExternalChatGPTFixturePreparesPackageAndImportsResult() {
+        let app = XCUIApplication()
+        let isolatedStorageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("WardrobeUIExternalFlow-\(UUID().uuidString)", isDirectory: true)
+        app.launchEnvironment["WARDROBE_STORAGE_ROOT_OVERRIDE"] = isolatedStorageRoot.path
+        app.launchEnvironment["WARDROBE_UI_TEST_SEED_TRYON"] = "1"
+        app.launchEnvironment["WARDROBE_UI_TEST_EXTERNAL_RESULT"] = "1"
+        app.launchEnvironment["WARDROBE_UI_TEST_INITIAL_ROUTE"] = "tryOn"
+        addTeardownBlock { app.terminate() }
+        app.launch(); ensureWindow(app)
+        XCTAssertTrue(app.descendants(matching: .any)["tryon.person.canvas"].waitForExistence(timeout: 5))
+        let add = app.descendants(matching: .any)["tryon.add.00000000-0000-0000-0000-000000000721"]
+        XCTAssertTrue(add.waitForExistence(timeout: 3)); add.click()
+        let generate = app.buttons["tryon.external.generate"]
+        XCTAssertTrue(generate.waitForExistence(timeout: 3)); XCTAssertTrue(generate.isEnabled)
+        app.typeKey("g", modifierFlags: .command)
+        XCTAssertTrue(app.descendants(matching: .any)["tryon.external.ready-sheet"].waitForExistence(timeout: 5))
+        let importButton = app.buttons["tryon.external.import"]
+        XCTAssertTrue(importButton.waitForExistence(timeout: 3))
+        app.typeKey("i", modifierFlags: .command)
+        XCTAssertTrue(app.descendants(matching: .any)["tryon.external.imported-result"].waitForExistence(timeout: 8))
     }
 
     private func ensureWindow(_ app: XCUIApplication) {

@@ -73,6 +73,7 @@ struct AppEnvironment {
 #endif
         let inspector = ResourceReferenceInspector(repository: repository)
         let clothingStorage = storageService
+        let externalWorkspace = try ExternalGenerationWorkspace(rootURL: storageService.libraryRootURL)
         self.wardrobe = WardrobeFeatureDependencies(
             management: ClothingManagementService(repository: repository),
             importer: ImportClothingService(
@@ -113,13 +114,44 @@ struct AppEnvironment {
 #else
         let tryOnLoader: any TryOnResourceLoading = clothingStorage
 #endif
+#if DEBUG
+        let externalClipboard: any ClipboardServing = ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_TRYON"] == "1"
+            ? UITestClipboardService()
+            : SystemClipboardService()
+        let externalLauncher: any ExternalAILaunching = ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_TRYON"] == "1"
+            ? UITestExternalAILauncher()
+            : SystemExternalAILauncher()
+#else
+        let externalClipboard: any ClipboardServing = SystemClipboardService()
+        let externalLauncher: any ExternalAILaunching = SystemExternalAILauncher()
+#endif
+#if DEBUG
+        let injectedResultURL: URL? = {
+            guard ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_EXTERNAL_RESULT"] == "1" else { return nil }
+            let url = storageService.libraryRootURL.appendingPathComponent("staging/ui-external-result.png")
+            try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")?.write(to: url)
+            return url
+        }()
+#else
+        let injectedResultURL: URL? = nil
+#endif
         self.tryOn = TryOnFeatureDependencies(
             clothing: ClothingManagementService(repository: repository),
             person: PersonManagementService(repository: repository),
             imageLoader: tryOnLoader,
-            provider: mockProvider
+            provider: mockProvider,
+            externalWorkflow: ExternalGenerationWorkflow(
+                builder: ExternalGenerationPackageBuilder(loader: tryOnLoader, workspace: externalWorkspace),
+                clipboard: externalClipboard,
+                launcher: externalLauncher,
+                workspace: externalWorkspace
+            ),
+            resultImporter: ExternalGenerationResultImporter(repository: repository, storage: storageService),
+            injectedResultURL: injectedResultURL
         )
     }
+
 
 #if DEBUG
     @MainActor
@@ -176,5 +208,16 @@ private struct UITestTryOnImageLoader: TryOnResourceLoading {
         }
         return try await base.data(for: resourceID)
     }
+}
+
+@MainActor
+private final class UITestClipboardService: ClipboardServing {
+    func copy(_: String) -> Bool { true }
+}
+
+@MainActor
+private final class UITestExternalAILauncher: ExternalAILaunching {
+    func openChatGPT() -> Bool { true }
+    func revealInFinder(_: URL) -> Bool { true }
 }
 #endif
