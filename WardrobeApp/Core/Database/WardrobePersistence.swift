@@ -222,6 +222,75 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
         return try context.fetch(descriptor).first
     }
 
+    func personProfiles(archive: PersonArchiveFilter) throws -> [PersonProfileRecord] {
+        let profiles = try context.fetch(FetchDescriptor<PersonProfile>())
+            .filter { profile in
+                switch archive {
+                case .active: profile.archivedAt == nil
+                case .archived: profile.archivedAt != nil
+                case .all: true
+                }
+            }
+            .sorted {
+                if $0.isDefault != $1.isDefault { return $0.isDefault }
+                if $0.createdAt != $1.createdAt { return $0.createdAt < $1.createdAt }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+        return try profiles.map(Self.personRecord)
+    }
+
+    func createPersonProfile(draft: PersonDraft, at date: Date) throws -> PersonProfileRecord {
+        let normalized = try draft.normalized()
+        let profile = PersonProfile(name: normalized.name, notes: normalized.notes, createdAt: date)
+        context.insert(profile)
+        do {
+            try context.save()
+            return try Self.personRecord(profile)
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    func updatePersonProfile(id: UUID, draft: PersonDraft, at date: Date) throws -> PersonProfileRecord {
+        guard let profile = try personProfile(id: id) else {
+            throw WardrobeRepositoryError.modelNotFound(model: "PersonProfile", id: id)
+        }
+        let normalized = try draft.normalized()
+        profile.name = normalized.name
+        profile.notes = normalized.notes
+        profile.markUpdated(at: date)
+        try context.save()
+        return try Self.personRecord(profile)
+    }
+
+    func setPersonProfileArchived(id: UUID, archived: Bool, at date: Date) throws -> PersonProfileRecord {
+        guard let profile = try personProfile(id: id) else {
+            throw WardrobeRepositoryError.modelNotFound(model: "PersonProfile", id: id)
+        }
+        profile.archivedAt = archived ? date : nil
+        if archived, profile.isDefault { profile.setDefault(false, at: date) }
+        profile.markUpdated(at: date)
+        try context.save()
+        return try Self.personRecord(profile)
+    }
+
+    func insertPersonImageAndSave(_ image: PersonImage, at date: Date) throws -> PersonImageRecord {
+        if image.isPrimary {
+            for sibling in image.profile.images where sibling.id != image.id {
+                sibling.setPrimary(false, at: date)
+            }
+        }
+        context.insert(image)
+        do {
+            try context.save()
+            return try Self.personImageRecord(image)
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
     func setDefaultPersonProfile(id: UUID, at date: Date = .now) throws {
         let profiles = try context.fetch(FetchDescriptor<PersonProfile>())
         guard profiles.contains(where: { $0.id == id && $0.archivedAt == nil }) else {
@@ -241,6 +310,59 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
         for image in images where image.profile.id == profileID {
             image.setPrimary(image.id == id, at: date)
         }
+        try context.save()
+    }
+
+    func defaultPersonReferenceSet() throws -> PersonReferenceSet? {
+        let profiles = try context.fetch(FetchDescriptor<PersonProfile>())
+        guard let profile = profiles.first(where: { $0.archivedAt == nil && $0.isDefault }) else { return nil }
+        let images = try profile.images.map(Self.personImageRecord).sorted(by: Self.personImageOrder)
+        let primary = images.first(where: \.isPrimary)
+        return PersonReferenceSet(
+            profileID: profile.id,
+            primaryImage: primary,
+            additionalImages: images.filter { $0.id != primary?.id }
+        )
+    }
+
+    func personImageDeleteImpact(id: UUID) throws -> PersonImageDeleteImpact {
+        let count = try context.fetch(FetchDescriptor<GenerationPersonInput>()).filter { $0.personImageID == id }.count
+        return PersonImageDeleteImpact(imageID: id, generationSnapshotCount: count)
+    }
+
+    func personProfileDeleteImpact(id: UUID) throws -> PersonProfileDeleteImpact {
+        guard let profile = try personProfile(id: id) else {
+            throw WardrobeRepositoryError.modelNotFound(model: "PersonProfile", id: id)
+        }
+        let inputs = try context.fetch(FetchDescriptor<GenerationPersonInput>())
+        let imageIDs = Set(profile.images.map(\.id))
+        return PersonProfileDeleteImpact(
+            profileID: id,
+            imageCount: profile.images.count,
+            generationProfileSnapshotCount: inputs.filter { $0.personProfileID == id }.count,
+            generationImageSnapshotCount: inputs.filter { imageIDs.contains($0.personImageID) }.count
+        )
+    }
+
+    func deletePersonImage(id: UUID, at date: Date) throws {
+        guard let image = try personImage(id: id) else { return }
+        let profile = image.profile
+        let wasPrimary = image.isPrimary
+        context.delete(image)
+        if wasPrimary {
+            let remaining = profile.images.filter { $0.id != id }.sorted {
+                if $0.createdAt != $1.createdAt { return $0.createdAt < $1.createdAt }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+            remaining.first?.setPrimary(true, at: date)
+        }
+        profile.markUpdated(at: date)
+        try context.save()
+    }
+
+    func deletePersonProfileAndSave(id: UUID) throws {
+        guard let profile = try personProfile(id: id) else { return }
+        context.delete(profile)
         try context.save()
     }
 
@@ -316,6 +438,40 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
             createdAt: item.createdAt,
             updatedAt: item.updatedAt
         )
+    }
+
+    private static func personRecord(_ profile: PersonProfile) throws -> PersonProfileRecord {
+        let images = try profile.images.map(personImageRecord).sorted(by: personImageOrder)
+        return PersonProfileRecord(
+            id: profile.id,
+            draft: PersonDraft(name: profile.name, notes: profile.notes),
+            isDefault: profile.isDefault,
+            archivedAt: profile.archivedAt,
+            createdAt: profile.createdAt,
+            updatedAt: profile.updatedAt,
+            images: images
+        )
+    }
+
+    private static func personImageRecord(_ image: PersonImage) throws -> PersonImageRecord {
+        PersonImageRecord(
+            id: image.id,
+            profileID: image.profile.id,
+            isPrimary: image.isPrimary,
+            originalResourceID: try StorageResourceID(rawValue: image.originalResourceID),
+            processedResourceID: try image.processedResourceID.map(StorageResourceID.init(rawValue:)),
+            thumbnailResourceID: try image.thumbnailResourceID.map(StorageResourceID.init(rawValue:)),
+            pixelWidth: image.pixelWidth,
+            pixelHeight: image.pixelHeight,
+            createdAt: image.createdAt,
+            updatedAt: image.updatedAt
+        )
+    }
+
+    private static func personImageOrder(_ left: PersonImageRecord, _ right: PersonImageRecord) -> Bool {
+        if left.isPrimary != right.isPrimary { return left.isPrimary }
+        if left.createdAt != right.createdAt { return left.createdAt < right.createdAt }
+        return left.id.uuidString < right.id.uuidString
     }
 
 }

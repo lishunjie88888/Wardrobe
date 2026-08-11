@@ -92,6 +92,8 @@ struct VirtualTryOnResult: Sendable {
 - `providerParameters` 必须有 allowlist、可序列化并随 GenerationRecord 快照保存；禁止存入密钥。
 - 大图片导致内存压力时，可在不改变业务边界的前提下引入受控流式 payload 或安全临时文件类型。
 
+Stage 5 提供轻量 `PersonReferenceSet` 查询边界：只从活跃默认人物取得明确的 primary image，并将其余图片按 `createdAt`、UUID 稳定排序为 additional images。后续 Try-On Service 应先使用该查询，再结合 Provider capability 决定是否接受全部参考图；不得在 SwiftUI 或 Provider Adapter 中重新猜测主图。若没有默认人物或主图，查询会明确返回 nil/空值，由后续输入校验提示用户。
+
 ## 5. 能力协商
 
 `VirtualTryOnCapabilities` 至少描述：

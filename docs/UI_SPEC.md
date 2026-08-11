@@ -57,6 +57,10 @@ Sidebar
 - 设置默认人物与设置主参考照是两个独立操作，菜单和标签不得混淆。
 - 图片不满足格式、尺寸或方向要求时，在保存前给出具体提示；自动处理由 Image Processing Service 完成。
 - 人物归档后默认不出现在试衣选择器，但生成历史仍显示其名称快照。
+- Stage 5 在 Sidebar 增加“我的形象”，使用人物列表 + 详情的原生 Mac 双栏布局；列表只加载 primary thumbnail，详情以 adaptive thumbnail Grid 展示多张照片。
+- 添加人物允许先只保存姓名与备注，并显示“尚未添加参考照片”；添加照片先展示本地预览，再呈现 importing/processing 状态并禁止重复提交。
+- 点击缩略图按需加载 processed image 进行较大预览，不批量解码档案内的 4K 图片。Default Person 与 Primary Image 使用独立命令和标签。
+- 归档默认人物后默认状态置空；删除主图后 UI 刷新为确定性选出的剩余最早图片。永久删除确认显示 Generation snapshot 影响，内部路径不进入用户错误信息。
 
 ## 5. AI 试衣间
 

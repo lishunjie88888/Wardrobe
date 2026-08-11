@@ -1,17 +1,21 @@
 import Foundation
 
-protocol ClothingAssetImporting: Sendable {
+protocol ManagedImageAssetImporting: Sendable {
     func importImage(from sourceURL: URL, for owner: StorageOwner) async throws -> StoredImageResources
     func deleteResourceDirectory(for owner: StorageOwner) async throws
 }
 
-protocol ClothingAssetDeleting: Sendable {
+protocol ManagedImageAssetDeleting: Sendable {
     func deleteResourceDirectory(for owner: StorageOwner) async throws
 }
 
-protocol ClothingImageLoading: Sendable {
+protocol ManagedImageLoading: Sendable {
     func data(for resourceID: StorageResourceID) async throws -> Data
 }
+
+typealias ClothingAssetImporting = ManagedImageAssetImporting
+typealias ClothingAssetDeleting = ManagedImageAssetDeleting
+typealias ClothingImageLoading = ManagedImageLoading
 
 @MainActor
 protocol ClothingImportPersisting {
@@ -28,7 +32,7 @@ protocol ClothingManagingPersisting {
 
 extension SwiftDataWardrobeRepository: ClothingImportPersisting, ClothingManagingPersisting {}
 
-extension StorageService: ClothingAssetImporting, ClothingAssetDeleting, ClothingImageLoading {
+extension StorageService: ManagedImageAssetImporting, ManagedImageAssetDeleting, ManagedImageLoading {
     func data(for resourceID: StorageResourceID) async throws -> Data { try read(resourceID) }
 }
 

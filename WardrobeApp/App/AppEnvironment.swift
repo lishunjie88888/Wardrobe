@@ -14,6 +14,7 @@ struct AppEnvironment {
     let applicationName: String
     let modelContainer: ModelContainer
     let wardrobe: WardrobeFeatureDependencies
+    let person: PersonFeatureDependencies
 
     @MainActor
     init(
@@ -42,6 +43,26 @@ struct AppEnvironment {
                 }
             }
         }
+        if ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_PERSON"] == "1" {
+            let seedID = UUID(uuidString: "00000000-0000-0000-0000-000000000505")!
+            if (try? repository.personProfile(id: seedID)) == nil {
+                let profile = PersonProfile(id: seedID, name: "UI 测试人物", notes: "隔离测试资料")
+                let firstID = UUID(uuidString: "00000000-0000-0000-0000-000000000511")!
+                let secondID = UUID(uuidString: "00000000-0000-0000-0000-000000000512")!
+                let firstOwner = StorageOwner(kind: .person, id: firstID)
+                let secondOwner = StorageOwner(kind: .person, id: secondID)
+                if let firstResource = try? StorageResourceID(owner: firstOwner, kind: .original(fileExtension: "jpg")),
+                   let secondResource = try? StorageResourceID(owner: secondOwner, kind: .original(fileExtension: "jpg")) {
+                    let first = PersonImage(id: firstID, profile: profile, isPrimary: true, originalResourceID: firstResource.rawValue)
+                    let second = PersonImage(id: secondID, profile: profile, originalResourceID: secondResource.rawValue)
+                    profile.images = [first, second]
+                    try? repository.insert(profile)
+                    try? repository.insert(first)
+                    try? repository.insert(second)
+                }
+                try? repository.save()
+            }
+        }
 #endif
         let inspector = ResourceReferenceInspector(repository: repository)
         let clothingStorage = storageService
@@ -53,6 +74,25 @@ struct AppEnvironment {
                 imageProcessing: imageProcessingService
             ),
             deletion: ClothingDeletionService(
+                repository: repository,
+                inspector: inspector,
+                storage: clothingStorage
+            ),
+            imageLoader: clothingStorage
+        )
+        self.person = PersonFeatureDependencies(
+            management: PersonManagementService(repository: repository),
+            importer: ImportPersonImageService(
+                repository: repository,
+                storage: clothingStorage,
+                imageProcessing: imageProcessingService
+            ),
+            imageDeletion: PersonImageDeletionService(
+                repository: repository,
+                inspector: inspector,
+                storage: clothingStorage
+            ),
+            profileDeletion: PersonProfileDeletionService(
                 repository: repository,
                 inspector: inspector,
                 storage: clothingStorage

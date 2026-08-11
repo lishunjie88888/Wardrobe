@@ -128,6 +128,14 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - `ClothingDeletionService` 先收集候选和影响摘要，再删除并保存 metadata；SwiftData `.nullify` 保留 Outfit/Generation snapshot。保存成功后才检查 surviving references：任一候选仍被引用时保留完整 owner 目录，全部无引用时才请求受控目录删除。cleanup 失败不回滚已安全提交的数据库状态。
 - `AppEnvironment` 不再向 Feature 暴露完整 `StorageServing` 或 `ImageProcessingServing`。组合根把具体 Storage 拆成导入、删除与只读图片加载窄能力并只注入 Service；Wardrobe Feature 无法取得 `deleteResourceDirectory`。
 
+### 4.8 Stage 5 人物业务边界
+
+- `PersonView` 只依赖 `PersonViewModel`；ViewModel 分别调用 `PersonManagementService`、`ImportPersonImageService`、`PersonImageDeletionService`、`PersonProfileDeletionService` 与只读 `PersonImageLoading`。
+- `ImportPersonImageService` 以稳定 PersonImage UUID 作为 Storage owner，编排 staging import、Stage 3 `.person` preset、SwiftData 保存和失败补偿；档案本身可先于图片独立创建。
+- `PersonManagementService` 负责档案 CRUD、归档、Default/Primary 命令与 `PersonReferenceSet` 查询。Repository 在 MainActor 上串行维护全局 active default 和档案内 primary 唯一性，Feature 不直接遍历 SwiftData relationship 为 AI 选择素材。
+- 两类人物删除 Service 都在 metadata 提交前收集完整候选资源，提交 cascade/nullify 后复用 `ResourceReferenceInspector` 检查 surviving references，并按 PersonImage owner 独立决定是否删除目录。cleanup failure 单独报告，不回滚已经一致的数据库状态。
+- `AppEnvironment` 只向 Person Feature 注入上述用例与只读加载器；完整 Storage 和 ImageProcessing 仍只存在于 composition root。
+
 ## 5. 关键流程
 
 ### 5.1 导入衣物

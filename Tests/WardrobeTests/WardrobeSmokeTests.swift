@@ -18,10 +18,10 @@ final class WardrobeSmokeTests: XCTestCase {
         XCTAssertEqual(environment.applicationName, "Wardrobe")
     }
 
-    func testSidebarDefinesExactlyTheFivePlannedRoutes() {
+    func testSidebarDefinesExactlyTheSixPlannedRoutes() {
         XCTAssertEqual(
             AppRoute.allCases,
-            [.wardrobe, .tryOn, .outfits, .generationHistory, .settings]
+            [.wardrobe, .person, .tryOn, .outfits, .generationHistory, .settings]
         )
     }
 }

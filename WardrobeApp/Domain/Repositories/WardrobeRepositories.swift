@@ -30,8 +30,18 @@ protocol PersonRepository {
     func insert(_ image: PersonImage) throws
     func personProfile(id: UUID) throws -> PersonProfile?
     func personImage(id: UUID) throws -> PersonImage?
+    func personProfiles(archive: PersonArchiveFilter) throws -> [PersonProfileRecord]
+    func createPersonProfile(draft: PersonDraft, at date: Date) throws -> PersonProfileRecord
+    func updatePersonProfile(id: UUID, draft: PersonDraft, at date: Date) throws -> PersonProfileRecord
+    func setPersonProfileArchived(id: UUID, archived: Bool, at date: Date) throws -> PersonProfileRecord
+    func insertPersonImageAndSave(_ image: PersonImage, at date: Date) throws -> PersonImageRecord
     func setDefaultPersonProfile(id: UUID, at date: Date) throws
     func setPrimaryPersonImage(id: UUID, for profileID: UUID, at date: Date) throws
+    func defaultPersonReferenceSet() throws -> PersonReferenceSet?
+    func personImageDeleteImpact(id: UUID) throws -> PersonImageDeleteImpact
+    func personProfileDeleteImpact(id: UUID) throws -> PersonProfileDeleteImpact
+    func deletePersonImage(id: UUID, at date: Date) throws
+    func deletePersonProfileAndSave(id: UUID) throws
     func deletePersonProfile(id: UUID) throws
     func save() throws
 }

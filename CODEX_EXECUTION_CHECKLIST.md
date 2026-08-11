@@ -446,58 +446,71 @@
 
 ### Scope
 
-- [ ] 人物列表、人物详情、创建/编辑/归档。
-- [ ] 每个人物添加多张参考照、设置默认人物和主参考照。
-- [ ] 删除人物图片与永久删除人物的引用影响处理。
-- [ ] 人物图片导入、processed/thumbnail 和缺失资源状态。
+- [x] 人物列表、人物详情、创建/编辑/归档。
+- [x] 每个人物添加多张参考照、设置默认人物和主参考照。
+- [x] 删除人物图片与永久删除人物的引用影响处理。
+- [x] 人物图片导入、processed/thumbnail 和缺失资源状态。
 
 ### Out of Scope
 
-- [ ] 不调用 AI、不评价人物照片质量或自动选最佳照片。
-- [ ] 不实现云同步或人脸识别。
-- [ ] 不让 View 直接操作 Storage 或 SwiftData。
+- [x] 不调用 AI、不评价人物照片质量或自动选最佳照片。
+- [x] 不实现云同步或人脸识别。
+- [x] 不让 View 直接操作 Storage 或 SwiftData。
 
 ### Dependencies
 
-- [ ] Stage 1–3 已通过。
-- [ ] Stage 4 的通用导入/删除交互模式可复用，但不得形成 Feature 间反向依赖。
+- [x] Stage 1–3 已通过。
+- [x] Stage 4 的通用导入/删除交互模式可复用，但不得形成 Feature 间反向依赖。
 
 ### Implementation Tasks
 
-- [ ] 实现 Person Repository 与 ImportPersonImage/Deletion Service。
-- [ ] 实现人物列表、详情和参考照缩略图 Grid。
-- [ ] 实现默认人物与每个人物主参考照的独立命令。
-- [ ] 在 Service 层保证至多一个活跃默认人物和每档案至多一张主图。
-- [ ] 删除主图后按既定规则选择新主图或清空，并通知 UI。
-- [ ] 归档人物后从试衣选择器默认排除，但保留历史可追溯性。
-- [ ] 永久删除前检查 Generation input 引用，保留仍被快照引用的资源。
+- [x] 实现 Person Repository 与 ImportPersonImage/Deletion Service。
+- [x] 实现人物列表、详情和参考照缩略图 Grid。
+- [x] 实现默认人物与每个人物主参考照的独立命令。
+- [x] 在 Service 层保证至多一个活跃默认人物和每档案至多一张主图。
+- [x] 删除主图后按既定规则选择新主图或清空，并通知 UI。
+- [x] 归档人物后从试衣选择器默认排除，但保留历史可追溯性。
+- [x] 永久删除前检查 Generation input 引用，保留仍被快照引用的资源。
 
 ### Tests
 
-- [ ] 测试人物 CRUD、归档和多图关系。
-- [ ] 测试并发/连续设置默认人物与主图的唯一性。
-- [ ] 测试删除主图、最后一张图片和被历史引用图片。
-- [ ] 测试图片导入失败补偿和重启读取。
-- [ ] UI 测试创建人物→添加多图→设置默认人物/主图。
-- [ ] 运行 build 和全部现有 tests。
+- [x] 测试人物 CRUD、归档和多图关系。
+- [x] 测试并发/连续设置默认人物与主图的唯一性。
+- [x] 测试删除主图、最后一张图片和被历史引用图片。
+- [x] 测试图片导入失败补偿和重启读取。
+- [x] UI 测试使用隔离的多图人物 fixture→设置默认人物→编辑→重启读取；系统文件面板与图片导入/主图切换由 Service tests 覆盖。
+- [x] 运行 build 和全部现有 tests。
 
 ### Acceptance Criteria
 
-- [ ] 可以稳定创建人物并管理多张参考照。
-- [ ] 默认人物和主图语义明确且约束不依赖 UI。
-- [ ] 被生成历史引用的资源不会因源人物删除而丢失。
-- [ ] 图片不进入 SwiftData，路径不写死。
+- [x] 可以稳定创建人物并管理多张参考照。
+- [x] 默认人物和主图语义明确且约束不依赖 UI。
+- [x] 被生成历史引用的资源不会因源人物删除而丢失。
+- [x] 图片不进入 SwiftData，路径不写死。
 
 ### Documentation Updates
 
-- [ ] 若默认选择或删除策略变化，更新 `DATA_MODEL.md`、`PRODUCT_SPEC.md` 和 `UI_SPEC.md`。
-- [ ] 在本 Stage 下记录测试与人工验证结果。
+- [x] 若默认选择或删除策略变化，更新 `DATA_MODEL.md`、`PRODUCT_SPEC.md` 和 `UI_SPEC.md`。
+- [x] 在本 Stage 下记录测试与人工验证结果。
+
+### Execution Record（2026-08-11）
+
+- Feature/架构：新增“我的形象”Sidebar route、人物列表 + 详情双栏、adaptive reference thumbnail Grid、processed 大图预览、创建/编辑/归档/恢复、Default/Primary 独立命令与危险删除确认。`PersonViewModel` 只持有四个专用用例和只读图片加载器，不接触 ModelContext、Storage 路径或图片处理器。
+- Import：`ImportPersonImageService` 为每张图片生成稳定 UUID，并以 `persons/<PersonImage UUID>/` 独立 owner 执行 Storage staging import、Stage 3 `.person` preset（4096 px processed、512 px thumbnail）、SwiftData 保存和失败补偿；original 不被覆盖。主错误与 cleanup issue 分离，取消保持 `CancellationError`。
+- Invariants/reference：Repository 在 MainActor 上保证最多一个 active default 与每档案最多一张 primary。归档默认人物后 default 置空；第一张图自动为 primary；删除 primary 后按 createdAt、UUID 选择最早剩余图。`PersonReferenceSet` 稳定提供 Default Profile → Primary → Additional images，未创建 Schema V2。
+- Delete/retention：单图删除与档案 cascade 删除都在 metadata 提交前收集完整资源，提交 nullify/cascade 后复用全模型 `ResourceReferenceInspector`。每个 PersonImage owner 独立判断：任一资源仍被 Generation snapshot 引用则保留完整 owner，否则删除目录；cleanup failure 不回滚数据库。
+- Stage 5 Unit Tests：新增 14 个，覆盖 CRUD/归档、Default/Primary 唯一性、多图、JPEG/PNG/HEIC、person preset 与尺寸、Storage/Processing/Repository failure、主图 fallback、单图/档案删除、snapshot retention、cleanup failure 和持久 container/storage 重建。
+- 全量 Unit Tests：`xcodebuild ... -collect-test-diagnostics never -only-testing:WardrobeTests test` → `TEST SUCCEEDED`；77 total，76 passed、1 skipped、0 failed。skip 为既有 Stage 2 HEIF encoder 条件限制；Stage 5 HEIC 实测通过。
+- UI Tests：`xcodebuild ... -collect-test-diagnostics never -only-testing:WardrobeUITests test` → `TEST SUCCEEDED`；3 个测试在同一完整 suite 中全部通过，覆盖六项 Sidebar navigation、既有 Stage 4 clothing 持久化流程、人物隔离多图 fixture 的 default/编辑/重启读取。Sidebar smoke 改用已解析元素的中心坐标点击，规避 XCTest 在全套顺序下错误地对数值 accessibility value 做 regex matching；每例 teardown 显式终止 App。系统文件面板不做脆弱自动化，测试使用 `WARDROBE_STORAGE_ROOT_OVERRIDE`，未访问正式资料库。
+- Debug Build：`xcodebuild ... -derivedDataPath /tmp/WardrobeStage5DevDerivedData build` → `BUILD SUCCEEDED`；无源码 warning/error，仅见既有 AppIntents metadata extraction 提示。Xcode 自动序列化的无语义 `Wardrobe.xcscheme` 差异已移除。
+- 环境记录：UI diagnostics 曾因磁盘空间不足写入失败；只删除了两个明确的大型临时诊断文件，随后以 `-collect-test-diagnostics never` 重跑。该问题不涉及项目或正式资料库内容。
+- 安全审计：Person Feature 未获得 destructive Storage API；源码无网络/真实 AI、OpenAI、Schema V2 或 Stage 6 实现；正式 Application Support 未产生测试 Person/Image。
 
 ### Completion Checklist
 
-- [ ] 人物素材完整流程通过。
-- [ ] 关系/资源生命周期测试通过。
-- [ ] 人工确认默认人物、主图和删除行为后再进入真实生成链路。
+- [x] 人物素材完整流程通过。
+- [x] 关系/资源生命周期测试通过。
+- [x] 人工确认默认人物、主图和删除行为后再进入真实生成链路。
 
 ---
 

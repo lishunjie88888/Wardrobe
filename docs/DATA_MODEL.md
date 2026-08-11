@@ -63,6 +63,8 @@
 
 关系：`images: [PersonImage]`，PersonProfile 删除到 PersonImage 为 `.cascade`，但永久删除前必须检查生成历史并由 Service 决定是否保留快照资源。应用服务保证活跃档案至多一个 `isDefault == true`；该约束不能仅依赖 UI。
 
+Stage 5 采用显式 nil fallback：归档或永久删除默认人物后不自动选择其他档案，默认人物变为 nil；用户恢复档案后也需显式重新设为默认。该策略避免应用替用户猜测 AI 主体。
+
 ### 3.3 PersonImage
 
 | 字段 | 类型 | 可选 | 默认值 | 说明 |
@@ -79,6 +81,8 @@
 | `updatedAt` | `Date` | 否 | 当前时间 | 修改时间 |
 
 关系：一个 `PersonImage` 可被多个 `GenerationPersonInput` 以可空关系引用。应用服务保证每个 PersonProfile 至多一张 `isPrimary == true`；删除主图时自动选择新主图或将其置空，并明确通知 UI。
+
+Stage 5 的确定性策略为：第一张成功导入的图片自动设为主图；切换主图会同时清除旧主图；删除主图时按 `createdAt` 升序、UUID 字符串升序选择剩余第一张，删除最后一张后主图为空。没有修改 `WardrobeSchemaV1`。
 
 ### 3.4 Outfit
 

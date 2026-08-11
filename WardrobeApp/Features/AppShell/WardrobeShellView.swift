@@ -18,6 +18,8 @@ struct WardrobeShellView: View {
             switch selection ?? .wardrobe {
             case .wardrobe:
                 WardrobeView(dependencies: environment.wardrobe)
+            case .person:
+                PersonView(dependencies: environment.person)
             case let route:
                 PlaceholderFeatureView(route: route)
             }

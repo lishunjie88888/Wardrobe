@@ -148,6 +148,7 @@ generations/89a1.../result.png
 - 资源是否可删除以所有元数据中的资源 ID 引用为准，而不是仅看 owner 对象是否存在。删除最后一条历史或穿搭引用后，资源才进入带宽限期的孤儿清理候选。
 - 永久删除先更新/删除元数据关系，再逐个删除已确认的文件；失败文件登记为待清理孤儿。
 - Stage 4 的 `ResourceReferenceInspector` 在 metadata 删除提交后检查全部 V1 持久模型中的资源字段与 snapshot 字段。只要同一 garment owner 的任一候选资源仍被引用，就保守保留完整 owner 目录；只有 original、processed、thumbnail 均无 surviving reference 时才允许目录级清理。
+- Stage 5 的每张人物照片以 PersonImage UUID 作为独立 owner。删除单张图片或 cascade 删除 PersonProfile 前先收集每张图片的 original、processed、thumbnail；metadata 提交后逐 owner 检查 surviving references。某 owner 任一资源仍被 Generation snapshot 引用时保留该 owner 完整目录，未被引用的其他 PersonImage owner 可独立清理。
 - 删除后的文件 cleanup 不参与 SwiftData 回滚：cleanup failure 作为独立结果报告，避免把已经 nullify 且保存的历史关系恢复成更危险的跨存储不一致状态。
 
 ### 6.2 孤儿扫描
