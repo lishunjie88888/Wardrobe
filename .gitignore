@@ -1,5 +1,39 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode user-specific state
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+
+# Xcode and Swift build output
 DerivedData/
 build/
-*.xcuserstate
-xcuserdata/
+.build/
+*.dSYM/
+*.dSYM.zip
+*.ipa
+
+# Test and coverage output
+*.profraw
+*.profdata
+*.xcresult/
+
+# SwiftPM local workspace state
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Editor and temporary files
+.idea/
+.vscode/
+*~
+*.swp
