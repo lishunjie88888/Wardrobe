@@ -715,7 +715,7 @@
 - [x] Result import：PNG、JPEG、HEIC（runtime 可用）、无效文件、正式 result/thumbnail、GenerationRecord 及人物/衣物快照。
 - [x] Cleanup：删除明确 package，不影响正式 generation result、Clothing 或 Person resources。
 - [x] UI fixture：准备 package、显示完成 sheet/count、注入结果并显示“ChatGPT 手动生成”预览。
-- [ ] 最终执行 focused/full Unit、全量 UI、Debug build、`git diff --check` 与正式 Application Support 检查。
+- [x] 最终执行 focused/full Unit、Debug build 与 `git diff --check`；全量 UI 按用户指令跳过，正式 UI 由用户人工验收。
 
 ### Acceptance Criteria
 
@@ -740,12 +740,18 @@
 - User-directed skip：用户明确要求跳过测试；此后未再执行 build、focused/full unit、全量 UI 或人工稳定模式闭环。以上未验证项不得报告为通过。
 - Static audit：`git diff --check` 通过；生产 Application Support 仅做只读目录检查，`external-generations` 为空且未删除/移动正式人物、衣物或 generation 资源；Swift 源码未发现 URLSession、Bearer/API Key、cookie、AXUIElement、CGEvent、AppleScript/osascript 等实现。
 - Commit：本记录随独立 Stage 8 commit 落盘；最终 hash 以 `git log -1` 为准。
+- Final terminal acceptance（2026-08-12）：`xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe -configuration Debug -derivedDataPath /tmp/WardrobeStage8FinalDerivedData -only-testing:WardrobeTests/Stage8ExternalGenerationTests test` → `TEST SUCCEEDED`；Stage 8 focused unit 8/8 passed。
+- 全量 Unit Tests：同一 project/scheme/configuration/DerivedData，执行 `-only-testing:WardrobeTests test` → `TEST SUCCEEDED`；0 failed，既有 `Stage2StorageTests.testHEIFImportWhenSystemEncoderAndDecoderAreAvailable()` 因当前 runtime codec 不可用按设计 skipped。
+- Final Debug Build：同一 project/scheme/configuration/DerivedData 执行 `build` → `BUILD SUCCEEDED`；`git diff --check` 通过。
+- Final UI disposition：按用户明确指令不执行 UI 自动化，不使用 Accessibility、AppleScript、System Events 或鼠标键盘模拟；正式 UI 由用户人工验收。本次未执行 Stage 9，未修改功能代码；任务开始前已有的未提交 UI 改动保持原状且不纳入本验收 commit。
 
 ### Completion Checklist
 
-- [ ] 最终自动测试、最终 Debug build与稳定模式人工验收完成（按用户指令跳过；保留为未完成 Gate）。
+- [x] Stage 8 focused/full Unit、最终 Debug build 与 `git diff --check` 通过。
+- [x] UI 自动化按用户明确指令跳过并记录，未使用任何 macOS UI 控制方式。
+- [ ] 稳定模式 UI 由用户人工验收；完成前保留为人工 Gate。
 - [x] 隐私/Storage 静态审计完成。
-- [x] 创建独立 Stage 8 commit；不 amend 历史提交、不 push、不执行 Stage 9。
+- [x] 创建独立 Stage 8 commit；不 amend 历史提交、不执行 Stage 9。
 
 ---
 
