@@ -9,6 +9,14 @@
 - V1 采用软归档保护引用历史；永久删除必须经过专用 Service。
 - 资源字段使用 `StorageResourceID` 的字符串表示，格式和安全规则见 [STORAGE_SPEC.md](STORAGE_SPEC.md)。
 
+### 1.1 已发布 Schema 冻结与版本策略
+
+- 当前唯一产品 Schema 为 `WardrobeSchemaV1`，版本 `1.0.0`，包含 8 个模型；它已发布并冻结，Stage 13 未修改其业务结构。
+- 未来字段、类型、关系、delete rule、default、模型名或 enum code 变化必须创建新的 `VersionedSchema` 并增加显式 migration stage，禁止直接编辑 V1。
+- `WardrobeSchemaRegistry` 的 current/supported 以 `WardrobeSchemaV1.versionIdentifier` 和真实生产 registry 为来源，不维护重复的 `"1.0.0"` 字符串。
+- 当前生产 `WardrobeMigrationPlan.schemas = [WardrobeSchemaV1.self]`、`stages = []`；没有为了测试而制造产品 V2。
+- `LibraryVersionDescriptor` 同时携带 schemaVersion 和 storageLayoutVersion，但两者独立演进，不要求数值相等，也不保存绝对路径。
+
 ## 2. 公共约定
 
 | 约定 | 说明 |
@@ -271,6 +279,19 @@ SwiftData 删除规则只处理元数据关系；文件资源删除必须由 Sto
 - 每次迁移都要验证默认人物唯一性、主图唯一性、资源 ID 合法性、生成状态和关系完整性。
 - 备份清单记录 `schemaVersion` 与 `storageLayoutVersion`；恢复时先迁移到当前版本，再开放资料库。
 - 测试中保留各已发布 Schema 的小型 fixture，覆盖升级、失败回滚和未知枚举 code。
+
+Stage 13 增加 `MigrationPreflight`、`LibraryMigrationCoordinator` 和 `LibraryConsistencyValidator`。Preflight 是只读的，区分 current、required、future schema/layout、无路径、无效 manifest 与 interrupted checkpoint；无法证明安全时阻止 container 交给 Feature。Validator 只报告 duplicate ID、Default/Primary、Outfit/Generation Slot、Accessories 顺序和 resource ID 问题，不自动删除或修复记录。
+
+迁移 fixture 位于 `Tests/WardrobeTests/Fixtures/Migration/V1/fixture.json`。它是使用固定 UUID、实体计数和资源布局的不可变逻辑 manifest；测试每次在 `/tmp` 重建 V1 store、关闭、重新打开并逐实体验证。SwiftData binary store 与 SDK/OS runtime 绑定，因此不提交脆弱 binary fixture；未来版本增加 `Fixtures/Migration/V2`，不得覆盖 V1。
+
+| 范围 | 路径 | 结果 |
+| --- | --- | --- |
+| Product | 1.0.0 → 1.0.0 | 无需迁移 |
+| Product | V2 | 未创建 |
+| Test harness | Test V1 → Test V2 | lightweight verified |
+| Test harness | Test V2 → Test V3 | custom backfill verified |
+| Test harness | injected validation failure | rollback verified，旧 V1 可重开 |
+| Storage contract | interrupted checkpoint | preflight 阻断 |
 
 ## 7. 产品能力覆盖检查
 

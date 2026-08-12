@@ -20,6 +20,8 @@
 ## 数据模型与迁移
 
 - SwiftData 主要保存业务元数据、关系和受控文件引用，不保存原始图片或生成图片的大体积二进制数据。
+- `WardrobeSchemaV1` 是已经发布并冻结的 Schema；未来业务变更禁止直接修改 V1，必须创建新的 `VersionedSchema` 并增加显式 migration stage。
+- 历史 migration fixture 是不可变的。不得覆盖或删除既有版本 fixture；新版本必须增加独立 fixture。
 - 所有数据模型变更都必须考虑未来的 Schema Migration，包括默认值、可选性、关系变化和旧数据兼容。
 - 新增功能或字段时优先保证向后兼容，不得无计划地破坏已有数据或备份格式。
 - 架构、Schema、存储格式或迁移策略发生变化时，必须同步更新相关文档。

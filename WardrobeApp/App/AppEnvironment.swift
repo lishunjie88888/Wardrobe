@@ -206,6 +206,9 @@ struct AppEnvironment {
     @MainActor
     static func production() throws -> AppEnvironment {
         let storageConfiguration = try StorageConfiguration.production()
+        guard StorageService.migrationPreflight(configuration: storageConfiguration) == .current else {
+            throw StorageError.migrationBlocked
+        }
         let storageService = try StorageService(configuration: storageConfiguration)
         return try AppEnvironment(
             applicationName: "Wardrobe",

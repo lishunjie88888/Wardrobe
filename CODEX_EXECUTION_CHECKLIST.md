@@ -1024,7 +1024,7 @@
 ### Completion Checklist
 
 - [x] 历史快照、重新生成和删除 tests 通过。
-- [ ] 人工确认删除影响摘要与失败详情脱敏后继续。
+- [x] 人工确认删除影响摘要与失败详情脱敏后继续（用户于 2026-08-12 明确确认 Stage 12 Manual UI Acceptance 通过）。
 
 ### Execution Record（2026-08-12）
 
@@ -1034,7 +1034,7 @@
 - Regenerate/Outfit：完整 preflight 阻止缺失、归档、无资源、无效或不兼容输入；通过 app-owned `TryOnWorkspaceCoordinator` 恢复人物、参考照、严格 Slot/Accessories 顺序和 sourceGenerationID。Mock 复用 `VirtualTryOnService`；External manifest 增加 optional sourceGenerationID 并保持旧 package decode 兼容。成功记录复用 `OutfitService`，不可用衣物阻止完整保存。
 - Delete：先收集 typed generation-owned result/thumbnail 候选，再提交 GenerationRecord/cascade inputs 删除，随后全局引用检查并逐文件清理；人物/衣物 snapshot 不进入候选，ownership mismatch/shared reference 保留，cleanup failure 仅返回 nonfatal notice，不恢复 metadata。
 - Focused Unit：`xcodebuild ... -only-testing:WardrobeTests/Stage12GenerationHistoryTests test` → `TEST SUCCEEDED`；11/11 passed。
-- Full Unit：`xcodebuild ... -only-testing:WardrobeTests test` → `TEST SUCCEEDED`；1 个既有 HEIF runtime conditional skip、0 failed。Debug build → `BUILD SUCCEEDED`；`git diff --check` 通过。UI automation 按项目长期规则跳过；Manual UI Acceptance pending。
+- Full Unit：`xcodebuild ... -only-testing:WardrobeTests test` → `TEST SUCCEEDED`；1 个既有 HEIF runtime conditional skip、0 failed。Debug build → `BUILD SUCCEEDED`；`git diff --check` 通过。UI automation 按项目长期规则跳过；Manual UI Acceptance 已由用户于 2026-08-12 明确确认通过，覆盖历史列表、状态/Provider 筛选、成功/失败/取消详情、snapshot-first、Regenerate 不覆盖旧记录、保存为穿搭、删除影响摘要与失败详情脱敏。
 - Data/Privacy：`WardrobeSchemaV1 unchanged`；没有创建 Schema V2。测试仅使用 in-memory SwiftData、临时 Storage 和 injected actor；未访问正式 Application Support。未新增网络、API、Key/Token/Cookie、Provider raw response、Accessibility automation 或绝对持久路径；Feature 不接触 ModelContext、Provider SDK、绝对路径或目录级 destructive Storage。
 
 ---
@@ -1047,10 +1047,10 @@
 
 ### Scope
 
-- [ ] `VersionedSchema`、`SchemaMigrationPlan` 和逐版本 fixture 测试体系。
-- [ ] schemaVersion 与 storageLayoutVersion 的独立版本策略。
-- [ ] 轻量/自定义迁移、失败回滚和升级后一致性检查。
-- [ ] 已发布 Schema 不可变规则的工程化约束。
+- [x] `VersionedSchema`、`SchemaMigrationPlan` 和逐版本 fixture 测试体系。
+- [x] schemaVersion 与 storageLayoutVersion 的独立版本策略。
+- [x] 轻量/自定义迁移、失败回滚和升级后一致性检查。
+- [x] 已发布 Schema 不可变规则的工程化约束。
 
 ### Out of Scope
 
@@ -1060,44 +1060,55 @@
 
 ### Dependencies
 
-- [ ] Stage 1 已建立 V1 基线。
-- [ ] V1 模型已完成跨功能验证并准备冻结。
+- [x] Stage 1 已建立 V1 基线。
+- [x] V1 模型已完成跨功能验证并准备冻结。
 
 ### Implementation Tasks
 
-- [ ] 固化 V1 Schema fixture、逻辑记录样本和资源 ID fixture。
-- [ ] 建立迁移测试 harness，能从每个历史版本升级到当前版本。
-- [ ] 定义新增字段、枚举 code、关系变化和多阶段回填规范。
-- [ ] 实现升级后默认人物、主图、关系、状态和资源 ID 一致性检查。
-- [ ] 建立 migration preflight、失败错误和不开放半迁移资料库的流程。
-- [ ] 为 storage layout 迁移定义检查点、可恢复中断和版本提交顺序。
-- [ ] 在代码评审规则中禁止修改已发布 VersionedSchema。
+- [x] 固化 V1 Schema fixture、逻辑记录样本和资源 ID fixture。
+- [x] 建立迁移测试 harness，能从每个历史版本升级到当前版本。
+- [x] 定义新增字段、枚举 code、关系变化和多阶段回填规范。
+- [x] 实现升级后默认人物、主图、关系、状态和资源 ID 一致性检查。
+- [x] 建立 migration preflight、失败错误和不开放半迁移资料库的流程。
+- [x] 为 storage layout 迁移定义检查点、可恢复中断和版本提交顺序。
+- [x] 在代码评审规则中禁止修改已发布 VersionedSchema。
 
 ### Tests
 
-- [ ] 测试 V1 fixture 打开与当前版本无损读取。
-- [ ] 使用测试专用演进 Schema 验证轻量和自定义迁移 harness，不污染产品 Schema。
-- [ ] 测试未知枚举 code、可选字段、关系 nullify/cascade 和时间默认值。
-- [ ] 测试迁移中断/失败后原资料库仍可打开或可回滚。
-- [ ] 测试 schemaVersion 与 storageLayoutVersion 不同步时的阻断。
-- [ ] 运行 build 和全部 tests。
+- [x] 测试 V1 fixture 打开与当前版本无损读取。
+- [x] 使用测试专用演进 Schema 验证轻量和自定义迁移 harness，不污染产品 Schema。
+- [x] 测试未知枚举 code、可选字段、关系 nullify/cascade 和时间默认值。
+- [x] 测试迁移中断/失败后原资料库仍可打开或可回滚。
+- [x] 测试 schemaVersion 与 storageLayoutVersion 不同步时的阻断。
+- [x] 运行 build 和全部 tests。
 
 ### Acceptance Criteria
 
-- [ ] 首个 Release 的 V1 Schema 已冻结并有 fixture。
-- [ ] 未来变更有明确 Migration Plan 和回归测试入口。
-- [ ] 迁移失败不会静默破坏或开放半迁移资料库。
-- [ ] 资源 ID 在迁移后保持有效或经过显式 Storage Migration 更新。
+- [x] 首个 Release 的 V1 Schema 已冻结并有 fixture。
+- [x] 未来变更有明确 Migration Plan 和回归测试入口。
+- [x] 迁移失败不会静默破坏或开放半迁移资料库。
+- [x] 资源 ID 在迁移后保持有效或经过显式 Storage Migration 更新。
 
 ### Documentation Updates
 
-- [ ] 实际版本、迁移流程和 fixture 维护规则同步到 `DATA_MODEL.md`/`STORAGE_SPEC.md`。
-- [ ] 在本 Stage 下记录迁移测试矩阵。
+- [x] 实际版本、迁移流程和 fixture 维护规则同步到 `DATA_MODEL.md`/`STORAGE_SPEC.md`。
+- [x] 在本 Stage 下记录迁移测试矩阵。
 
 ### Completion Checklist
 
-- [ ] Migration harness、fixtures、失败回滚测试通过。
+- [x] Migration harness、fixtures、失败回滚测试通过。
 - [ ] 人工 Schema review 并冻结当前发布模型后，才能进入备份恢复最终实现。
+
+### Execution Record（2026-08-12）
+
+- Gate/Scope：Stage 12 Manual UI Acceptance 已由用户明确确认后开始。`WardrobeSchemaV1` 未修改，未创建产品 V2 或 Layout V2，未执行 Stage 14。
+- Version/Preflight：新增 `LibraryVersionDescriptor`、`WardrobeSchemaRegistry` 与只读 `MigrationPreflight`；当前 schema `1.0.0` / layout `1` 独立演进。阻断 future schema/layout、no path、invalid manifest 和 interrupted checkpoint；production composition root 只在 `.current` 时创建 container。
+- Coordination/Validation：`LibraryMigrationCoordinator` actor 固定 checkpoint→transform→validate→commit→最后版本提交的未来 contract，失败 rollback，rollback 失败阻断；async `StorageMigrationStep` 不要求 MainActor。`LibraryConsistencyValidator` 只检测 ID、Default/Primary、Slot/Accessories 与 resource ID，不修数据。
+- Fixture/Freeze：`Tests/WardrobeTests/Fixtures/Migration/V1/fixture.json` 为 immutable logical manifest；固定 `13000000-...` UUID，可重复构建跨 8 个模型的临时 V1 store，包含 active/archived/favorite、unknown category/status/slot、nil/value、snapshots 和 typed resource IDs。未提交 SDK/OS 绑定的 binary SwiftData store。AGENTS 增加 V1/fixture freeze 规则，结构 contract guard 明确提示创建 V2。
+- Migration Matrix：Product `1.0.0 → 1.0.0` no migration；Production V2 none/stages none。Test V1→V2 lightweight verified；Test V2→V3 custom backfill verified；injected validation failure rollback + old V1 reopen verified；interrupted checkpoint blocked。
+- Focused Unit：`xcodebuild ... -only-testing:WardrobeTests/Stage13SchemaMigrationTests test` → `TEST SUCCEEDED`；8 tests passed。Xcode 26.5 Swift compiler 对 existential `VersionedSchema.map` 表达式发生 frontend crash，guard 改用稳定的 count/type identity，不影响运行时 migration 验证。
+- Full Unit：`xcodebuild ... -only-testing:WardrobeTests test` → `TEST SUCCEEDED`；156 total，155 passed、1 个既有 HEIF runtime conditional skip、0 failed。Debug terminal build → `BUILD SUCCEEDED`。
+- Data/Privacy：所有 fixture/store/checkpoint 测试均使用 in-memory 或 `/tmp/WardrobeStage13-*`，没有打开或修改正式 Application Support；checked-in fixture 不原地 migration。未新增网络、API、Key/Token/Cookie、Accessibility automation 或绝对持久路径。
 
 ---
 

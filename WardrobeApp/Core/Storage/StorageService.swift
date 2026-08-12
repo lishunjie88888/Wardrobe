@@ -70,6 +70,7 @@ enum StorageError: Error, Equatable, LocalizedError {
     case applicationSupportUnavailable
     case unsupportedLayoutVersion(found: Int)
     case invalidLibraryManifest
+    case migrationBlocked
     case resourceNotFound(StorageResourceID)
     case resourceAlreadyExists(StorageResourceID)
     case resourceDirectoryAlreadyExists(StorageOwner)
@@ -84,6 +85,7 @@ enum StorageError: Error, Equatable, LocalizedError {
         case .applicationSupportUnavailable: "Application Support is unavailable."
         case let .unsupportedLayoutVersion(found): "Unsupported storage layout version: \(found)."
         case .invalidLibraryManifest: "The storage library manifest is invalid."
+        case .migrationBlocked: "This library was created by a newer or incompatible version of Wardrobe."
         case let .resourceNotFound(id): "Storage resource not found: \(id.rawValue)."
         case let .resourceAlreadyExists(id): "Storage resource already exists: \(id.rawValue)."
         case let .resourceDirectoryAlreadyExists(owner): "Storage directory already exists for \(owner.id)."
@@ -142,6 +144,40 @@ actor StorageService: StorageServing, ImageProcessingStorageServing {
 
     static func production() throws -> StorageService {
         try StorageService(configuration: .production())
+    }
+
+    nonisolated static func migrationPreflight(
+        configuration: StorageConfiguration,
+        fileManager: FileManager = .default
+    ) -> MigrationPreflightResult {
+        let root = configuration.rootURL.standardizedFileURL
+        let manifestURL = root.appendingPathComponent("library.json")
+        let checkpointURL = root.appendingPathComponent("migration/checkpoint.json")
+        guard fileManager.fileExists(atPath: root.path) else { return .current }
+        guard fileManager.fileExists(atPath: manifestURL.path) else { return .invalidManifest }
+        let manifest: StorageLibraryManifest
+        do {
+            manifest = try readManifest(at: manifestURL)
+        } catch {
+            return .invalidManifest
+        }
+        let checkpoint: LibraryMigrationCheckpoint?
+        if fileManager.fileExists(atPath: checkpointURL.path) {
+            checkpoint = try? JSONDecoder().decode(
+                LibraryMigrationCheckpoint.self,
+                from: Data(contentsOf: checkpointURL)
+            )
+            if checkpoint == nil { return .invalidManifest }
+        } else {
+            checkpoint = nil
+        }
+        // V1 is the only schema Wardrobe has published. A future schema must add
+        // an explicit, pre-open metadata reader rather than guessing here.
+        return MigrationPreflight().evaluate(
+            manifest: manifest,
+            schemaVersion: WardrobeSchemaV1.versionIdentifier,
+            checkpoint: checkpoint
+        )
     }
 
     func createResourceDirectory(for owner: StorageOwner) throws {

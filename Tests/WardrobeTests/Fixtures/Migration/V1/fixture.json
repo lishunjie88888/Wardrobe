@@ -1,0 +1,16 @@
+{
+  "fixtureVersion" : "1.0.0",
+  "immutable" : true,
+  "modelCounts" : {
+    "ClothingItem" : 3,
+    "GenerationGarmentInput" : 3,
+    "GenerationPersonInput" : 3,
+    "GenerationRecord" : 3,
+    "Outfit" : 1,
+    "OutfitItem" : 3,
+    "PersonImage" : 2,
+    "PersonProfile" : 2
+  },
+  "resourcePrefixes" : [ "garments/", "persons/", "generations/" ],
+  "stableUUIDNamespace" : "13000000-0000-0000-0000-000000000000"
+}

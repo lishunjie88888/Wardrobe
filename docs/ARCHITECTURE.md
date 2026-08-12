@@ -113,6 +113,7 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - `BackgroundRemovalProviding` 当前注入 `DisabledBackgroundRemovalProvider`，行为是 deterministic no-op 且无网络依赖；未来 Apple Vision、AI 或测试 provider 可在不改变 Feature/Storage 边界的情况下替换。Stage 3 不提供真实背景分离。
 - pipeline constant `wardrobe-image-v1` 同时出现在结果 metadata 与 PNG `Software` 字段。已发布 `processed.png` 默认不可覆盖；未来重新处理由生命周期 Service 在引用预检后采用版本化资源策略，不能由图片层自行删除或替换历史引用。
 - `StorageCompensationTransaction` 为跨 SwiftData/filesystem Service 提供显式补偿记录；它只回滚调用方注册的本次资源，不执行全库扫描。
+- Stage 13 的 `MigrationPreflight` 在 composition root 打开资料库前只读判断版本、路径和 checkpoint；`LibraryMigrationCoordinator` actor 集中管理 prepare/transform/validate/commit/rollback，`LibraryConsistencyValidator` 只报告问题。长时间文件变换由注入的 async `StorageMigrationStep` 执行，不散落到 View、ViewModel 或 Storage CRUD。
 
 ### 4.6 AI Provider
 

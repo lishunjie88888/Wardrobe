@@ -204,3 +204,17 @@ V1 若只支持替换恢复，UI 必须明确说明；合并恢复需要独立�
 - 路径结构变化采用显式 Storage Migration：预检空间、逐资源复制/移动、校验、更新资源 ID、提交版本、失败回滚。
 - 不在应用启动主线程上执行大量迁移；显示进度并阻止同时写入。
 - 每次迁移必须可重复检测、支持从中断点恢复，并具备 fixture 测试。
+
+当前 storage layout 仍为 `1`，没有创建生产 Layout 2。`LibraryVersionDescriptor.current` 为 schema `1.0.0` / storage layout `1`；两个版本字段分别来自产品 Schema 与 `StorageConfiguration.layoutVersion`，不会相互推导。
+
+Stage 13 固定以下迁移 contract：
+
+1. 只读 preflight 校验 manifest、schema/layout 支持范围、迁移路径和 interruption checkpoint。
+2. 在受控 migration workspace 写入 checkpoint，记录 source、target 与 phase；此时不改正式 layoutVersion。
+3. 后台 `StorageMigrationStep.transform()` 执行未来文件变换；复制、checksum、目录 walking 和验证不得放在 MainActor。
+4. 验证变换后的 Storage、全部 metadata resource references 与数据库一致性。
+5. 只有验证通过才 commit transformed storage；最后一步才提交 manifest 的新 storageLayoutVersion。
+6. 任一步失败执行 rollback；rollback 验证失败返回 blocking error，不开放半迁移资料库。
+7. checkpoint 存在表示 pending/interrupted，下一次 preflight 阻断正常打开，直到受控恢复或回滚完成。
+
+生产 composition root 在创建 `StorageService` 和 SwiftData container 前运行 preflight。未来同时演进 DB 与 Storage 时，由 `LibraryMigrationCoordinator` 串行协调，使不兼容的新旧组合永远不会交给 Feature。当前 test-only fake step 已验证 failure injection、rollback、checkpoint 和 interruption；它不会移动生产文件或把 manifest 改成 Layout 2。
