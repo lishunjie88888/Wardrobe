@@ -8,6 +8,7 @@ struct OutfitView: View {
     @State private var editingDraft = OutfitDraft()
     @State private var showsEditor = false
     @State private var deleteTarget: OutfitRecord?
+    @State private var showsCompactDetail = false
 
     init(dependencies: OutfitFeatureDependencies, openTryOn: @escaping (OutfitLoadResult) -> Void, goToTryOn: @escaping () -> Void) {
         _model = State(initialValue: OutfitViewModel(dependencies: dependencies))
@@ -19,16 +20,20 @@ struct OutfitView: View {
         VStack(spacing: 0) {
             toolbar
             Divider()
-            if model.outfits.isEmpty {
-                emptyState
-            } else {
-                HSplitView {
-                    outfitGrid
-                        .frame(minWidth: 320, maxWidth: .infinity)
-                        .layoutPriority(1)
-                    if let outfit = model.selectedOutfit {
-                        detail(outfit)
-                            .frame(width: 350)
+            GeometryReader { geometry in
+                if model.outfits.isEmpty {
+                    emptyState
+                } else if geometry.size.width < 720 {
+                    outfitGrid(compact: true)
+                } else {
+                    HSplitView {
+                        outfitGrid(compact: false)
+                            .frame(minWidth: 320, maxWidth: .infinity)
+                            .layoutPriority(1)
+                        if let outfit = model.selectedOutfit {
+                            detail(outfit)
+                                .frame(width: 350)
+                        }
                     }
                 }
             }
@@ -41,6 +46,12 @@ struct OutfitView: View {
             OutfitDraftSheet(title: "编辑穿搭", draft: $editingDraft) {
                 model.update(editingDraft)
                 showsEditor = false
+            }
+        }
+        .sheet(isPresented: $showsCompactDetail) {
+            if let outfit = model.selectedOutfit {
+                detail(outfit)
+                    .frame(width: 430, height: 640)
             }
         }
         .alert("永久删除穿搭？", isPresented: Binding(get: { deleteTarget != nil }, set: { if !$0 { deleteTarget = nil } })) {
@@ -63,39 +74,73 @@ struct OutfitView: View {
     }
 
     private var toolbar: some View {
+        ViewThatFits(in: .horizontal) {
+            toolbarRow
+            VStack(spacing: 8) {
+                TextField("搜索名称或备注", text: $model.query.searchText)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("outfit.search")
+                    .onSubmit { model.load() }
+                HStack(spacing: 10) {
+                    filterMenu
+                    sortPicker
+                    Button("应用") { model.load() }
+                    Spacer(minLength: 4)
+                    tryOnButton
+                }
+            }
+        }
+        .padding(14)
+    }
+
+    private var toolbarRow: some View {
         HStack(spacing: 12) {
             TextField("搜索名称或备注", text: $model.query.searchText)
                 .textFieldStyle(.roundedBorder)
                 .frame(minWidth: 120, idealWidth: 240, maxWidth: 300)
                 .layoutPriority(1)
                 .accessibilityIdentifier("outfit.search").onSubmit { model.load() }
-            Menu {
-                Toggle("仅收藏", isOn: $model.query.favoritesOnly)
-                Picker("范围", selection: $model.query.archive) {
-                    Text("未归档").tag(OutfitArchiveFilter.active)
-                    Text("已归档").tag(OutfitArchiveFilter.archived)
-                    Text("全部").tag(OutfitArchiveFilter.all)
-                }
-                Divider()
-                Button("清除筛选") { model.clearFilters() }
-            } label: {
-                Label("筛选", systemImage: "line.3.horizontal.decrease.circle")
-            }
-            .fixedSize()
-            Picker("排序", selection: $model.query.sort) {
-                Text("最近修改").tag(OutfitSort.recentlyUpdated)
-                Text("最新创建").tag(OutfitSort.newest)
-                Text("名称").tag(OutfitSort.name)
-                Text("收藏优先").tag(OutfitSort.favoritesFirst)
-            }
-            .labelsHidden()
-            .frame(width: 125)
+            filterMenu
+            sortPicker
             Button("应用") { model.load() }
                 .fixedSize()
             Spacer(minLength: 8)
-            Button { goToTryOn() } label: { Label("AI 试衣间", systemImage: "sparkles.rectangle.stack") }
-                .fixedSize()
-        }.padding(14)
+            tryOnButton
+        }
+    }
+
+    private var filterMenu: some View {
+        Menu {
+            Toggle("仅收藏", isOn: $model.query.favoritesOnly)
+            Picker("范围", selection: $model.query.archive) {
+                Text("未归档").tag(OutfitArchiveFilter.active)
+                Text("已归档").tag(OutfitArchiveFilter.archived)
+                Text("全部").tag(OutfitArchiveFilter.all)
+            }
+            Divider()
+            Button("清除筛选") { model.clearFilters() }
+        } label: {
+            Label("筛选", systemImage: "line.3.horizontal.decrease.circle")
+        }
+        .fixedSize()
+    }
+
+    private var sortPicker: some View {
+        Picker("排序", selection: $model.query.sort) {
+            Text("最近修改").tag(OutfitSort.recentlyUpdated)
+            Text("最新创建").tag(OutfitSort.newest)
+            Text("名称").tag(OutfitSort.name)
+            Text("收藏优先").tag(OutfitSort.favoritesFirst)
+        }
+        .labelsHidden()
+        .frame(width: 125)
+    }
+
+    private var tryOnButton: some View {
+        Button { goToTryOn() } label: {
+            Label("AI 试衣间", systemImage: "sparkles.rectangle.stack")
+        }
+        .fixedSize()
     }
 
     @ViewBuilder private var emptyState: some View {
@@ -114,12 +159,13 @@ struct OutfitView: View {
         }
     }
 
-    private var outfitGrid: some View {
+    private func outfitGrid(compact: Bool) -> some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 210, maximum: 280), spacing: 14)], spacing: 14) {
                 ForEach(model.outfits) { outfit in
                     OutfitCard(outfit: outfit, loader: model.imageLoader) {
                         model.selection = outfit.id
+                        if compact { showsCompactDetail = true }
                     } favorite: { model.toggleFavorite(outfit) }
                     .accessibilityIdentifier("outfit.card.\(outfit.id.uuidString)")
                     .contextMenu {
