@@ -169,6 +169,13 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - Regenerate 复用同一 Service 并创建新 UUID，通过 `sourceGenerationID` 指向来源，不修改旧记录。应用 composition root 打开资料库后运行 `InterruptedGenerationRecoveryService`，将遗留的 `queued/preparing/running` 记录标为脱敏的 `failed/interrupted`。
 - 当前生产方向仍是 Stage 8 External ChatGPT 手动交接；Stage 10 的 UI 入口仅在 Debug 暴露 Mock 完整链，不新增 API、凭据、网络或付费 Provider，也不实现 Stage 12 历史浏览。
 
+### 4.11 Stage 11 穿搭业务边界
+
+- `OutfitView` 只依赖 `OutfitViewModel`；ViewModel 调用 `OutfitService` 和只读 `ClothingImageLoading`。Feature 使用 `OutfitRecord`/`OutfitItemRecord`，不接触 SwiftData model 或 `ModelContext`。
+- `OutfitService` 复用 `TryOnSession`/`TryOnSlot`，负责空搭配、单值槽唯一、Accessories 连续顺序、保存 snapshot 和 load preflight；Repository 负责 query、稳定排序、关系映射与事务提交。
+- `TryOnWorkspaceCoordinator` 由 App Shell 明确持有，不是 singleton。Outfit 先生成显式 `OutfitLoadResult`，Shell 导航到 Try-On，工作区消费一次性请求并仅替换衣物槽位，人物选择保持不变。
+- Outfit 卡片与详情只用 current thumbnail 或 snapshot thumbnail 的只读加载；没有自动生成 cover。永久删除只删除 Outfit metadata/cascade items，不取得 Storage 删除能力。
+
 ## 5. 关键流程
 
 ### 5.1 导入衣物

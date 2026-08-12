@@ -18,6 +18,8 @@ struct TryOnView: View {
     @State private var model: TryOnViewModel
     @State private var showsExternalPackage = false
     @State private var importsExternalResult = false
+    @State private var showsSaveOutfit = false
+    @State private var saveDraft = OutfitDraft()
 
     init(dependencies: TryOnFeatureDependencies) {
         _model = State(initialValue: TryOnViewModel(dependencies: dependencies))
@@ -56,6 +58,12 @@ struct TryOnView: View {
             }
         }
         .sheet(isPresented: $showsExternalPackage) { externalPackageSheet }
+        .sheet(isPresented: $showsSaveOutfit) {
+            OutfitDraftSheet(title: "保存当前搭配", draft: $saveDraft) {
+                model.saveCurrentOutfit(draft: saveDraft)
+                showsSaveOutfit = false
+            }
+        }
         .fileImporter(isPresented: $importsExternalResult, allowedContentTypes: [.image], allowsMultipleSelection: false) { result in
             if case .success(let urls) = result, let url = urls.first { model.importExternalResult(from: url) }
             else if case .failure = result { model.message = "无法读取所选图片，请重新选择。" }
@@ -274,6 +282,14 @@ struct TryOnView: View {
             HStack {
                 Text("当前搭配").font(.headline)
                 Spacer()
+                Button {
+                    saveDraft = OutfitDraft()
+                    showsSaveOutfit = true
+                } label: {
+                    Label("保存当前搭配", systemImage: "square.and.arrow.down")
+                }
+                .disabled(model.session.garmentCount == 0)
+                .accessibilityIdentifier("outfit.save")
                 Button { model.clearOutfit() } label: {
                     Label("清空搭配", systemImage: "trash")
                 }

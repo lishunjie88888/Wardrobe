@@ -29,7 +29,7 @@ struct WardrobeShellView: View {
                 .padding(.vertical, 18)
 
                 VStack(spacing: 6) {
-                    ForEach(AppRoute.allCases.filter { $0 != .outfits }) { route in
+                    ForEach(AppRoute.allCases) { route in
                         Button {
                             selection = route
                         } label: {
@@ -75,6 +75,13 @@ struct WardrobeShellView: View {
                 PersonView(dependencies: environment.person)
             case .tryOn:
                 TryOnView(dependencies: environment.tryOn)
+            case .outfits:
+                OutfitView(dependencies: environment.outfit) { result in
+                    environment.tryOnWorkspaceCoordinator.requestLoad(result)
+                    selection = .tryOn
+                } goToTryOn: {
+                    selection = .tryOn
+                }
             case let route:
                 PlaceholderFeatureView(route: route)
             }

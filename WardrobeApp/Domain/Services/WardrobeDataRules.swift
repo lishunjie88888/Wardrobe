@@ -20,6 +20,7 @@ enum WardrobeDataRules {
         }
 
         var occupiedSingleSlots = Set<TryOnSlot>()
+        var accessoryOrders: [Int] = []
         for item in outfit.items {
             guard case let .known(slot) = item.resolvedSlot else {
                 throw WardrobeRepositoryError.invalidOutfit(reason: "Unknown try-on slot: \(item.slotCode)")
@@ -27,6 +28,10 @@ enum WardrobeDataRules {
             guard slot.permitsMultipleItems || occupiedSingleSlots.insert(slot).inserted else {
                 throw WardrobeRepositoryError.invalidOutfit(reason: "Only one item is allowed in \(slot.rawValue).")
             }
+            if slot == .accessories { accessoryOrders.append(item.sortOrder) }
+        }
+        if accessoryOrders.sorted() != Array(0..<accessoryOrders.count) {
+            throw WardrobeRepositoryError.invalidOutfit(reason: "Accessory sort order must be continuous.")
         }
     }
 

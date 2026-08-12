@@ -391,6 +391,111 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
         return try context.fetch(descriptor).first
     }
 
+    func outfits(matching query: OutfitQuery) throws -> [OutfitRecord] {
+        let needle = query.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filtered = try context.fetch(FetchDescriptor<Outfit>()).filter { outfit in
+            switch query.archive {
+            case .active where outfit.archivedAt != nil: return false
+            case .archived where outfit.archivedAt == nil: return false
+            default: break
+            }
+            if query.favoritesOnly && !outfit.isFavorite { return false }
+            guard !needle.isEmpty else { return true }
+            return outfit.name.localizedCaseInsensitiveContains(needle) ||
+                (outfit.notes?.localizedCaseInsensitiveContains(needle) == true) ||
+                outfit.items.contains {
+                    ($0.clothingItem?.name.localizedCaseInsensitiveContains(needle) == true) ||
+                    $0.clothingNameSnapshot.localizedCaseInsensitiveContains(needle)
+                }
+        }
+        let sorted = filtered.sorted { left, right in
+            switch query.sort {
+            case .recentlyUpdated:
+                return left.updatedAt == right.updatedAt ? left.id.uuidString < right.id.uuidString : left.updatedAt > right.updatedAt
+            case .newest:
+                return left.createdAt == right.createdAt ? left.id.uuidString < right.id.uuidString : left.createdAt > right.createdAt
+            case .name:
+                let comparison = left.name.localizedStandardCompare(right.name)
+                return comparison == .orderedSame ? left.id.uuidString < right.id.uuidString : comparison == .orderedAscending
+            case .favoritesFirst:
+                if left.isFavorite != right.isFavorite { return left.isFavorite }
+                return left.updatedAt == right.updatedAt ? left.id.uuidString < right.id.uuidString : left.updatedAt > right.updatedAt
+            }
+        }
+        return sorted.prefix(max(1, query.fetchLimit)).map(Self.outfitRecord)
+    }
+
+    func outfitRecord(id: UUID) throws -> OutfitRecord? {
+        try outfit(id: id).map(Self.outfitRecord)
+    }
+
+    func createOutfit(draft: OutfitDraft, items: [OutfitCreationItem], at date: Date) throws -> OutfitRecord {
+        let normalized = draft.normalized()
+        guard !items.isEmpty else { throw OutfitServiceError.emptyOutfit }
+        let outfit = Outfit(name: normalized.name, notes: normalized.notes, isFavorite: normalized.isFavorite, createdAt: date)
+        var persistedItems: [OutfitItem] = []
+        for input in items {
+            guard let clothing = try clothingItem(id: input.clothingItemID), clothing.archivedAt == nil else {
+                throw OutfitServiceError.clothingUnavailable(input.clothingItemID)
+            }
+            let snapshotName = clothing.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !snapshotName.isEmpty else { throw OutfitServiceError.invalidSnapshotName(input.clothingItemID) }
+            persistedItems.append(OutfitItem(
+                outfit: outfit,
+                clothingItem: clothing,
+                clothingItemID: clothing.id,
+                clothingNameSnapshot: snapshotName,
+                thumbnailResourceIDSnapshot: clothing.thumbnailResourceID,
+                slotCode: input.slotCode,
+                sortOrder: input.sortOrder,
+                createdAt: date
+            ))
+        }
+        outfit.items = persistedItems
+        try WardrobeDataRules.validateOutfit(outfit)
+        context.insert(outfit)
+        do {
+            try context.save()
+            return Self.outfitRecord(outfit)
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    func updateOutfit(id: UUID, draft: OutfitDraft, at date: Date) throws -> OutfitRecord {
+        guard let outfit = try outfit(id: id) else {
+            throw WardrobeRepositoryError.modelNotFound(model: "Outfit", id: id)
+        }
+        let normalized = draft.normalized()
+        outfit.name = normalized.name
+        outfit.notes = normalized.notes
+        outfit.isFavorite = normalized.isFavorite
+        outfit.markUpdated(at: date)
+        try context.save()
+        return Self.outfitRecord(outfit)
+    }
+
+    func setOutfitFavorite(id: UUID, isFavorite: Bool, at date: Date) throws -> OutfitRecord {
+        guard let outfit = try outfit(id: id) else {
+            throw WardrobeRepositoryError.modelNotFound(model: "Outfit", id: id)
+        }
+        outfit.isFavorite = isFavorite
+        outfit.markUpdated(at: date)
+        try context.save()
+        return Self.outfitRecord(outfit)
+    }
+
+    func setOutfitArchived(id: UUID, archived: Bool, at date: Date) throws -> OutfitRecord {
+        guard let outfit = try outfit(id: id) else {
+            throw WardrobeRepositoryError.modelNotFound(model: "Outfit", id: id)
+        }
+        outfit.archivedAt = archived ? date : nil
+        outfit.markUpdated(at: date)
+        try context.save()
+        return Self.outfitRecord(outfit)
+    }
+
     func deleteOutfit(id: UUID) throws {
         guard let outfit = try outfit(id: id) else { return }
         context.delete(outfit)
@@ -492,6 +597,41 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
         if left.isPrimary != right.isPrimary { return left.isPrimary }
         if left.createdAt != right.createdAt { return left.createdAt < right.createdAt }
         return left.id.uuidString < right.id.uuidString
+    }
+
+    private static func outfitRecord(_ outfit: Outfit) -> OutfitRecord {
+        let items = outfit.items.map { item in
+            OutfitItemRecord(
+                id: item.id,
+                clothingItemID: item.clothingItemID,
+                hasCurrentClothing: item.clothingItem != nil,
+                currentClothingIsActive: item.clothingItem?.archivedAt == nil,
+                currentClothingName: item.clothingItem?.name,
+                currentThumbnailResourceID: item.clothingItem?.thumbnailResourceID.flatMap { try? StorageResourceID(rawValue: $0) },
+                currentCategoryCode: item.clothingItem?.categoryCode,
+                clothingNameSnapshot: item.clothingNameSnapshot,
+                thumbnailResourceIDSnapshot: item.thumbnailResourceIDSnapshot.flatMap { try? StorageResourceID(rawValue: $0) },
+                slotCode: item.slotCode,
+                sortOrder: item.sortOrder,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt
+            )
+        }.sorted { left, right in
+            let leftIndex = TryOnSlot.allCases.firstIndex { $0.rawValue == left.slotCode } ?? Int.max
+            let rightIndex = TryOnSlot.allCases.firstIndex { $0.rawValue == right.slotCode } ?? Int.max
+            if leftIndex != rightIndex { return leftIndex < rightIndex }
+            if left.sortOrder != right.sortOrder { return left.sortOrder < right.sortOrder }
+            return left.id.uuidString < right.id.uuidString
+        }
+        return OutfitRecord(
+            id: outfit.id,
+            draft: OutfitDraft(name: outfit.name, notes: outfit.notes, isFavorite: outfit.isFavorite),
+            coverResourceID: outfit.coverResourceID.flatMap { try? StorageResourceID(rawValue: $0) },
+            archivedAt: outfit.archivedAt,
+            createdAt: outfit.createdAt,
+            updatedAt: outfit.updatedAt,
+            items: items
+        )
     }
 
 }

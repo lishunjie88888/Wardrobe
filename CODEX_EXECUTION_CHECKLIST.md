@@ -906,52 +906,65 @@
 
 ### Scope
 
-- [ ] 保存当前搭配为 Outfit/OutfitItem。
-- [ ] 穿搭列表、详情、收藏、名称/备注编辑、归档和永久删除。
-- [ ] 从穿搭载入试衣间并处理归档/缺失衣物。
+- [x] 保存当前搭配为 Outfit/OutfitItem。
+- [x] 穿搭列表、详情、收藏、名称/备注编辑、归档和永久删除。
+- [x] 从穿搭载入试衣间并处理归档/缺失衣物。
 
 ### Out of Scope
 
-- [ ] 不实现穿着记录、自动封面排版、版本历史或分享。
-- [ ] 不静默替换已删除或不兼容衣物。
+- [x] 不实现穿着记录、自动封面排版、版本历史或分享。
+- [x] 不静默替换已删除或不兼容衣物。
 
 ### Dependencies
 
-- [ ] Stage 4 与 Stage 7 已通过。
+- [x] Stage 4 与 Stage 7 已通过。
 
 ### Implementation Tasks
 
-- [ ] 实现 Outfit Repository 和 Outfit Service。
-- [ ] 保存时验证至少一个有效 Item、单值槽位唯一和 Accessories 顺序。
-- [ ] 保存 clothingItemID、名称和 thumbnail resource 快照。
-- [ ] 实现列表/详情、搜索、收藏、编辑、归档与删除。
-- [ ] 载入试衣间时识别活跃、归档、关系 nullify 和槽位不兼容项。
-- [ ] 对缺失项显示快照占位并要求用户明确处理。
-- [ ] 确保 Outfit 永久删除只 cascade OutfitItem，不删除 ClothingItem 或源图片。
+- [x] 实现 Outfit Repository 和 Outfit Service。
+- [x] 保存时验证至少一个有效 Item、单值槽位唯一和 Accessories 顺序。
+- [x] 保存 clothingItemID、名称和 thumbnail resource 快照。
+- [x] 实现列表/详情、搜索、收藏、编辑、归档与删除。
+- [x] 载入试衣间时识别活跃、归档、关系 nullify 和槽位不兼容项。
+- [x] 对缺失项显示快照占位并要求用户明确处理。
+- [x] 确保 Outfit 永久删除只 cascade OutfitItem，不删除 ClothingItem 或源图片。
 
 ### Tests
 
-- [ ] 测试保存、读取、编辑、收藏、归档和删除。
-- [ ] 测试槽位唯一性、Accessories 顺序和空穿搭拒绝。
-- [ ] 测试源衣物归档/永久删除后的快照与载入提示。
-- [ ] UI 测试当前搭配→保存→关闭/重启→载入试衣间。
-- [ ] 运行 build 和全部现有 tests。
+- [x] 测试保存、读取、编辑、收藏、归档和删除。
+- [x] 测试槽位唯一性、Accessories 顺序和空穿搭拒绝。
+- [x] 测试源衣物归档/永久删除后的快照与载入提示。
+- [ ] UI automation 按项目长期规则跳过；当前搭配→保存→关闭/重启→载入试衣间保留人工 UI Acceptance。
+- [x] 运行 build 和全部现有 Unit tests；UI automation 按长期规则跳过。
 
 ### Acceptance Criteria
 
-- [ ] 当前搭配可以稳定保存和重新载入。
-- [ ] 删除穿搭不影响衣物，删除衣物不误删穿搭。
-- [ ] 缺失/归档衣物不被静默替换。
+- [x] 当前搭配可以稳定保存和重新载入。
+- [x] 删除穿搭不影响衣物，删除衣物不误删穿搭。
+- [x] 缺失/归档衣物不被静默替换。
 
 ### Documentation Updates
 
-- [ ] 实际穿搭行为与 `PRODUCT_SPEC.md`、`DATA_MODEL.md`、`UI_SPEC.md` 一致。
-- [ ] 在本 Stage 下记录测试结果。
+- [x] 实际穿搭行为与 `PRODUCT_SPEC.md`、`DATA_MODEL.md`、`UI_SPEC.md` 一致；`WardrobeSchemaV1 unchanged`。
+- [x] 在本 Stage 下记录测试结果。
 
 ### Completion Checklist
 
-- [ ] Outfit 关系/删除测试与 UI 流程通过。
-- [ ] 没有提前实现 Future 穿着统计或分享能力。
+- [ ] Outfit 关系/删除自动测试通过；人工 UI 流程待用户验收。
+- [x] 没有提前实现 Future 穿着统计或分享能力。
+
+### Execution Record（2026-08-12）
+
+- Architecture：新增 `OutfitRecord`/`OutfitItemRecord`、query/filter/sort/load records、`OutfitService`、Repository 映射和由 App Shell 持有的 `TryOnWorkspaceCoordinator`；View/ViewModel 不接触 SwiftData `ModelContext` 或 destructive Storage。
+- Save：复用 `TryOnSession`/`TryOnSlot`；空搭配拒绝、单值 Slot 唯一、Accessories 连续 `sortOrder`，创建时保存稳定 clothing ID、名称和 thumbnail snapshot。名称/备注规范化；metadata edit 不刷新 item snapshot。
+- UI：Sidebar 正式启用“穿搭”；实现 thumbnail grid、详情、搜索、active/archived/all、仅收藏、四种稳定排序、编辑、收藏、归档/恢复、危险删除确认和区分两类 empty state。未生成 cover 文件。
+- Load：preflight 区分 available、archived、missing、invalid slot、incompatible；问题项需确认后只加载 available，全部不可用则阻止；严格恢复保存 Slot 与 Accessories 顺序，只替换 Try-On 衣物并保留 Person。
+- Delete：Outfit 永久删除只 cascade OutfitItem；不删除 ClothingItem、人物、Generation 或 Clothing resources。`thumbnailResourceIDSnapshot` 仍由 `ResourceReferenceInspector` 计入全局引用。已有 `coverResourceID` 保守保留，不做无法证明所有权的清理。
+- Focused Unit：`xcodebuild ... -only-testing:WardrobeTests/Stage11OutfitManagementTests test` → `TEST SUCCEEDED`，11 tests passed。
+- Full Unit：`xcodebuild ... -only-testing:WardrobeTests test` → `TEST SUCCEEDED`，135 passed、1 HEIF runtime conditional skipped。首轮发现 Stage 10 Provider cancellation 被包装为 service error；统一保持 `.cancelled` 后单独复现与全量复跑通过。
+- Debug build：`xcodebuild ... build` → `BUILD SUCCEEDED`。
+- UI automation：按项目长期规则未运行；Manual UI Acceptance pending。
+- Data/Privacy：`WardrobeSchemaV1 unchanged`；测试使用 in-memory SwiftData 或独立 `/tmp` 目录，没有访问正式 Application Support；未新增网络、API、Key、Token 或绝对持久路径。Stage 12 未执行。
 
 ---
 

@@ -57,6 +57,8 @@ Stage 8 将默认生成体验调整为 External ChatGPT Generation Workflow。Wa
 - 浏览、搜索、收藏和查看历史保存的穿搭。
 - 从穿搭载入 AI 试衣间；缺失或归档衣物需明确提示，不静默替换。
 
+Stage 11 已实现完全本地的穿搭管理：当前 Try-On 衣物槽位可保存为带名称、备注与收藏状态的 Outfit；列表支持搜索、active/archived/all、仅收藏和稳定排序，详情按五类 Slot 展示当前衣物或 snapshot fallback。载入前会区分可用、已归档、已删除、未知 Slot 与当前分类不兼容项；问题项需确认后仅载入可用衣物，人物选择保持不变。Outfit 永久删除只 cascade OutfitItem，不删除衣橱素材。`WardrobeSchemaV1` 未修改，未实现封面合成、版本历史或 Stage 12 生成历史。
+
 ### 3.5 AI 生成历史
 
 - 每次生成保存不可变请求快照：输入人物引用、人物图片引用、所用衣服与槽位。

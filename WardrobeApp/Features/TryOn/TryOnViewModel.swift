@@ -10,6 +10,8 @@ struct TryOnFeatureDependencies {
     let externalWorkflow: ExternalGenerationWorkflow?
     let resultImporter: ExternalGenerationResultImporter?
     let injectedResultURL: URL?
+    let workspaceCoordinator: TryOnWorkspaceCoordinator?
+    let outfitService: OutfitService?
 
     init(
         clothing: ClothingManagementService,
@@ -19,7 +21,9 @@ struct TryOnFeatureDependencies {
         generationService: VirtualTryOnService? = nil,
         externalWorkflow: ExternalGenerationWorkflow? = nil,
         resultImporter: ExternalGenerationResultImporter? = nil,
-        injectedResultURL: URL? = nil
+        injectedResultURL: URL? = nil,
+        workspaceCoordinator: TryOnWorkspaceCoordinator? = nil,
+        outfitService: OutfitService? = nil
     ) {
         self.clothing = clothing
         self.person = person
@@ -29,6 +33,8 @@ struct TryOnFeatureDependencies {
         self.externalWorkflow = externalWorkflow
         self.resultImporter = resultImporter
         self.injectedResultURL = injectedResultURL
+        self.workspaceCoordinator = workspaceCoordinator
+        self.outfitService = outfitService
     }
 }
 
@@ -136,6 +142,7 @@ final class TryOnViewModel {
                 session.selectPerson(profileID: nil, referenceImageIDs: [])
                 currentReferences = nil
             }
+            consumePendingOutfitLoad()
         } catch {
             message = "无法载入试衣工作区，请稍后重试。"
         }
@@ -212,6 +219,28 @@ final class TryOnViewModel {
     func clearOutfit() {
         session.clearGarments()
         invalidateResult()
+    }
+
+    func saveCurrentOutfit(draft: OutfitDraft) {
+        guard let service = dependencies.outfitService else { return }
+        do {
+            let outfit = try service.save(session: session, draft: draft)
+            message = "已保存穿搭“\(outfit.draft.name)”。"
+        } catch {
+            message = (error as? LocalizedError)?.errorDescription ?? "无法保存当前搭配。"
+        }
+    }
+
+    func applyOutfitLoad(_ result: OutfitLoadResult) {
+        cancelGeneration(setCancelledState: false)
+        session.replaceGarments(with: result.availableItems)
+        invalidateResult()
+        message = "已载入“\(result.outfitName)”，人物选择保持不变。"
+    }
+
+    private func consumePendingOutfitLoad() {
+        guard let result = dependencies.workspaceCoordinator?.consumeRequest(), result.canLoad else { return }
+        applyOutfitLoad(result)
     }
 
     func generate() {

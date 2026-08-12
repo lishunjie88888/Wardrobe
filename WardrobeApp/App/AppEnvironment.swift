@@ -17,6 +17,8 @@ struct AppEnvironment {
     let person: PersonFeatureDependencies
     let providerRegistry: ProviderRegistry
     let tryOn: TryOnFeatureDependencies
+    let outfit: OutfitFeatureDependencies
+    let tryOnWorkspaceCoordinator: TryOnWorkspaceCoordinator
 
     @MainActor
     init(
@@ -30,6 +32,9 @@ struct AppEnvironment {
         let mockProvider = MockVirtualTryOnProvider(behavior: .success(delay: .milliseconds(350)))
         self.providerRegistry = try ProviderRegistry(providers: [mockProvider])
         let repository = SwiftDataWardrobeRepository(container: modelContainer)
+        let outfitService = OutfitService(repository: repository)
+        let tryOnWorkspaceCoordinator = TryOnWorkspaceCoordinator()
+        self.tryOnWorkspaceCoordinator = tryOnWorkspaceCoordinator
         try InterruptedGenerationRecoveryService(repository: repository).recover()
 #if DEBUG
         if ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_CLOTHING"] == "1" {
@@ -108,6 +113,7 @@ struct AppEnvironment {
             ),
             imageLoader: clothingStorage
         )
+        self.outfit = OutfitFeatureDependencies(service: outfitService, imageLoader: clothingStorage)
 #if DEBUG
         let tryOnLoader: any TryOnResourceLoading = ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_TRYON"] == "1"
             ? UITestTryOnImageLoader(base: clothingStorage)
@@ -155,7 +161,9 @@ struct AppEnvironment {
                 workspace: externalWorkspace
             ),
             resultImporter: ExternalGenerationResultImporter(repository: repository, storage: storageService),
-            injectedResultURL: injectedResultURL
+            injectedResultURL: injectedResultURL,
+            workspaceCoordinator: tryOnWorkspaceCoordinator,
+            outfitService: outfitService
         )
     }
 

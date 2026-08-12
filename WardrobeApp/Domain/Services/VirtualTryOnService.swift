@@ -125,6 +125,7 @@ final class VirtualTryOnService {
         } catch let error as VirtualTryOnError {
             let normalized = error == .cancelled ? GenerationStatus.cancelled : .failed
             markTerminal(record, status: normalized, code: Self.errorCode(error), message: Self.safeMessage(error))
+            if error == .cancelled { throw VirtualTryOnError.cancelled }
             throw VirtualTryOnServiceError.provider(error)
         } catch let error as VirtualTryOnServiceError {
             markTerminal(record, status: .failed, code: Self.serviceErrorCode(error), message: Self.safeMessage(error))

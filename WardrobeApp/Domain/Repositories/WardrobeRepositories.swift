@@ -51,6 +51,12 @@ protocol PersonRepository {
 protocol OutfitRepository {
     func insert(_ outfit: Outfit) throws
     func outfit(id: UUID) throws -> Outfit?
+    func outfits(matching query: OutfitQuery) throws -> [OutfitRecord]
+    func outfitRecord(id: UUID) throws -> OutfitRecord?
+    func createOutfit(draft: OutfitDraft, items: [OutfitCreationItem], at date: Date) throws -> OutfitRecord
+    func updateOutfit(id: UUID, draft: OutfitDraft, at date: Date) throws -> OutfitRecord
+    func setOutfitFavorite(id: UUID, isFavorite: Bool, at date: Date) throws -> OutfitRecord
+    func setOutfitArchived(id: UUID, archived: Bool, at date: Date) throws -> OutfitRecord
     func deleteOutfit(id: UUID) throws
     func save() throws
 }

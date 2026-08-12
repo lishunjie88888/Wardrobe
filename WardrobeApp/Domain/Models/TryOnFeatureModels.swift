@@ -62,6 +62,11 @@ struct TryOnSession: Equatable, Sendable {
 
     mutating func clearGarments() { garmentIDsBySlot.removeAll() }
 
+    mutating func replaceGarments(with items: [OutfitLoadItem]) {
+        garmentIDsBySlot.removeAll()
+        for item in items { add(clothingID: item.clothingItemID, to: item.slot) }
+    }
+
     mutating func reconcile(activeClothingIDs: Set<UUID>) {
         for slot in TryOnSlot.allCases {
             let valid = garmentIDs(in: slot).filter(activeClothingIDs.contains)
