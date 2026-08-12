@@ -1097,7 +1097,7 @@
 ### Completion Checklist
 
 - [x] Migration harness、fixtures、失败回滚测试通过。
-- [ ] 人工 Schema review 并冻结当前发布模型后，才能进入备份恢复最终实现。
+- [x] 人工 Schema review 并冻结当前发布模型后，才能进入备份恢复最终实现（用户于 2026-08-12 确认 Stage 13 Schema Review passed，V1 is frozen）。
 
 ### Execution Record（2026-08-12）
 
