@@ -178,6 +178,7 @@
 		B0000000000000000000004A /* Stage14BackupRestoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage14BackupRestoreTests.swift; sourceTree = "<group>"; };
 		B0000000000000000000004C /* Stage16PerformanceReliabilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage16PerformanceReliabilityTests.swift; sourceTree = "<group>"; };
 		B0000000000000000000004D /* Stage17CompleteValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage17CompleteValidationTests.swift; sourceTree = "<group>"; };
+		B0000000000000000000004E /* WardrobeApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WardrobeApp.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -223,6 +224,7 @@
 				G0000000000000000000000B /* Core */,
 				G0000000000000000000000C /* AI */,
 				G0000000000000000000000D /* Resources */,
+				B0000000000000000000004E /* WardrobeApp.entitlements */,
 			);
 			path = WardrobeApp;
 			sourceTree = "<group>";
@@ -647,14 +649,16 @@
 		L00000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WardrobeApp/WardrobeApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Wardrobe;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lishunjie.Wardrobe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -667,14 +671,16 @@
 		L00000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WardrobeApp/WardrobeApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Wardrobe;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lishunjie.Wardrobe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

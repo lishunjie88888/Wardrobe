@@ -1477,62 +1477,103 @@
 
 ### Scope
 
-- [ ] Release Build、签名/权限、App metadata、App Icon 占位或正式资源。
-- [ ] 日志、Debug code、API Key、数据目录和备份恢复最终检查。
-- [ ] README、架构文档、Known Issues、版本与升级说明。
-- [ ] Release 候选人工验收和可回滚发布资料。
+- [x] Release Build、签名/权限、App metadata、App Icon 状态明确（正式图标资源缺失，已如实记录为 pending）。
+- [x] 日志、Debug code、API Key、数据目录和备份恢复最终检查。
+- [x] README、架构文档、Known Issues、版本与升级说明。
+- [ ] Release 候选人工验收和可回滚发布资料（Final Manual Release Gate pending，见 Completion Checklist）。
 
 ### Out of Scope
 
-- [ ] 不加入未完成的新功能或临时 Release hack。
-- [ ] 不在最后阶段无故重写稳定模块。
-- [ ] 不宣称未验证的真实 Provider 能力可用。
+- [x] 不加入未完成的新功能或临时 Release hack。
+- [x] 不在最后阶段无故重写稳定模块（仅新增 entitlements、版本号与 security-scoped 面板访问）。
+- [x] 不宣称未验证的真实 Provider 能力可用（External ChatGPT 仍为人工交接，无自动 API）。
 
 ### Dependencies
 
-- [ ] Stage 17 已通过并完成 Go/No-Go。
+- [x] Stage 17 已通过并完成 Go/No-Go（**GO，2026-08-12**，Stage 17 closed）。
 
 ### Implementation Tasks
 
-- [ ] 设置版本号、build number、最低 macOS 版本、bundle metadata 和权限说明。
-- [ ] 生成/检查 App Icon、应用名称、菜单、About 信息和隐私描述。
-- [ ] 运行 Release archive/build，检查签名、sandbox entitlement 和网络/文件权限最小化。
-- [ ] 搜索并清理临时 debug UI、测试入口、示例密钥、敏感日志和无用 feature flag。
-- [ ] 检查 Application Support、Keychain、Cache、staging 和 backup 路径。
-- [ ] 用 Release candidate 执行 fresh install、升级 fixture、备份恢复和核心闭环。
-- [ ] 完成 README：安装、资料库位置、备份、Provider 配置、故障恢复和测试说明。
-- [ ] 完成 Architecture documentation、Known Issues 和版本发布记录。
-- [ ] 保留发布前资料库备份和可回滚的上一构建（首发则记录恢复方案）。
+- [x] 设置版本号、build number、最低 macOS 版本、bundle metadata 和权限说明：`MARKETING_VERSION 1.0.0`（原 `0.1.0` 为 `4f7717b` 脚手架默认值，仓库无其他明确版本策略，按首个 V1 采用 `1.0.0`）、`CURRENT_PROJECT_VERSION 1`、最低 macOS 15.0、Bundle ID `com.lishunjie.Wardrobe`（未改动）、显示名 Wardrobe、App Category lifestyle。
+- [x] 生成/检查 App Icon、应用名称、菜单、About 信息和隐私描述：无 Asset Catalog/AppIcon，当前为系统占位图标；**Final App Icon manual asset pending**（不联网找图、不擅自生成设计）；菜单/About 由系统默认提供（显示 1.0.0 (1)）。
+- [x] 运行 Release archive/build，检查签名、sandbox entitlement 和网络/文件权限最小化：Release `BUILD SUCCEEDED`、`ARCHIVE SUCCEEDED`；新增 `WardrobeApp/WardrobeApp.entitlements` 仅含 App Sandbox + user-selected read-write，无网络/无 automation/无 Accessibility/无 Keychain 扩展；archive 产物 entitlements 确认无 `get-task-allow`。
+- [x] 搜索并清理临时 debug UI、测试入口、示例密钥、敏感日志和无用 feature flag：`WARDROBE_DEBUG_MOCK_GENERATION`、`WARDROBE_UI_TEST_*`、`WARDROBE_STORAGE_ROOT_OVERRIDE` 全部仅在 `#if DEBUG` 生效；Release UI 只暴露 External ChatGPT 流程，无 Mock 按钮/Debug 菜单/测试资料库入口；Mock infrastructure 与测试保留未删。
+- [x] 检查 Application Support、Keychain、Cache、staging 和 backup 路径：无 Keychain 使用；cache 可清理；staging 启动恢复；backup 排除 cache/staging/external-generations/credentials；restore 为 pre-open apply；无 release-time destructive shortcut；Sandbox 生效后资料库位于容器路径（已写入 README/Known Issues）。
+- [x] 用 Release candidate 执行 fresh install、升级 fixture、备份恢复和核心闭环：fresh 启动由 Stage 17 `testFreshRootBootstrapBuildsValidV1Library` 覆盖；升级/备份恢复由 Stage 13/14 自动测试覆盖；Release 运行时人工闭环见 Completion Checklist（pending）。
+- [x] 完成 README：安装、资料库位置、备份、Provider 配置、故障恢复和测试说明（新增根 `README.md`）。
+- [x] 完成 Architecture documentation、Known Issues 和版本发布记录（新增 `docs/KNOWN_ISSUES.md`、`docs/RELEASE_NOTES.md`；既有 docs 与实现一致，无需修正）。
+- [x] 保留发布前资料库备份和可回滚的上一构建：首发无正式生产数据；上一构建为 `6028b70`（Stage 17）代码与 0.1.0 产物，可通过 Git 恢复；未自动创建 Release tag。
 
 ### Tests
 
-- [ ] Release Build/Archive 成功。
-- [ ] Release 配置完整测试通过。
-- [ ] API Key/敏感信息静态扫描通过。
-- [ ] 签名、sandbox、首次启动、升级、恢复和核心 UI smoke test 通过。
-- [ ] 在无 API Key、无网络和 Mock Provider 环境验证本地功能。
+- [x] Release Build/Archive 成功（见 Execution Record）。
+- [ ] Release 配置完整测试通过（Stage 18 自动工作期间按用户指示跳过完整测试重跑；Stage 17 Full Unit Suite 192 passed / 0 failed / 1 skipped 为最近一次完整证据；Stage 18 改动经 Release build + build-for-testing 编译验证，运行时测试留给 Manual Gate 前由用户决定是否重跑）。
+- [x] API Key/敏感信息静态扫描通过（无真实密钥、无 URLSession、无网络请求代码）。
+- [x] 签名、sandbox、首次启动、升级、恢复和核心 UI smoke test：签名/sandbox 已自动验证（archive entitlements + codesign verify）；升级/恢复由 Stage 13/14 自动覆盖；首次启动与核心 UI 运行时 smoke test 由用户人工执行（见 Completion Checklist）。
+- [x] 在无 API Key、无网络和 Mock Provider 环境验证本地功能（Stage 17 已覆盖；应用无网络代码，Mock 仅 Debug）。
 
 ### Acceptance Criteria
 
-- [ ] Release 可安装、启动、保存数据、重启、升级和恢复。
-- [ ] 无明文 API Key、敏感日志、Debug 后门或绝对路径依赖。
-- [ ] README、架构、数据、存储、AI、UI 和 Known Issues 与实现一致。
-- [ ] 所有未完成项被明确列入 Known Issues/Future，不伪装完成。
+- [ ] Release 可安装、启动、保存数据、重启、升级和恢复（待人工 Gate）。
+- [x] 无明文 API Key、敏感日志、Debug 后门或绝对路径依赖（静态扫描通过）。
+- [x] README、架构、数据、存储、AI、UI 和 Known Issues 与实现一致（本次同步核对，无偏差）。
+- [x] 所有未完成项被明确列入 Known Issues/Future，不伪装完成（App Icon、签名、未加密备份、人工 ChatGPT 流程等均已记录）。
 
 ### Documentation Updates
 
-- [ ] 更新 README、版本记录、Known Issues 和全部发生偏差的设计文档。
-- [ ] 记录 Release build/test 命令、环境、产物和备份位置。
-- [ ] 将本清单对应 Stage 标记和验收证据更新完整。
+- [x] 更新 README、版本记录、Known Issues 和全部发生偏差的设计文档（新增 README.md / RELEASE_NOTES.md / KNOWN_ISSUES.md；STORAGE_SPEC 已预先说明 Sandbox 容器路径，无偏差）。
+- [x] 记录 Release build/test 命令、环境、产物和备份位置（见下方 Execution Record 与 README）。
+- [x] 将本清单对应 Stage 标记和验收证据更新完整（本段）。
 
 ### Completion Checklist
 
-- [ ] Release checklist 全部完成。
-- [ ] 人工完成最终安全、数据恢复和核心流程验收。
-- [ ] 建立下一版本 Schema/功能变更前的文档与 Migration 流程。
+- [x] Release checklist 自动部分全部完成。
+- [ ] 人工完成最终安全、数据恢复和核心流程验收（Final Manual Release Gate pending，见下方清单）。
+- [x] 建立下一版本 Schema/功能变更前的文档与 Migration 流程（`WardrobeSchemaV1` 冻结 + `DATA_MODEL.md` 版本策略 + Migration fixture 流程已具备）。
+
+### Execution Record（2026-08-12）
+
+- Gate/Scope：HEAD `936e9ef`（main、working tree clean、local == origin），只执行 Stage 18；`WardrobeSchemaV1`、Migration、Backup 格式、Repository 公开协议与删除/生成生命周期语义均未修改。
+- 环境：macOS 26.5.2，MacBook Air（Apple Silicon），Xcode 26.6 / Swift 6；全部构建日志在 `/tmp/wardrobe-stage18-*.log`。
+- Release Identity：`MARKETING_VERSION 1.0.0`、`CURRENT_PROJECT_VERSION 1`、Bundle ID `com.lishunjie.Wardrobe`（未改动）、`MACOSX_DEPLOYMENT_TARGET 15.0`、显示名 Wardrobe；archive `Info.plist` 验证：CFBundleShortVersionString 1.0.0 / CFBundleVersion 1 / Architectures x86_64 + arm64。
+- Entitlements/Sandbox：新增 `WardrobeApp/WardrobeApp.entitlements`（`com.apple.security.app-sandbox` + `com.apple.security.files.user-selected.read-write`），app target Debug/Release 均设置 `CODE_SIGN_ENTITLEMENTS` 与 `ENABLE_APP_SANDBOX = YES`；archive 产物 `codesign -d --entitlements` 确认仅两项 entitlement、无 `get-task-allow`；`codesign --verify --deep --strict` 通过。网络 entitlement 未添加（应用无网络代码，External ChatGPT 仅经 NSWorkspace 打开外部应用/浏览器）。
+- Security-scoped：`SettingsViewModel` 对恢复包选择目录（NSOpenPanel）与备份目标（NSSavePanel）增加 `startAccessingSecurityScopedResource()`/`stop` 生命周期，与既有导入路径保持一致；其余功能不需要额外权限。
+- Debug Surface：Release 构建无 Mock 生成按钮/Debug 菜单/测试种子；`WARDROBE_DEBUG_MOCK_GENERATION`（TryOnView）、`WARDROBE_UI_TEST_*`（AppEnvironment/WardrobeShellView/WardrobeViewModel/PersonViewModel）、`WARDROBE_STORAGE_ROOT_OVERRIDE`（StorageConfiguration）均在 `#if DEBUG` 内；MockVirtualTryOnProvider 作为底层基础设施保留（Release UI 不暴露）。
+- Static Audit：app 代码无 `print`/`debugPrint`/`NSLog`/`Logger`；无 `URLSession`；无真实 API Key/Bearer/Token/Cookie；无 `/Users/` 绝对路径（仅测试 fixture 字符串）；敏感键脱敏逻辑（GenerationHistoryRedactor）为生产功能；External ChatGPT 仅 `com.openai.chat` / `chatgpt.com` 打开动作。
+- 验证命令与结果：
+  - Release build：`xcodebuild build -configuration Release -derivedDataPath /tmp/WardrobeStage18-Release` → `BUILD SUCCEEDED`。
+  - Archive：`xcodebuild archive -archivePath /tmp/WardrobeStage18-Archive/Wardrobe.xcarchive` → `ARCHIVE SUCCEEDED`（产物 `/tmp/WardrobeStage18-Archive/Wardrobe.xcarchive`，ad-hoc 签名）。
+  - 测试 target 编译：`xcodebuild build-for-testing`（含 WardrobeTests + WardrobeUITests）→ `TEST BUILD SUCCEEDED`。
+  - Full Unit Suite：Stage 18 期间未重跑（用户指示跳过完整测试；最近完整证据为 Stage 17：192 passed / 0 failed / 1 skipped）。
+  - `git diff --check` 通过；secrets/绝对路径静态扫描通过。
+- 签名状态：`CODE_SIGN_STYLE Automatic`、无 DEVELOPMENT_TEAM → ad-hoc（`flags=0x2(adhoc)`、TeamIdentifier not set）。明确区分：**Local self-use build**（本机可运行）；**不是** Developer ID signed / notarized distribution，不得对外宣称 notarized。
+- 存储/数据：storage layout 仍为 1；schema `1.0.0`；备份格式 `wardrobeBackup` v1 未变；Sandbox 容器路径变更已写入 README 与 Known Issues。
+- Artifact：`.app`/`.xcarchive` 仅存在于 `/tmp`，不提交 Git；DerivedData、xcarchive、.app 均未入库。
+- 文档：新增根 `README.md`（是什么/系统要求/安装运行/资料库位置/基本流程/ChatGPT 流程/备份恢复/存储维护/隐私/故障恢复/开发测试）、`docs/RELEASE_NOTES.md`（V1.0.0）、`docs/KNOWN_ISSUES.md`。
+- Git：建议 commit message `chore: prepare Wardrobe 1.0.0 release`；不创建 tag（人工 Release Gate 通过前不提前 tag）。
+
+### Final Manual Release Gate（待用户执行）
+
+自动验证完成后不自动关闭 Stage 18。请用户验收以下 14 项：
+
+1. Release candidate 首次启动（fresh container 库）
+2. Clothing import
+3. Person（创建/选择/图片）
+4. Try-On manual ChatGPT package（本地素材 + prompt + clipboard + Finder 显示）
+5. 手动导入生成结果
+6. Save Outfit
+7. Generation History
+8. Quit / reopen（数据持久化）
+9. Backup creation
+10. Restore preview
+11. Storage Maintenance report（缓存/孤儿）
+12. About/version/icon/menu（1.0.0 (1)、Wardrobe、占位图标）
+13. 无 Debug Mock UI
+14. 无异常权限请求（不应出现网络/辅助功能等权限弹窗）
+
+如计划真实恢复，请先在隔离资料库验证，不要用唯一真实资料库首测。
 
 ---
-
 ## 阶段顺序调整记录
 
 原始需求包含 Stage 0–18，共 19 个阶段；本清单保留相同数量和全部功能范围，但按依赖重新编号：

@@ -233,6 +233,8 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func createBackup(to url: URL) async {
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         await coordinator.createBackup(destination: url)
         if coordinator.lastBackupSummary != nil {
             preview = nil
@@ -246,7 +248,9 @@ final class SettingsViewModel: ObservableObject {
         previewError = nil
         selectedPackageURL = url
         do {
-            preview = try await coordinator.preview(packageURL: url)
+            preview = try await withSecurityScopedAccess(to: url) {
+                try await coordinator.preview(packageURL: url)
+            }
             showsPreview = true
         } catch let error as BackupError {
             previewError = error
@@ -261,9 +265,17 @@ final class SettingsViewModel: ObservableObject {
         guard let url = selectedPackageURL else { return }
         showsConfirmRestore = false
         showsPreview = false
-        await coordinator.prepareRestore(packageURL: url)
+        await withSecurityScopedAccess(to: url) {
+            await coordinator.prepareRestore(packageURL: url)
+        }
         readyInfo = coordinator.restoreReady
         restoreResult = nil
+    }
+
+    private func withSecurityScopedAccess<T>(to url: URL, _ operation: () async throws -> T) async rethrows -> T {
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        return try await operation()
     }
 
     func quitApp() {
