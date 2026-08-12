@@ -1361,6 +1361,7 @@
 - Cache/orphan/staging 策略已同步 `docs/STORAGE_SPEC.md`（§4.5 临时文件、§4.6 Cache、新增 §5.2 磁盘容量、§10 维护与孤儿文件安全）。
 - 测试：Stage16 focused 16 项全过；Full Wardrobe Unit 189 项（188 passed / 0 failed / 1 skipped=HEIC runtime）；Debug build 与 Release build 均 `BUILD SUCCEEDED`；`git diff --check` 通过；未运行 GUI UI automation。
 - Data/Privacy：全部测试使用 in-memory SwiftData / 隔离临时 Storage；xctrace 启动 trace 使用 `/tmp` 隔离根；未触碰生产 Application Support，无网络，无真实照片。
+- Manual Review 跟进（2026-08-12）：人工 orphan safety review 发现 `deleteEligibleUnreferenced()` 原先只在删除循环前读取一次全局引用快照，循环内多次 `await` 期间 metadata 变化后后续删除仍可能依据旧快照。已改为逐 candidate 删除前重新读取全局引用、重验 `StorageResourceID` 合法性与 modification date 仍超宽限期，任一条件不满足即 retained 不删除；新增 2 项回归测试（删除中途被重新引用必须保留、report 后 mtime 刷新到宽限期内必须保留），单独 commit 并 push。
 - **Manual Gate（待用户）**：
   - 性能：启动、1000 项衣橱、搜索/筛选、快速滚动、重复详情、Generation History、内存行为（Allocations CLI 不可用，建议 Instruments GUI 复核）。
   - File Safety 边界确认：允许自动 cleanup = `cache/previews`、`cache/provider`（LRU 驱逐，仅文件）；`staging/<UUID>` 超过 24h（仅启动时，仅 UUID 目录）；`generations|garments|persons|outfits/<UUID>/` 下经显式确认且再次核对引用的无引用文件（7 天宽限，仅文件）。

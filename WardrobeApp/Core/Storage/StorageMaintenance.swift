@@ -131,21 +131,29 @@ final class OrphanReportService {
         )
     }
 
-    /// Explicit, user-confirmed cleanup only. The reference set is re-read at
-    /// execution time and each candidate is verified against it immediately
-    /// before deletion. Deletes individual files only, never directories, and
-    /// never touches cache, staging, backups, migration or external packages.
+    /// Explicit, user-confirmed cleanup only. The global reference set is
+    /// re-read and the candidate is re-verified (still valid, still
+    /// unreferenced, modification date still beyond the grace period)
+    /// immediately before every individual deletion, so metadata changes that
+    /// happen while earlier deletions are awaiting can never authorize a stale
+    /// snapshot deletion. Deletes individual files only, never directories,
+    /// and never touches cache, staging, backups, migration or external
+    /// packages.
     func deleteEligibleUnreferenced(
         now: Date = .now,
         gracePeriod: TimeInterval = OrphanCleanupPolicy.gracePeriod
     ) async throws -> OrphanCleanupResult {
         let report = try await generateReport(now: now, gracePeriod: gracePeriod)
-        let referencedNow = try repository.allPersistedResourceIDStrings()
         var deleted: [StorageResourceID] = []
         var retained: [StorageResourceID] = []
         var failed: [StorageCleanupIssue] = []
         for resource in report.eligibleCleanupCandidates {
-            if referencedNow.contains(resource.rawValue) {
+            let stillValid = (try? StorageResourceID(rawValue: resource.rawValue)).map { $0 == resource } ?? false
+            let referencedNow = try? repository.allPersistedResourceIDStrings()
+            let stillUnreferenced = referencedNow.map { !$0.contains(resource.rawValue) } ?? false
+            let modificationDate = try? await storage.modificationDate(of: resource)
+            let stillEligible = modificationDate.map { now.timeIntervalSince($0) >= gracePeriod } ?? false
+            guard stillValid, stillUnreferenced, stillEligible else {
                 retained.append(resource)
                 continue
             }

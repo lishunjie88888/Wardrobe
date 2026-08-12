@@ -678,4 +678,158 @@ final class Stage16PerformanceReliabilityTests: XCTestCase {
         XCTAssertTrue(cleanup.deletedResources.isEmpty)
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
     }
+
+    /// Storage probe that inserts a metadata reference to the surviving
+    /// candidate immediately after the first file deletion, simulating a
+    /// reference appearing while the cleanup loop is mid-flight.
+    @MainActor
+    private final class MidLoopReferenceProbeStorage: OrphanStorageScanning {
+        private let inner: any OrphanStorageScanning
+        private let repository: any ClothingRepository
+        private let candidates: [StorageResourceID]
+        private var hasFired = false
+
+        init(
+            inner: any OrphanStorageScanning,
+            repository: any ClothingRepository,
+            candidates: [StorageResourceID]
+        ) {
+            self.inner = inner
+            self.repository = repository
+            self.candidates = candidates
+        }
+
+        func scanManagedResources() async throws -> Set<StorageResourceID> {
+            try await inner.scanManagedResources()
+        }
+
+        func modificationDate(of resourceID: StorageResourceID) async throws -> Date? {
+            try await inner.modificationDate(of: resourceID)
+        }
+
+        func deleteUnreferencedFile(_ resourceID: StorageResourceID) async throws {
+            try await inner.deleteUnreferencedFile(resourceID)
+            guard !hasFired, let survivor = candidates.first(where: { $0 != resourceID }) else { return }
+            hasFired = true
+            let item = ClothingItem(
+                name: "中途引用",
+                categoryCode: ClothingCategory.outerwear.rawValue,
+                originalResourceID: try StorageResourceID(
+                    owner: StorageOwner(kind: .garment, id: UUID()),
+                    kind: .original(fileExtension: "jpg")
+                ).rawValue,
+                thumbnailResourceID: survivor.rawValue
+            )
+            try repository.insert(item)
+            try repository.save()
+        }
+    }
+
+    /// The reference set must be re-read before every candidate deletion, not
+    /// once before the loop: a file that becomes referenced while an earlier
+    /// deletion is awaiting must be retained.
+    func testOrphanCleanupRechecksReferencesMidLoop() async throws {
+        let fixture = try makeFixture()
+        let root = fixture.root
+        let storage = fixture.storage
+        let repository = fixture.repository
+
+        let first = try StorageResourceID(
+            owner: StorageOwner(kind: .generation, id: UUID()),
+            kind: .generationResult(fileExtension: "png")
+        )
+        let second = try StorageResourceID(
+            owner: StorageOwner(kind: .generation, id: UUID()),
+            kind: .generationResult(fileExtension: "png")
+        )
+        for resource in [first, second] {
+            try FileManager.default.createDirectory(
+                at: root.appendingPathComponent(resource.owner.kind.rawValue).appendingPathComponent(resource.owner.directoryName),
+                withIntermediateDirectories: true
+            )
+            let url = root.appendingPathComponent(resource.rawValue)
+            try Data([1]).write(to: url)
+            try setModificationDate(Date(timeIntervalSinceNow: -30 * 24 * 3_600), at: url)
+        }
+
+        let reportService = OrphanReportService(repository: repository, storage: storage)
+        let report = try await reportService.generateReport(now: Date(), gracePeriod: 7 * 24 * 3_600)
+        XCTAssertEqual(Set(report.eligibleCleanupCandidates), Set([first, second]))
+
+        let sorted = [first, second].sorted { $0.rawValue < $1.rawValue }
+        let probe = MidLoopReferenceProbeStorage(
+            inner: storage,
+            repository: repository,
+            candidates: sorted
+        )
+        let service = OrphanReportService(repository: repository, storage: probe)
+        let cleanup = try await service.deleteEligibleUnreferenced(now: Date(), gracePeriod: 7 * 24 * 3_600)
+
+        // The first candidate was deleted before the reference appeared; the
+        // second must survive because the loop re-reads references per item.
+        XCTAssertEqual(cleanup.deletedResources, [sorted[0]])
+        XCTAssertEqual(cleanup.retainedResources, [sorted[1]])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(sorted[0].rawValue).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent(sorted[1].rawValue).path))
+    }
+
+    /// Storage probe that reports a fresh modification date from the second
+    /// read onward, simulating the file being touched after the report.
+    @MainActor
+    private final class RefreshedModificationDateProbeStorage: OrphanStorageScanning {
+        private let inner: any OrphanStorageScanning
+        private let target: StorageResourceID
+        private var readCounts: [String: Int] = [:]
+
+        init(inner: any OrphanStorageScanning, target: StorageResourceID) {
+            self.inner = inner
+            self.target = target
+        }
+
+        func scanManagedResources() async throws -> Set<StorageResourceID> {
+            try await inner.scanManagedResources()
+        }
+
+        func modificationDate(of resourceID: StorageResourceID) async throws -> Date? {
+            let count = (readCounts[resourceID.rawValue] ?? 0) + 1
+            readCounts[resourceID.rawValue] = count
+            if resourceID == target, count > 1 {
+                return Date()
+            }
+            return try await inner.modificationDate(of: resourceID)
+        }
+
+        func deleteUnreferencedFile(_ resourceID: StorageResourceID) async throws {
+            try await inner.deleteUnreferencedFile(resourceID)
+        }
+    }
+
+    /// A candidate whose modification date is refreshed into the grace period
+    /// after the report must be retained by the execution-time re-check.
+    func testOrphanCleanupRetainsCandidateWithRefreshedModificationDate() async throws {
+        let fixture = try makeFixture()
+        let root = fixture.root
+        let storage = fixture.storage
+        let repository = fixture.repository
+
+        let candidate = try StorageResourceID(
+            owner: StorageOwner(kind: .generation, id: UUID()),
+            kind: .generationResult(fileExtension: "png")
+        )
+        try FileManager.default.createDirectory(
+            at: root.appendingPathComponent(candidate.owner.kind.rawValue).appendingPathComponent(candidate.owner.directoryName),
+            withIntermediateDirectories: true
+        )
+        let url = root.appendingPathComponent(candidate.rawValue)
+        try Data([1]).write(to: url)
+        try setModificationDate(Date(timeIntervalSinceNow: -30 * 24 * 3_600), at: url)
+
+        let probe = RefreshedModificationDateProbeStorage(inner: storage, target: candidate)
+        let service = OrphanReportService(repository: repository, storage: probe)
+        let cleanup = try await service.deleteEligibleUnreferenced(now: Date(), gracePeriod: 7 * 24 * 3_600)
+
+        XCTAssertTrue(cleanup.deletedResources.isEmpty)
+        XCTAssertEqual(cleanup.retainedResources, [candidate])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+    }
 }
