@@ -140,6 +140,20 @@ struct WardrobeView: View {
                         Button(category.displayName) { model.query.categoryCode = category.rawValue }
                     }
                 }
+                Menu("季节") {
+                    Button("全部季节") { model.query.seasonCode = nil }
+                    ForEach(Season.clothingSeasons, id: \.rawValue) { season in
+                        Button {
+                            model.query.seasonCode = season.rawValue
+                        } label: {
+                            if model.query.seasonCode == season.rawValue {
+                                Label(season.displayName, systemImage: "checkmark")
+                            } else {
+                                Text(season.displayName)
+                            }
+                        }
+                    }
+                }
                 Divider()
                 Button("清除筛选") { model.clearFilters() }
             } label: {
@@ -161,6 +175,7 @@ struct WardrobeView: View {
         .onChange(of: model.query.archive) { _, _ in model.filtersChanged() }
         .onChange(of: model.query.favoritesOnly) { _, _ in model.filtersChanged() }
         .onChange(of: model.query.categoryCode) { _, _ in model.filtersChanged() }
+        .onChange(of: model.query.seasonCode) { _, _ in model.filtersChanged() }
         .onChange(of: model.query.sort) { _, _ in model.filtersChanged() }
     }
 
@@ -327,6 +342,12 @@ private struct ClothingCard: View {
             }
             Text(ClothingCategory(rawValue: item.draft.categoryCode)?.displayName ?? "其他 / 未知")
                 .font(.caption).foregroundStyle(.secondary)
+            if !item.draft.seasonCodes.isEmpty {
+                Text(item.draft.seasonCodes.map(Season.displayName(for:)).joined(separator: " · "))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
             if let brand = item.draft.brand { Text(brand).font(.caption).lineLimit(1) }
         }
         .padding(10)
@@ -381,7 +402,7 @@ private struct ClothingDetailView: View {
                     detailRow("类别", value: ClothingCategory(rawValue: item.draft.categoryCode)?.displayName ?? "其他 / 未知")
                     detailRow("品牌", value: item.draft.brand ?? "—")
                     detailRow("颜色", value: item.draft.colorCodes.isEmpty ? "—" : item.draft.colorCodes.joined(separator: "、"))
-                    detailRow("季节", value: item.draft.seasonCodes.isEmpty ? "—" : item.draft.seasonCodes.joined(separator: "、"))
+                    detailRow("季节", value: item.draft.seasonCodes.isEmpty ? "—" : item.draft.seasonCodes.map(Season.displayName(for:)).joined(separator: "、"))
                     detailRow("风格", value: item.draft.styleCodes.isEmpty ? "—" : item.draft.styleCodes.joined(separator: "、"))
                     detailRow("材质", value: item.draft.materials.isEmpty ? "—" : item.draft.materials.joined(separator: "、"))
                     detailRow("标签", value: item.draft.tags.isEmpty ? "—" : item.draft.tags.joined(separator: "、"))
@@ -484,10 +505,30 @@ private struct ClothingEditorSheet: View {
                 }
                 Section("属性（用逗号分隔）") {
                     TextField("颜色", text: list($draft.colorCodes))
-                    TextField("季节", text: list($draft.seasonCodes))
                     TextField("风格", text: list($draft.styleCodes))
                     TextField("材质", text: list($draft.materials))
                     TextField("标签", text: list($draft.tags))
+                }
+                Section("适用季节（可多选）") {
+                    HStack(spacing: 10) {
+                        ForEach(Season.clothingSeasons, id: \.rawValue) { season in
+                            Button {
+                                toggleSeason(season)
+                            } label: {
+                                Label(
+                                    season.displayName,
+                                    systemImage: draft.seasonCodes.contains(season.rawValue) ? "checkmark.circle.fill" : "circle"
+                                )
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(draft.seasonCodes.contains(season.rawValue) ? .accentColor : .secondary)
+                            .accessibilityIdentifier("wardrobe.editor.season.\(season.rawValue)")
+                        }
+                    }
+                    Text("可以同时选择多个季节，例如春季和秋季。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Section("备注") { TextEditor(text: optional($draft.notes)).frame(minHeight: 70) }
             }
@@ -512,6 +553,16 @@ private struct ClothingEditorSheet: View {
             set: { binding.wrappedValue = $0.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty } }
         )
     }
+
+    private func toggleSeason(_ season: Season) {
+        if let index = draft.seasonCodes.firstIndex(of: season.rawValue) {
+            draft.seasonCodes.remove(at: index)
+        } else {
+            draft.seasonCodes.append(season.rawValue)
+        }
+        let order = Dictionary(uniqueKeysWithValues: Season.clothingSeasons.enumerated().map { ($0.element.rawValue, $0.offset) })
+        draft.seasonCodes.sort { (order[$0] ?? Int.max) < (order[$1] ?? Int.max) }
+    }
 }
 
 private extension ClothingCategory {
@@ -525,5 +576,23 @@ private extension ClothingCategory {
         case .accessories: "配饰"
         case .other: "其他"
         }
+    }
+}
+
+private extension Season {
+    static let clothingSeasons: [Season] = [.spring, .summer, .autumn, .winter]
+
+    var displayName: String {
+        switch self {
+        case .spring: "春季"
+        case .summer: "夏季"
+        case .autumn: "秋季"
+        case .winter: "冬季"
+        case .allSeason: "四季"
+        }
+    }
+
+    static func displayName(for code: String) -> String {
+        Season(rawValue: code)?.displayName ?? code
     }
 }

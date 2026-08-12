@@ -111,6 +111,28 @@ final class Stage4ClothingManagementTests: XCTestCase {
         XCTAssertEqual(try repository.clothingItems(matching: query).first?.draft.categoryCode, "future_category")
     }
 
+    func testMultipleSeasonsPersistAndEachSeasonCanFindTheSameClothing() throws {
+        let container = try WardrobeModelContainerFactory.inMemory()
+        let repository = SwiftDataWardrobeRepository(container: container)
+        let item = try testItem(name: "春秋风衣", category: "outerwear")
+        item.seasonCodes = [Season.spring.rawValue, Season.autumn.rawValue]
+        try repository.insert(item)
+        try repository.save()
+
+        var query = ClothingQuery(seasonCode: Season.spring.rawValue)
+        XCTAssertEqual(try repository.clothingItems(matching: query).map(\.id), [item.id])
+        query.seasonCode = Season.autumn.rawValue
+        XCTAssertEqual(try repository.clothingItems(matching: query).map(\.id), [item.id])
+        query.seasonCode = Season.summer.rawValue
+        XCTAssertTrue(try repository.clothingItems(matching: query).isEmpty)
+
+        var draft = try XCTUnwrap(repository.clothingItems(matching: ClothingQuery()).first).draft
+        XCTAssertEqual(draft.seasonCodes, [Season.spring.rawValue, Season.autumn.rawValue])
+        draft.seasonCodes.append(Season.winter.rawValue)
+        let updated = try repository.updateClothing(id: item.id, draft: draft, at: .now)
+        XCTAssertEqual(updated.draft.seasonCodes, [Season.spring.rawValue, Season.autumn.rawValue, Season.winter.rawValue])
+    }
+
     func testStorageImportFailureLeavesNoMetadata() async throws {
         let container = try WardrobeModelContainerFactory.inMemory()
         let repository = SwiftDataWardrobeRepository(container: container)
