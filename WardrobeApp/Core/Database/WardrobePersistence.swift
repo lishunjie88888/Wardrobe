@@ -523,6 +523,89 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
         }
     }
 
+    func generationHistory(matching query: GenerationHistoryQuery) throws -> [GenerationHistoryRecord] {
+        let records = try context.fetch(FetchDescriptor<GenerationRecord>()).filter { record in
+            if let providerID = query.providerID, record.providerID != providerID { return false }
+            switch query.status {
+            case .all: return true
+            case .succeeded: return record.statusCode == GenerationStatus.succeeded.rawValue
+            case .failed: return record.statusCode == GenerationStatus.failed.rawValue
+            case .cancelled: return record.statusCode == GenerationStatus.cancelled.rawValue
+            case .inProgress:
+                return [GenerationStatus.queued, .preparing, .running].map(\.rawValue).contains(record.statusCode)
+            }
+        }.sorted {
+            $0.createdAt == $1.createdAt ? $0.id.uuidString < $1.id.uuidString : $0.createdAt > $1.createdAt
+        }
+        return records.prefix(max(1, query.fetchLimit)).map(Self.generationHistoryRecord)
+    }
+
+    func generationDetail(id: UUID) throws -> GenerationDetailRecord? {
+        guard let record = try generationRecord(id: id) else { return nil }
+        let sourceExists = try record.sourceGenerationID.map { try generationRecord(id: $0) != nil } ?? false
+        var persons: [GenerationPersonSnapshotRecord] = []
+        for input in record.personInputs {
+            let resource = try? StorageResourceID(rawValue: input.resourceIDSnapshot)
+            let profileExists = input.personProfile != nil
+            let profileActive = input.personProfile.map { $0.archivedAt == nil } ?? false
+            persons.append(GenerationPersonSnapshotRecord(
+                id: input.id,
+                personProfileID: input.personProfileID,
+                personImageID: input.personImageID,
+                personNameSnapshot: input.personNameSnapshot,
+                resourceIDSnapshot: resource,
+                sortOrder: input.sortOrder,
+                hasCurrentProfile: profileExists,
+                currentProfileIsActive: profileActive,
+                hasCurrentImage: input.personImage != nil
+            ))
+        }
+        persons.sort {
+            $0.sortOrder == $1.sortOrder ? $0.id.uuidString < $1.id.uuidString : $0.sortOrder < $1.sortOrder
+        }
+        var garments: [GenerationGarmentSnapshotRecord] = []
+        for input in record.garmentInputs {
+            let resource = try? StorageResourceID(rawValue: input.resourceIDSnapshot)
+            let clothingExists = input.clothingItem != nil
+            let clothingActive = input.clothingItem.map { $0.archivedAt == nil } ?? false
+            garments.append(GenerationGarmentSnapshotRecord(
+                id: input.id,
+                clothingItemID: input.clothingItemID,
+                clothingNameSnapshot: input.clothingNameSnapshot,
+                categoryCodeSnapshot: input.categoryCodeSnapshot,
+                slotCode: input.slotCode,
+                resourceIDSnapshot: resource,
+                sortOrder: input.sortOrder,
+                hasCurrentClothing: clothingExists,
+                currentClothingIsActive: clothingActive,
+                currentClothingName: input.clothingItem?.name,
+                currentCategoryCode: input.clothingItem?.categoryCode
+            ))
+        }
+        garments.sort(by: Self.generationGarmentOrder)
+        return GenerationDetailRecord(
+            id: record.id,
+            sourceGenerationID: record.sourceGenerationID,
+            sourceExists: sourceExists,
+            providerID: record.providerID,
+            providerModelID: record.providerModelID,
+            status: Self.generationStatus(record),
+            prompt: record.prompt,
+            optionsText: GenerationHistoryRedactor.options(record.optionsJSON),
+            providerRequestID: record.providerRequestID,
+            resultResourceID: record.resultResourceID.flatMap { try? StorageResourceID(rawValue: $0) },
+            resultThumbnailResourceID: record.resultThumbnailResourceID.flatMap { try? StorageResourceID(rawValue: $0) },
+            errorCode: record.errorCode,
+            safeErrorMessage: GenerationHistoryRedactor.errorMessage(record.errorMessage),
+            attemptCount: record.attemptCount,
+            startedAt: record.startedAt,
+            completedAt: record.completedAt,
+            createdAt: record.createdAt,
+            persons: persons,
+            garments: garments
+        )
+    }
+
     func transitionGeneration(id: UUID, to status: GenerationStatus, at date: Date = .now) throws {
         guard let record = try generationRecord(id: id) else {
             throw WardrobeRepositoryError.modelNotFound(model: "GenerationRecord", id: id)
@@ -632,6 +715,42 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
             updatedAt: outfit.updatedAt,
             items: items
         )
+    }
+
+    private static func generationHistoryRecord(_ record: GenerationRecord) -> GenerationHistoryRecord {
+        let persons = record.personInputs.sorted {
+            $0.sortOrder == $1.sortOrder ? $0.id.uuidString < $1.id.uuidString : $0.sortOrder < $1.sortOrder
+        }
+        let garments = record.garmentInputs.sorted(by: { left, right in
+            generationGarmentOrder(
+                GenerationGarmentSnapshotRecord(id: left.id, clothingItemID: left.clothingItemID, clothingNameSnapshot: left.clothingNameSnapshot, categoryCodeSnapshot: left.categoryCodeSnapshot, slotCode: left.slotCode, resourceIDSnapshot: nil, sortOrder: left.sortOrder, hasCurrentClothing: false, currentClothingIsActive: false, currentClothingName: nil, currentCategoryCode: nil),
+                GenerationGarmentSnapshotRecord(id: right.id, clothingItemID: right.clothingItemID, clothingNameSnapshot: right.clothingNameSnapshot, categoryCodeSnapshot: right.categoryCodeSnapshot, slotCode: right.slotCode, resourceIDSnapshot: nil, sortOrder: right.sortOrder, hasCurrentClothing: false, currentClothingIsActive: false, currentClothingName: nil, currentCategoryCode: nil)
+            )
+        })
+        return GenerationHistoryRecord(
+            id: record.id,
+            providerID: record.providerID,
+            status: generationStatus(record),
+            thumbnailResourceID: record.resultThumbnailResourceID.flatMap { try? StorageResourceID(rawValue: $0) },
+            personNameSnapshot: persons.first?.personNameSnapshot ?? "未知人物",
+            garmentSummary: garments.map(\.clothingNameSnapshot).joined(separator: "、"),
+            createdAt: record.createdAt,
+            completedAt: record.completedAt
+        )
+    }
+
+    private static func generationStatus(_ record: GenerationRecord) -> GenerationDisplayStatus {
+        if record.statusCode == GenerationStatus.failed.rawValue, record.errorCode == "interrupted" { return .interrupted }
+        if let status = GenerationStatus(rawValue: record.statusCode) { return .known(status) }
+        return .unknown(record.statusCode)
+    }
+
+    private static func generationGarmentOrder(_ left: GenerationGarmentSnapshotRecord, _ right: GenerationGarmentSnapshotRecord) -> Bool {
+        let leftIndex = TryOnSlot.allCases.firstIndex { $0.rawValue == left.slotCode } ?? Int.max
+        let rightIndex = TryOnSlot.allCases.firstIndex { $0.rawValue == right.slotCode } ?? Int.max
+        if leftIndex != rightIndex { return leftIndex < rightIndex }
+        if left.sortOrder != right.sortOrder { return left.sortOrder < right.sortOrder }
+        return left.id.uuidString < right.id.uuidString
     }
 
 }

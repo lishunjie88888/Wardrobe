@@ -72,6 +72,7 @@ final class TryOnViewModel {
     private let requestBuilder: VirtualTryOnRequestBuilder
     private var generationTask: Task<Void, Never>?
     private var generationToken: UUID?
+    private var sourceGenerationID: UUID?
 
     var session = TryOnSession()
     var clothing: [ClothingRecord] = []
@@ -143,6 +144,7 @@ final class TryOnViewModel {
                 currentReferences = nil
             }
             consumePendingOutfitLoad()
+            consumePendingRegenerateRequest()
         } catch {
             message = "无法载入试衣工作区，请稍后重试。"
         }
@@ -243,6 +245,17 @@ final class TryOnViewModel {
         applyOutfitLoad(result)
     }
 
+    private func consumePendingRegenerateRequest() {
+        guard let request = dependencies.workspaceCoordinator?.consumeRegenerateRequest() else { return }
+        sourceGenerationID = request.sourceGenerationID
+        session.selectPerson(profileID: request.personProfileID, referenceImageIDs: request.selectedPersonImageIDs)
+        session.replaceGarments(with: request.garments)
+        refreshReferences(profileID: request.personProfileID, preserveSelection: true)
+        generationState = .idle
+        externalState = .idle
+        message = "已载入历史输入，请检查后重新生成。"
+    }
+
     func generate() {
         guard generationTask == nil else { return }
         let token = UUID()
@@ -267,7 +280,8 @@ final class TryOnViewModel {
                         session: session,
                         person: references,
                         personName: profile.draft.name,
-                        clothing: allActiveClothing
+                        clothing: allActiveClothing,
+                        sourceGenerationID: sourceGenerationID
                     )
                 } else {
                     let request = try await requestBuilder.build(
@@ -296,6 +310,7 @@ final class TryOnViewModel {
                     requestID: result.generationID,
                     resultResourceID: dependencies.generationService == nil ? nil : result.resultResourceID
                 ))
+                sourceGenerationID = nil
             } catch is CancellationError {
                 if generationToken == token { generationState = .cancelled }
             } catch let error as VirtualTryOnError where error == .cancelled {
@@ -317,7 +332,8 @@ final class TryOnViewModel {
                 let result = try await workflow.prepare(
                     session: session,
                     person: references,
-                    clothing: allActiveClothing
+                    clothing: allActiveClothing,
+                    sourceGenerationID: sourceGenerationID
                 )
                 externalState = .ready(result)
             } catch {
@@ -352,6 +368,7 @@ final class TryOnViewModel {
             do {
                 let result = try await importer.importResult(from: sourceURL, package: package)
                 externalState = .imported(package, result)
+                sourceGenerationID = nil
             } catch {
                 externalState = .ready(.init(package: package, promptCopied: false, chatGPTOpened: false, finderOpened: false))
                 message = Self.externalMessage(for: error)

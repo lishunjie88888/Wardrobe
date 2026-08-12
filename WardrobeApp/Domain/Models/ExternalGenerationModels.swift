@@ -38,9 +38,22 @@ struct ExternalGenerationManifest: Codable, Equatable, Sendable {
     let packageID: ExternalGenerationPackageID
     let createdAt: Date
     let personProfileID: UUID
+    let sourceGenerationID: UUID?
     let attachments: [ExternalGenerationAttachment]
     let prompt: String
     let source: ExternalGenerationSource
+
+    init(schemaVersion: Int, workflowVersion: String, packageID: ExternalGenerationPackageID, createdAt: Date, personProfileID: UUID, sourceGenerationID: UUID? = nil, attachments: [ExternalGenerationAttachment], prompt: String, source: ExternalGenerationSource) {
+        self.schemaVersion = schemaVersion
+        self.workflowVersion = workflowVersion
+        self.packageID = packageID
+        self.createdAt = createdAt
+        self.personProfileID = personProfileID
+        self.sourceGenerationID = sourceGenerationID
+        self.attachments = attachments
+        self.prompt = prompt
+        self.source = source
+    }
 }
 
 struct ExternalGenerationPackage: Equatable, Sendable, Identifiable {

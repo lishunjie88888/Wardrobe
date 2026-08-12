@@ -67,6 +67,8 @@ protocol GenerationRepository {
     func generationRecord(id: UUID) throws -> GenerationRecord?
     func allGenerationRecords() throws -> [GenerationRecord]
     func nonterminalGenerationRecords() throws -> [GenerationRecord]
+    func generationHistory(matching query: GenerationHistoryQuery) throws -> [GenerationHistoryRecord]
+    func generationDetail(id: UUID) throws -> GenerationDetailRecord?
     func transitionGeneration(id: UUID, to status: GenerationStatus, at date: Date) throws
     func deleteGeneration(id: UUID) throws
     func save() throws

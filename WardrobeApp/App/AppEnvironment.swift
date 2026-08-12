@@ -18,6 +18,7 @@ struct AppEnvironment {
     let providerRegistry: ProviderRegistry
     let tryOn: TryOnFeatureDependencies
     let outfit: OutfitFeatureDependencies
+    let generationHistory: GenerationHistoryFeatureDependencies
     let tryOnWorkspaceCoordinator: TryOnWorkspaceCoordinator
 
     @MainActor
@@ -114,6 +115,10 @@ struct AppEnvironment {
             imageLoader: clothingStorage
         )
         self.outfit = OutfitFeatureDependencies(service: outfitService, imageLoader: clothingStorage)
+        self.generationHistory = GenerationHistoryFeatureDependencies(
+            service: GenerationHistoryService(repository: repository, references: inspector, storage: clothingStorage, outfitService: outfitService),
+            imageLoader: clothingStorage
+        )
 #if DEBUG
         let tryOnLoader: any TryOnResourceLoading = ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_TRYON"] == "1"
             ? UITestTryOnImageLoader(base: clothingStorage)

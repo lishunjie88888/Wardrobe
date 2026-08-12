@@ -98,6 +98,7 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - 编排跨 Repository、Storage、Image Processing、AI、Keychain 或 Backup 的业务流程。
 - 例如 `ImportClothingService` 负责验证输入、写入资源、生成缩略图、保存元数据和失败补偿。
 - `VirtualTryOnService` 负责校验槽位、创建生成记录、准备 Provider 输入、调用 Provider、保存结果并更新状态。
+- `GenerationHistoryService` 负责生成记录的 snapshot-first 映射、脱敏诊断、重生成/保存穿搭预检和 metadata-first 安全删除；Feature 只获得图片读取、存在性和单资源删除的窄 Storage 能力，不获得路径或目录级破坏 API。
 - 并发敏感服务优先使用 `actor` 或明确隔离；UI 更新回到 `MainActor`。
 
 ### 4.5 Storage

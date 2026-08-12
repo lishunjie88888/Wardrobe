@@ -57,7 +57,7 @@ Stage 8 将默认生成体验调整为 External ChatGPT Generation Workflow。Wa
 - 浏览、搜索、收藏和查看历史保存的穿搭。
 - 从穿搭载入 AI 试衣间；缺失或归档衣物需明确提示，不静默替换。
 
-Stage 11 已实现完全本地的穿搭管理：当前 Try-On 衣物槽位可保存为带名称、备注与收藏状态的 Outfit；列表支持搜索、active/archived/all、仅收藏和稳定排序，详情按五类 Slot 展示当前衣物或 snapshot fallback。载入前会区分可用、已归档、已删除、未知 Slot 与当前分类不兼容项；问题项需确认后仅载入可用衣物，人物选择保持不变。Outfit 永久删除只 cascade OutfitItem，不删除衣橱素材。`WardrobeSchemaV1` 未修改，未实现封面合成、版本历史或 Stage 12 生成历史。
+Stage 11 已实现完全本地的穿搭管理：当前 Try-On 衣物槽位可保存为带名称、备注与收藏状态的 Outfit；列表支持搜索、active/archived/all、仅收藏和稳定排序，详情按五类 Slot 展示当前衣物或 snapshot fallback。载入前会区分可用、已归档、已删除、未知 Slot 与当前分类不兼容项；问题项需确认后仅载入可用衣物，人物选择保持不变。Outfit 永久删除只 cascade OutfitItem，不删除衣橱素材。`WardrobeSchemaV1` 未修改，未实现封面合成或版本历史。
 
 ### 3.5 AI 生成历史
 
@@ -65,6 +65,8 @@ Stage 11 已实现完全本地的穿搭管理：当前 Try-On 衣物槽位可保
 - 保存 Provider 标识、Prompt、参数、结果资源、创建时间、完成时间、失败状态与规范化错误。
 - 支持查看成功、失败、取消中的历史记录，以及由某次记录发起重新生成。
 - 删除源衣物或人物后，历史记录仍保留当时的名称、资源 ID 和请求信息；资源是否保留由明确的删除策略控制。
+
+Stage 12 正式启用生成历史：默认按创建时间倒序并以 UUID 稳定打破同时间顺序，支持成功、失败、取消、进行中与动态 Provider 筛选。列表只读取结果缩略图；详情按需读取结果及人物/衣物 snapshot 图片，并显示 Prompt、脱敏参数、Provider 诊断、失败/中断语义。重新生成先验证当前人物、图片、衣物、Slot 与资源，再通过 app-owned coordinator 把完整历史输入载入试衣间；Mock 与 External ChatGPT 新记录均保留 `sourceGenerationID`，旧记录不可变。成功记录可在全部衣物仍 active 且兼容时复用 OutfitService 保存穿搭。永久删除采用 metadata-first，只清理所有权可证明、无 surviving reference 的结果/缩略图，不删除人物、衣物、源图片或 Outfit。
 
 ### 3.6 设置、备份与恢复
 

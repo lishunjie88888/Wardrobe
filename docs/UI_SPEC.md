@@ -128,6 +128,8 @@ Stage 11 实际界面正式启用 Sidebar“穿搭”，主页面采用原生 to
 - 对失败和取消记录也提供详情；成功记录支持重新生成和保存穿搭。
 - 删除历史需说明是否同时删除生成结果。V1 建议提供“仅移除记录与其专属结果”的明确行为，源衣物和人物资源不受影响。
 
+Stage 12 实际界面采用原生 toolbar + 历史 List + Detail 分栏。Toolbar 提供状态和动态 Provider 筛选；列表只解码 result thumbnail，缺失、损坏及非成功记录使用状态占位。详情按 snapshot-first 展示结果、人物参考、衣物/Slot、Prompt、pretty-printed 且脱敏的参数、Provider/模型/时间/尝试次数与安全错误；未知状态和 Provider 保留 raw code fallback。重新生成和保存穿搭均先做完整可用性预检，不静默替换或丢弃输入；永久删除显示影响摘要，且进行中记录禁用危险操作。新增 `generationHistory.*` 稳定 accessibility identifiers；UI automation 按项目规则不运行，Stage 12 保留人工点击验收。
+
 ## 8. 设置
 
 使用原生 Settings scene 或标准设置窗口，按以下分区：

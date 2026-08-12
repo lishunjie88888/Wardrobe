@@ -160,6 +160,7 @@ generations/89a1.../result.png
 - Stage 4 的 `ResourceReferenceInspector` 在 metadata 删除提交后检查全部 V1 持久模型中的资源字段与 snapshot 字段。只要同一 garment owner 的任一候选资源仍被引用，就保守保留完整 owner 目录；只有 original、processed、thumbnail 均无 surviving reference 时才允许目录级清理。
 - Stage 5 的每张人物照片以 PersonImage UUID 作为独立 owner。删除单张图片或 cascade 删除 PersonProfile 前先收集每张图片的 original、processed、thumbnail；metadata 提交后逐 owner 检查 surviving references。某 owner 任一资源仍被 Generation snapshot 引用时保留该 owner 完整目录，未被引用的其他 PersonImage owner 可独立清理。
 - 删除后的文件 cleanup 不参与 SwiftData 回滚：cleanup failure 作为独立结果报告，避免把已经 nullify 且保存的历史关系恢复成更危险的跨存储不一致状态。
+- Stage 12 删除 Generation 时先读取并校验 result/thumbnail 的 typed `StorageResourceID` owner，必须为 `generation/<同一 Generation UUID>` 才成为候选；person/garment snapshot 永不进入清理候选。GenerationRecord 与 cascade inputs 成功提交删除后，再用全局引用检查 surviving metadata，并逐个删除无引用结果文件。所有权无法证明、仍被引用或 cleanup 失败时保留文件；cleanup failure 不恢复已删除 metadata。
 
 ### 6.2 孤儿扫描
 

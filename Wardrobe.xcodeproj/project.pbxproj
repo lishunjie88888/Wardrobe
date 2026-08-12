@@ -59,6 +59,11 @@
 		A00000000000000000000035 /* OutfitViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000035 /* OutfitViewModel.swift */; };
 		A00000000000000000000036 /* OutfitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000036 /* OutfitView.swift */; };
 		A00000000000000000000037 /* Stage11OutfitManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000037 /* Stage11OutfitManagementTests.swift */; };
+		A00000000000000000000038 /* GenerationHistoryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000038 /* GenerationHistoryModels.swift */; };
+		A00000000000000000000039 /* GenerationHistoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000039 /* GenerationHistoryService.swift */; };
+		A0000000000000000000003A /* GenerationHistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000003A /* GenerationHistoryViewModel.swift */; };
+		A0000000000000000000003B /* GenerationHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000003B /* GenerationHistoryView.swift */; };
+		A0000000000000000000003C /* Stage12GenerationHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000003C /* Stage12GenerationHistoryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -134,6 +139,11 @@
 		B00000000000000000000035 /* OutfitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitViewModel.swift; sourceTree = "<group>"; };
 		B00000000000000000000036 /* OutfitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitView.swift; sourceTree = "<group>"; };
 		B00000000000000000000037 /* Stage11OutfitManagementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage11OutfitManagementTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000038 /* GenerationHistoryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerationHistoryModels.swift; sourceTree = "<group>"; };
+		B00000000000000000000039 /* GenerationHistoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerationHistoryService.swift; sourceTree = "<group>"; };
+		B0000000000000000000003A /* GenerationHistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerationHistoryViewModel.swift; sourceTree = "<group>"; };
+		B0000000000000000000003B /* GenerationHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerationHistoryView.swift; sourceTree = "<group>"; };
+		B0000000000000000000003C /* Stage12GenerationHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage12GenerationHistoryTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -240,6 +250,7 @@
 				B0000000000000000000002F /* Stage8ExternalGenerationTests.swift */,
 				B00000000000000000000031 /* Stage10VirtualTryOnServiceTests.swift */,
 				B00000000000000000000037 /* Stage11OutfitManagementTests.swift */,
+				B0000000000000000000003C /* Stage12GenerationHistoryTests.swift */,
 			);
 			path = WardrobeTests;
 			sourceTree = "<group>";
@@ -280,12 +291,12 @@
 		G0000000000000000000000F /* Person */ = {isa = PBXGroup; children = (B00000000000000000000020 /* PersonViewModel.swift */, B00000000000000000000021 /* PersonView.swift */,); path = Person; sourceTree = "<group>"; };
 		G00000000000000000000010 /* TryOn */ = {isa = PBXGroup; children = (B00000000000000000000029 /* TryOnViewModel.swift */, B0000000000000000000002A /* TryOnView.swift */,); path = TryOn; sourceTree = "<group>"; };
 		G00000000000000000000011 /* Outfit */ = {isa = PBXGroup; children = (B00000000000000000000035 /* OutfitViewModel.swift */, B00000000000000000000036 /* OutfitView.swift */,); path = Outfit; sourceTree = "<group>"; };
-		G00000000000000000000012 /* GenerationHistory */ = {isa = PBXGroup; children = (); path = GenerationHistory; sourceTree = "<group>"; };
+		G00000000000000000000012 /* GenerationHistory */ = {isa = PBXGroup; children = (B0000000000000000000003A /* GenerationHistoryViewModel.swift */, B0000000000000000000003B /* GenerationHistoryView.swift */,); path = GenerationHistory; sourceTree = "<group>"; };
 		G00000000000000000000013 /* Settings */ = {isa = PBXGroup; children = (); path = Settings; sourceTree = "<group>"; };
 		G00000000000000000000014 /* WardrobeUITests */ = {isa = PBXGroup; children = (B0000000000000000000000A /* WardrobeLaunchUITests.swift */,); path = WardrobeUITests; sourceTree = "<group>"; };
-		G00000000000000000000015 /* Models */ = {isa = PBXGroup; children = (B0000000000000000000000B /* DomainCodes.swift */, B0000000000000000000000C /* WardrobeSchemaV1.swift */, B00000000000000000000019 /* ClothingFeatureModels.swift */, B0000000000000000000001E /* PersonFeatureModels.swift */, B00000000000000000000028 /* TryOnFeatureModels.swift */, B0000000000000000000002C /* ExternalGenerationModels.swift */, B00000000000000000000032 /* OutfitFeatureModels.swift */,); path = Models; sourceTree = "<group>"; };
+		G00000000000000000000015 /* Models */ = {isa = PBXGroup; children = (B0000000000000000000000B /* DomainCodes.swift */, B0000000000000000000000C /* WardrobeSchemaV1.swift */, B00000000000000000000019 /* ClothingFeatureModels.swift */, B0000000000000000000001E /* PersonFeatureModels.swift */, B00000000000000000000028 /* TryOnFeatureModels.swift */, B0000000000000000000002C /* ExternalGenerationModels.swift */, B00000000000000000000032 /* OutfitFeatureModels.swift */, B00000000000000000000038 /* GenerationHistoryModels.swift */,); path = Models; sourceTree = "<group>"; };
 		G00000000000000000000016 /* Repositories */ = {isa = PBXGroup; children = (B0000000000000000000000D /* WardrobeRepositories.swift */,); path = Repositories; sourceTree = "<group>"; };
-		G00000000000000000000017 /* Services */ = {isa = PBXGroup; children = (B0000000000000000000000E /* WardrobeDataRules.swift */, B0000000000000000000001A /* ClothingServices.swift */, B0000000000000000000001F /* PersonServices.swift */, B0000000000000000000002D /* ExternalGenerationServices.swift */, B00000000000000000000030 /* VirtualTryOnService.swift */, B00000000000000000000033 /* OutfitServices.swift */,); path = Services; sourceTree = "<group>"; };
+		G00000000000000000000017 /* Services */ = {isa = PBXGroup; children = (B0000000000000000000000E /* WardrobeDataRules.swift */, B0000000000000000000001A /* ClothingServices.swift */, B0000000000000000000001F /* PersonServices.swift */, B0000000000000000000002D /* ExternalGenerationServices.swift */, B00000000000000000000030 /* VirtualTryOnService.swift */, B00000000000000000000033 /* OutfitServices.swift */, B00000000000000000000039 /* GenerationHistoryService.swift */,); path = Services; sourceTree = "<group>"; };
 		G00000000000000000000018 /* Database */ = {isa = PBXGroup; children = (B0000000000000000000000F /* WardrobePersistence.swift */,); path = Database; sourceTree = "<group>"; };
 		G00000000000000000000019 /* Storage */ = {isa = PBXGroup; children = (B00000000000000000000011 /* StorageResourceID.swift */, B00000000000000000000012 /* StorageService.swift */, B00000000000000000000015 /* StorageCompensationTransaction.swift */, B0000000000000000000002E /* ExternalGenerationWorkspace.swift */,); path = Storage; sourceTree = "<group>"; };
 		G0000000000000000000001A /* ImageProcessing */ = {isa = PBXGroup; children = (B00000000000000000000013 /* ImageThumbnailGenerator.swift */, B00000000000000000000016 /* ImageProcessingModels.swift */, B00000000000000000000017 /* ImageProcessingService.swift */,); path = ImageProcessing; sourceTree = "<group>"; };
@@ -431,6 +442,10 @@
 				A00000000000000000000034 /* TryOnWorkspaceCoordinator.swift in Sources */,
 				A00000000000000000000035 /* OutfitViewModel.swift in Sources */,
 				A00000000000000000000036 /* OutfitView.swift in Sources */,
+				A00000000000000000000038 /* GenerationHistoryModels.swift in Sources */,
+				A00000000000000000000039 /* GenerationHistoryService.swift in Sources */,
+				A0000000000000000000003A /* GenerationHistoryViewModel.swift in Sources */,
+				A0000000000000000000003B /* GenerationHistoryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -449,6 +464,7 @@
 				A0000000000000000000002C /* Stage8ExternalGenerationTests.swift in Sources */,
 				A0000000000000000000002E /* Stage10VirtualTryOnServiceTests.swift in Sources */,
 				A00000000000000000000037 /* Stage11OutfitManagementTests.swift in Sources */,
+				A0000000000000000000003C /* Stage12GenerationHistoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

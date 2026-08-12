@@ -894,7 +894,7 @@
 ### Completion Checklist
 
 - [x] 状态机、竞态和补偿测试通过。
-- [ ] 人工验收取消、失败、重新生成和结果持久化后再实现历史 UI。
+- [x] 人工验收取消、失败/重试、重新生成和结果持久化已由用户确认通过（2026-08-12），可以实现历史 UI。
 
 ---
 
@@ -950,7 +950,7 @@
 
 ### Completion Checklist
 
-- [ ] Outfit 关系/删除自动测试通过；人工 UI 流程待用户验收。
+- [x] Outfit 关系/删除自动测试通过；保存、重载、归档/缺失衣物和删除安全的人工 UI 流程已由用户确认通过（2026-08-12）。
 - [x] 没有提前实现 Future 穿着统计或分享能力。
 
 ### Execution Record（2026-08-12）
@@ -963,7 +963,7 @@
 - Focused Unit：`xcodebuild ... -only-testing:WardrobeTests/Stage11OutfitManagementTests test` → `TEST SUCCEEDED`，11 tests passed。
 - Full Unit：`xcodebuild ... -only-testing:WardrobeTests test` → `TEST SUCCEEDED`，135 passed、1 HEIF runtime conditional skipped。首轮发现 Stage 10 Provider cancellation 被包装为 service error；统一保持 `.cancelled` 后单独复现与全量复跑通过。
 - Debug build：`xcodebuild ... build` → `BUILD SUCCEEDED`。
-- UI automation：按项目长期规则未运行；Manual UI Acceptance pending。
+- UI automation：按项目长期规则未运行；Manual UI Acceptance 于 2026-08-12 由用户完成并确认通过。
 - Data/Privacy：`WardrobeSchemaV1 unchanged`；测试使用 in-memory SwiftData 或独立 `/tmp` 目录，没有访问正式 Application Support；未新增网络、API、Key、Token 或绝对持久路径。Stage 12 未执行。
 
 ---
@@ -976,55 +976,66 @@
 
 ### Scope
 
-- [ ] Generation History 列表、筛选和详情。
-- [ ] 展示结果、输入人物、所用衣物/槽位、Provider、时间、状态、Prompt/参数和脱敏错误。
-- [ ] 从历史重新生成、保存穿搭和删除记录/专属结果。
+- [x] Generation History 列表、筛选和详情。
+- [x] 展示结果、输入人物、所用衣物/槽位、Provider、时间、状态、Prompt/参数和脱敏错误。
+- [x] 从历史重新生成、保存穿搭和删除记录/专属结果。
 
 ### Out of Scope
 
-- [ ] 不实现云同步、成本统计或批量任务队列。
-- [ ] 不显示 API Key、Authorization 信息或原始供应商敏感响应。
+- [x] 不实现云同步、成本统计或批量任务队列。
+- [x] 不显示 API Key、Authorization 信息或原始供应商敏感响应。
 
 ### Dependencies
 
-- [ ] Stage 5 与 Stage 10 已通过。
-- [ ] Stage 11 已通过时启用“保存为穿搭”；否则该动作保持不可用且不加临时实现。
+- [x] Stage 5 与 Stage 10 已通过。
+- [x] Stage 11 已通过时启用“保存为穿搭”；否则该动作保持不可用且不加临时实现。
 
 ### Implementation Tasks
 
-- [ ] 实现 Generation Repository 的倒序、状态和 Provider 筛选查询。
-- [ ] 实现列表缩略图/状态占位和完整详情。
-- [ ] 使用快照字段展示已删除源人物/衣物，不依赖当前关系存在。
-- [ ] 实现 Regenerate 载入和新记录创建入口。
-- [ ] 实现成功记录保存为 Outfit 的映射。
-- [ ] 实现删除影响摘要：删除 GenerationRecord、输入子项和专属结果，不影响源素材。
-- [ ] 删除共享引用资源前进行全局 resource ID 引用检查。
+- [x] 实现 Generation Repository 的倒序、状态和 Provider 筛选查询。
+- [x] 实现列表缩略图/状态占位和完整详情。
+- [x] 使用快照字段展示已删除源人物/衣物，不依赖当前关系存在。
+- [x] 实现 Regenerate 载入和新记录创建入口。
+- [x] 实现成功记录保存为 Outfit 的映射。
+- [x] 实现删除影响摘要：删除 GenerationRecord、输入子项和专属结果，不影响源素材。
+- [x] 删除共享引用资源前进行全局 resource ID 引用检查。
 
 ### Tests
 
-- [ ] 测试成功、失败、取消和中断记录查询与展示映射。
-- [ ] 测试源对象删除后历史快照仍可读。
-- [ ] 测试 Regenerate 链和保存 Outfit。
-- [ ] 测试删除历史仅删除专属且无其他引用的资源。
-- [ ] UI 测试筛选、详情、重新生成和危险删除确认。
-- [ ] 运行 build 和全部现有 tests。
+- [x] 测试成功、失败、取消和中断记录查询与展示映射。
+- [x] 测试源对象删除后历史快照仍可读。
+- [x] 测试 Regenerate 链和保存 Outfit。
+- [x] 测试删除历史仅删除专属且无其他引用的资源。
+- [ ] UI automation 按项目长期规则跳过；筛选、详情、重新生成和危险删除确认保留人工 UI Acceptance。
+- [x] 运行 build 和全部现有 tests。
 
 ### Acceptance Criteria
 
-- [ ] 所有终态记录均可查看并解释。
-- [ ] 源素材删除不破坏历史事实。
-- [ ] 重新生成不覆盖旧结果。
-- [ ] 删除历史不会误删衣物、人物或共享资源。
+- [x] 所有终态记录均可查看并解释。
+- [x] 源素材删除不破坏历史事实。
+- [x] 重新生成不覆盖旧结果。
+- [x] 删除历史不会误删衣物、人物或共享资源。
 
 ### Documentation Updates
 
-- [ ] 删除语义和历史展示差异同步到 `PRODUCT_SPEC.md`、`STORAGE_SPEC.md` 和 `UI_SPEC.md`。
-- [ ] 在本 Stage 下记录资源引用测试结果。
+- [x] 删除语义和历史展示差异同步到 `PRODUCT_SPEC.md`、`STORAGE_SPEC.md` 和 `UI_SPEC.md`。
+- [x] 在本 Stage 下记录资源引用测试结果。
 
 ### Completion Checklist
 
-- [ ] 历史快照、重新生成和删除 tests 通过。
+- [x] 历史快照、重新生成和删除 tests 通过。
 - [ ] 人工确认删除影响摘要与失败详情脱敏后继续。
+
+### Execution Record（2026-08-12）
+
+- Planning：以实际 clean `main` 基线 `79f4b37` 开始；Stage 10 Mock success/cancel/failure-retry/regenerate/persisted result 与 Stage 11 save/reload/archive/missing/delete safety 的人工 UI Acceptance 已由用户明确确认。Scope 与清单一致，未执行 Stage 13。
+- Core：新增 Generation History query/detail/snapshot/preflight/delete domain records 与 `GenerationHistoryService`；Repository 按 `createdAt DESC + UUID ASC` 稳定查询并保留未知 status/provider。详情 snapshot-first，合法 JSON pretty-print，invalid JSON 安全 fallback，明显敏感 key/Bearer/绝对路径脱敏。
+- UI：Sidebar“生成历史”正式启用原生 toolbar + List + Detail；状态与动态 Provider 筛选、两类 empty state、thumbnail-only 列表、按需详情图片、结果/人物/衣物 Slot/Prompt/options/diagnostics、失败/取消/中断/未知占位和稳定 accessibility identifiers 已实现。
+- Regenerate/Outfit：完整 preflight 阻止缺失、归档、无资源、无效或不兼容输入；通过 app-owned `TryOnWorkspaceCoordinator` 恢复人物、参考照、严格 Slot/Accessories 顺序和 sourceGenerationID。Mock 复用 `VirtualTryOnService`；External manifest 增加 optional sourceGenerationID 并保持旧 package decode 兼容。成功记录复用 `OutfitService`，不可用衣物阻止完整保存。
+- Delete：先收集 typed generation-owned result/thumbnail 候选，再提交 GenerationRecord/cascade inputs 删除，随后全局引用检查并逐文件清理；人物/衣物 snapshot 不进入候选，ownership mismatch/shared reference 保留，cleanup failure 仅返回 nonfatal notice，不恢复 metadata。
+- Focused Unit：`xcodebuild ... -only-testing:WardrobeTests/Stage12GenerationHistoryTests test` → `TEST SUCCEEDED`；11/11 passed。
+- Full Unit：`xcodebuild ... -only-testing:WardrobeTests test` → `TEST SUCCEEDED`；1 个既有 HEIF runtime conditional skip、0 failed。Debug build → `BUILD SUCCEEDED`；`git diff --check` 通过。UI automation 按项目长期规则跳过；Manual UI Acceptance pending。
+- Data/Privacy：`WardrobeSchemaV1 unchanged`；没有创建 Schema V2。测试仅使用 in-memory SwiftData、临时 Storage 和 injected actor；未访问正式 Application Support。未新增网络、API、Key/Token/Cookie、Provider raw response、Accessibility automation 或绝对持久路径；Feature 不接触 ModelContext、Provider SDK、绝对路径或目录级 destructive Storage。
 
 ---
 

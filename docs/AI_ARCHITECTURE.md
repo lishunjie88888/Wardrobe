@@ -152,6 +152,8 @@ queued → preparing → running → succeeded
 
 Stage 10 实际实现采用 `VirtualTryOnService` 单次任务编排。它先保存 queued 记录和人物/衣物 resource ID 快照，再构造短生命周期 Provider 图片；Provider 调用开始前进入 running 并递增/保存 attemptCount。当前受限 retry 只对 `transientFailure` 生效、最多两次，其他 Provider 错误、输入错误和取消不重试。
 
+Stage 12 的历史重新生成不复制该编排：`GenerationHistoryService` 只验证完整历史输入，随后由 app-owned `TryOnWorkspaceCoordinator` 把 `GenerationRegenerateRequest` 交给 Try-On。用户检查后，Mock 仍调用 `VirtualTryOnService.generate(... sourceGenerationID:)`；External ChatGPT package manifest 新增 optional `sourceGenerationID`，旧 Stage 8 manifest 缺少该字段仍可解码，导入的新 GenerationRecord 保存来源 ID。两条路线都创建新记录且不覆盖来源记录。
+
 成功结果通过窄的 generation result Storage 接口执行 staging、图片解码校验、thumbnail 与原子发布；数据库终态提交失败时删除本次 generation owner。取消和失败写入脱敏 `errorCode/errorMessage`，不保存迟到结果。Regenerate 创建新记录并写 `sourceGenerationID`。启动时 `InterruptedGenerationRecoveryService` 将所有遗留非终态记录转为 `failed`、错误 code 为 `interrupted`。此链当前只由 Debug Mock 驱动，不改变 External ChatGPT 主流程，也不要求 Stage 9 API Provider。
 
 ## 9. Error、Retry 与 Cancel

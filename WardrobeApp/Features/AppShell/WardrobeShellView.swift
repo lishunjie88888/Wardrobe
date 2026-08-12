@@ -82,6 +82,11 @@ struct WardrobeShellView: View {
                 } goToTryOn: {
                     selection = .tryOn
                 }
+            case .generationHistory:
+                GenerationHistoryView(dependencies: environment.generationHistory) { request in
+                    environment.tryOnWorkspaceCoordinator.requestRegenerate(request)
+                    selection = .tryOn
+                }
             case let route:
                 PlaceholderFeatureView(route: route)
             }

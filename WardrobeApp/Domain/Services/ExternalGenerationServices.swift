@@ -75,7 +75,8 @@ struct ExternalGenerationPackageBuilder: Sendable {
     func build(
         session: TryOnSession,
         person: PersonReferenceSet,
-        clothing: [ClothingRecord]
+        clothing: [ClothingRecord],
+        sourceGenerationID: UUID? = nil
     ) async throws -> ExternalGenerationPackage {
         guard let profileID = session.personProfileID, profileID == person.profileID else { throw ExternalGenerationError.noPerson }
         guard !session.selectedPersonImageIDs.isEmpty else { throw ExternalGenerationError.personHasNoReference }
@@ -138,6 +139,7 @@ struct ExternalGenerationPackageBuilder: Sendable {
             packageID: packageID,
             createdAt: now(),
             personProfileID: profileID,
+            sourceGenerationID: sourceGenerationID,
             attachments: attachments,
             prompt: prompt,
             source: .chatGPTManual
@@ -209,8 +211,8 @@ final class ExternalGenerationWorkflow {
         self.workspace = workspace
     }
 
-    func prepare(session: TryOnSession, person: PersonReferenceSet, clothing: [ClothingRecord]) async throws -> PreparationResult {
-        let package = try await builder.build(session: session, person: person, clothing: clothing)
+    func prepare(session: TryOnSession, person: PersonReferenceSet, clothing: [ClothingRecord], sourceGenerationID: UUID? = nil) async throws -> PreparationResult {
+        let package = try await builder.build(session: session, person: person, clothing: clothing, sourceGenerationID: sourceGenerationID)
         return PreparationResult(
             package: package,
             promptCopied: clipboard.copy(package.manifest.prompt),
@@ -248,6 +250,7 @@ final class ExternalGenerationResultImporter {
         do {
             let record = GenerationRecord(
                 id: generationID,
+                sourceGenerationID: package.manifest.sourceGenerationID,
                 providerID: "external-chatgpt-manual",
                 statusCode: GenerationStatus.succeeded.rawValue,
                 prompt: package.manifest.prompt,
