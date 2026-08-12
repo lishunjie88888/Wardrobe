@@ -87,7 +87,7 @@ struct WardrobeShellView: View {
             }
         }
         .navigationSplitViewStyle(.balanced)
-        .frame(minWidth: 1_100, minHeight: 680)
+        .frame(minWidth: 880, minHeight: 680)
     }
 }
 

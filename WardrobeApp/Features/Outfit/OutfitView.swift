@@ -24,11 +24,11 @@ struct OutfitView: View {
             } else {
                 HSplitView {
                     outfitGrid
-                        .frame(minWidth: 430, maxWidth: .infinity)
+                        .frame(minWidth: 320, maxWidth: .infinity)
                         .layoutPriority(1)
                     if let outfit = model.selectedOutfit {
                         detail(outfit)
-                            .frame(width: 390)
+                            .frame(width: 350)
                     }
                 }
             }
@@ -66,24 +66,34 @@ struct OutfitView: View {
         HStack(spacing: 12) {
             TextField("搜索名称或备注", text: $model.query.searchText)
                 .textFieldStyle(.roundedBorder)
-                .frame(minWidth: 160, idealWidth: 260, maxWidth: 300)
+                .frame(minWidth: 120, idealWidth: 240, maxWidth: 300)
                 .layoutPriority(1)
                 .accessibilityIdentifier("outfit.search").onSubmit { model.load() }
-            Toggle("仅收藏", isOn: $model.query.favoritesOnly).toggleStyle(.button)
-            Picker("范围", selection: $model.query.archive) {
-                Text("未归档").tag(OutfitArchiveFilter.active)
-                Text("已归档").tag(OutfitArchiveFilter.archived)
-                Text("全部").tag(OutfitArchiveFilter.all)
-            }.frame(width: 120)
+            Menu {
+                Toggle("仅收藏", isOn: $model.query.favoritesOnly)
+                Picker("范围", selection: $model.query.archive) {
+                    Text("未归档").tag(OutfitArchiveFilter.active)
+                    Text("已归档").tag(OutfitArchiveFilter.archived)
+                    Text("全部").tag(OutfitArchiveFilter.all)
+                }
+                Divider()
+                Button("清除筛选") { model.clearFilters() }
+            } label: {
+                Label("筛选", systemImage: "line.3.horizontal.decrease.circle")
+            }
+            .fixedSize()
             Picker("排序", selection: $model.query.sort) {
                 Text("最近修改").tag(OutfitSort.recentlyUpdated)
                 Text("最新创建").tag(OutfitSort.newest)
                 Text("名称").tag(OutfitSort.name)
                 Text("收藏优先").tag(OutfitSort.favoritesFirst)
-            }.frame(width: 135)
+            }
+            .labelsHidden()
+            .frame(width: 125)
             Button("应用") { model.load() }
+                .fixedSize()
             Spacer(minLength: 8)
-            Button { goToTryOn() } label: { Label("前往 AI 试衣间", systemImage: "sparkles.rectangle.stack") }
+            Button { goToTryOn() } label: { Label("AI 试衣间", systemImage: "sparkles.rectangle.stack") }
                 .fixedSize()
         }.padding(14)
     }
