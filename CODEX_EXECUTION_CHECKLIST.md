@@ -1552,6 +1552,14 @@
 - 文档：新增根 `README.md`（是什么/系统要求/安装运行/资料库位置/基本流程/ChatGPT 流程/备份恢复/存储维护/隐私/故障恢复/开发测试）、`docs/RELEASE_NOTES.md`（V1.0.0）、`docs/KNOWN_ISSUES.md`。
 - Git：建议 commit message `chore: prepare Wardrobe 1.0.0 release`；不创建 tag（人工 Release Gate 通过前不提前 tag）。
 
+### Finalization Pass（2026-08-12，HEAD `9868887`）
+
+- App Icon：复查仓库与桌面/下载等常见位置，无最终确认图标文件；**Final App Icon manual asset pending**（不伪造完成）。需要用户提供：一张最终确认的方形图标（建议 1024×1024 PNG，macOS Big Sur 风格，含安全边距），放入仓库（如 `WardrobeApp/Resources/AppIcon.png`）或给出文件路径；随后可生成完整 AppIcon asset（16/32/64/128/256/512/1024 各 @1x/@2x）并接入 target。
+- Full Unit Suite：按用户指示跳过（本次运行在构建阶段即被中断，0 项执行）；最近完整证据仍为 Stage 17：192 passed / 0 failed / 1 skipped。**Release 配置完整测试通过未勾选**，待用户决定是否重跑。
+- Security-scoped 回归测试：确认 `SettingsViewModel` 无直接测试覆盖（真实小缺口）；按用户指示不运行测试，未补 focused 测试。缺口已记录：`createBackup` / `validateSelectedPackage` / `confirmRestore` 的 security-scoped 包装路径待回归测试（可后续在 `Stage14BackupRestoreTests` 内补，无需改 pbxproj）。
+- 重新验证（本次执行）：Release build `BUILD SUCCEEDED`；Archive `ARCHIVE SUCCEEDED`（`/tmp/WardrobeStage18-Final-Archive/Wardrobe.xcarchive`，1.0.0 (1)）；`build-for-testing`（含 WardrobeUITests）`TEST BUILD SUCCEEDED`；`codesign --verify --deep --strict` 通过；archive entitlements 仅 app-sandbox + user-selected.read-write（无 get-task-allow）；`git diff --check` 通过。
+- 未修改：`WardrobeSchemaV1`、Migration、Backup 格式、Repository 公开协议、稳定业务逻辑。全部日志在 `/tmp/wardrobe-stage18-final-*.log`。
+
 ### Final Manual Release Gate（待用户执行）
 
 自动验证完成后不自动关闭 Stage 18。请用户验收以下 14 项：
