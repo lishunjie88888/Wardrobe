@@ -81,6 +81,7 @@
 		A0000000000000000000004A /* Stage14BackupRestoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000004A /* Stage14BackupRestoreTests.swift */; };
 		A0000000000000000000004C /* Stage16PerformanceReliabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000004C /* Stage16PerformanceReliabilityTests.swift */; };
 		A0000000000000000000004D /* Stage17CompleteValidationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000004D /* Stage17CompleteValidationTests.swift */; };
+		A0000000000000000000004E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000004F /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -179,6 +180,8 @@
 		B0000000000000000000004C /* Stage16PerformanceReliabilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage16PerformanceReliabilityTests.swift; sourceTree = "<group>"; };
 		B0000000000000000000004D /* Stage17CompleteValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage17CompleteValidationTests.swift; sourceTree = "<group>"; };
 		B0000000000000000000004E /* WardrobeApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WardrobeApp.entitlements; sourceTree = "<group>"; };
+		B0000000000000000000004F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B00000000000000000000050 /* AppIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIcon.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -328,7 +331,7 @@
 			sourceTree = "<group>";
 		};
 		G0000000000000000000000C /* AI */ = {isa = PBXGroup; children = (B00000000000000000000023 /* VirtualTryOnModels.swift */, B00000000000000000000024 /* VirtualTryOnProvider.swift */, B00000000000000000000025 /* ProviderRegistry.swift */, B00000000000000000000026 /* MockVirtualTryOnProvider.swift */,); path = AI; sourceTree = "<group>"; };
-		G0000000000000000000000D /* Resources */ = {isa = PBXGroup; children = (); path = Resources; sourceTree = "<group>"; };
+		G0000000000000000000000D /* Resources */ = {isa = PBXGroup; children = (B00000000000000000000050 /* AppIcon.png */, B0000000000000000000004F /* Assets.xcassets */,); path = Resources; sourceTree = "<group>"; };
 		G0000000000000000000000E /* Wardrobe */ = {isa = PBXGroup; children = (B0000000000000000000001B /* WardrobeViewModel.swift */, B0000000000000000000001C /* WardrobeView.swift */,); path = Wardrobe; sourceTree = "<group>"; };
 		G0000000000000000000000F /* Person */ = {isa = PBXGroup; children = (B00000000000000000000020 /* PersonViewModel.swift */, B00000000000000000000021 /* PersonView.swift */,); path = Person; sourceTree = "<group>"; };
 		G00000000000000000000010 /* TryOn */ = {isa = PBXGroup; children = (B00000000000000000000029 /* TryOnViewModel.swift */, B0000000000000000000002A /* TryOnView.swift */,); path = TryOn; sourceTree = "<group>"; };
@@ -435,7 +438,7 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		J00000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		J00000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A0000000000000000000004E /* Assets.xcassets in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
 		J00000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A0000000000000000000003F /* fixture.json in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
 		J00000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
@@ -652,6 +655,7 @@
 				CODE_SIGN_ENTITLEMENTS = WardrobeApp/WardrobeApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
@@ -674,6 +678,7 @@
 				CODE_SIGN_ENTITLEMENTS = WardrobeApp/WardrobeApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;

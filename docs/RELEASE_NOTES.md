@@ -45,4 +45,4 @@
 ### 签名与分发
 
 - 本机构建：ad-hoc 签名（`Sign to Run Locally`），未 Developer ID 签名、未 notarize；仅限本机/个人自用分发。
-- App Icon 使用系统占位图标，正式图标资源待人工提供（见 `KNOWN_ISSUES.md`）。
+- App Icon 使用正式 Wardrobe 图标（`WardrobeApp/Resources/AppIcon.png` 源图 + `Assets.xcassets/AppIcon.appiconset` 全尺寸 asset，16–1024 各 @1x/@2x，经 actool 生成 `AppIcon.icns` 并接入 app target）。

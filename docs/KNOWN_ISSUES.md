@@ -18,7 +18,6 @@
 
 ## 发布状态
 
-- **App Icon 待人工提供**：当前使用系统占位图标；正式 Wardrobe App Icon 资源尚未交付，Release Gate 不视为完成。
 - **本地自用签名**：当前产物为 ad-hoc 签名（`Sign to Run Locally`），未 Developer ID 签名、未 notarize；请勿对外分发。需要公开分发时需另行完成 Developer ID + notarization。
 - **Sandbox 迁移**：V1 启用 App Sandbox 后资料库位于容器路径（`~/Library/Containers/com.lishunjie.Wardrobe/...`）；0.1.0 开发期在容器外 `Application Support` 留下的数据不会被自动迁移，需通过备份/恢复手工迁移（V1 首发无正式生产数据）。
 - **Debug 环境变量**：`WARDROBE_STORAGE_ROOT_OVERRIDE`、`WARDROBE_DEBUG_MOCK_GENERATION`、`WARDROBE_UI_TEST_*` 仅 Debug 构建生效，Release 构建不响应。

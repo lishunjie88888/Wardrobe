@@ -1477,10 +1477,10 @@
 
 ### Scope
 
-- [x] Release Build、签名/权限、App metadata、App Icon 状态明确（正式图标资源缺失，已如实记录为 pending）。
+- [x] Release Build、签名/权限、App metadata、App Icon 状态明确（正式图标资源已由用户提供并接入，见 Finalization Pass II）。
 - [x] 日志、Debug code、API Key、数据目录和备份恢复最终检查。
 - [x] README、架构文档、Known Issues、版本与升级说明。
-- [ ] Release 候选人工验收和可回滚发布资料（Final Manual Release Gate pending，见 Completion Checklist）。
+- [x] Release 候选人工验收和可回滚发布资料（2026-08-12 用户确认 Final Manual Release Gate 14 项全部通过，见下方结果与 Go/No-Go）。
 
 ### Out of Scope
 
@@ -1495,7 +1495,7 @@
 ### Implementation Tasks
 
 - [x] 设置版本号、build number、最低 macOS 版本、bundle metadata 和权限说明：`MARKETING_VERSION 1.0.0`（原 `0.1.0` 为 `4f7717b` 脚手架默认值，仓库无其他明确版本策略，按首个 V1 采用 `1.0.0`）、`CURRENT_PROJECT_VERSION 1`、最低 macOS 15.0、Bundle ID `com.lishunjie.Wardrobe`（未改动）、显示名 Wardrobe、App Category lifestyle。
-- [x] 生成/检查 App Icon、应用名称、菜单、About 信息和隐私描述：无 Asset Catalog/AppIcon，当前为系统占位图标；**Final App Icon manual asset pending**（不联网找图、不擅自生成设计）；菜单/About 由系统默认提供（显示 1.0.0 (1)）。
+- [x] 生成/检查 App Icon、应用名称、菜单、About 信息和隐私描述：App Icon 已由用户提供最终方形 PNG（1254×1254）并接入 `Assets.xcassets/AppIcon.appiconset`（16/32/64/128/256/512/1024 全尺寸），Release 产物经 actool 生成 `AppIcon.icns`（见 Finalization Pass II）；菜单/About 由系统默认提供（显示 1.0.0 (1)）。
 - [x] 运行 Release archive/build，检查签名、sandbox entitlement 和网络/文件权限最小化：Release `BUILD SUCCEEDED`、`ARCHIVE SUCCEEDED`；新增 `WardrobeApp/WardrobeApp.entitlements` 仅含 App Sandbox + user-selected read-write，无网络/无 automation/无 Accessibility/无 Keychain 扩展；archive 产物 entitlements 确认无 `get-task-allow`。
 - [x] 搜索并清理临时 debug UI、测试入口、示例密钥、敏感日志和无用 feature flag：`WARDROBE_DEBUG_MOCK_GENERATION`、`WARDROBE_UI_TEST_*`、`WARDROBE_STORAGE_ROOT_OVERRIDE` 全部仅在 `#if DEBUG` 生效；Release UI 只暴露 External ChatGPT 流程，无 Mock 按钮/Debug 菜单/测试资料库入口；Mock infrastructure 与测试保留未删。
 - [x] 检查 Application Support、Keychain、Cache、staging 和 backup 路径：无 Keychain 使用；cache 可清理；staging 启动恢复；backup 排除 cache/staging/external-generations/credentials；restore 为 pre-open apply；无 release-time destructive shortcut；Sandbox 生效后资料库位于容器路径（已写入 README/Known Issues）。
@@ -1507,17 +1507,17 @@
 ### Tests
 
 - [x] Release Build/Archive 成功（见 Execution Record）。
-- [ ] Release 配置完整测试通过（Stage 18 自动工作期间按用户指示跳过完整测试重跑；Stage 17 Full Unit Suite 192 passed / 0 failed / 1 skipped 为最近一次完整证据；Stage 18 改动经 Release build + build-for-testing 编译验证，运行时测试留给 Manual Gate 前由用户决定是否重跑）。
+- [x] Release 配置完整测试通过（用户 2026-08-12 确认人工验收通过并决定不重跑完整套件；最近完整证据仍为 Stage 17：192 passed / 0 failed / 1 skipped；Stage 18 改动经 Release build + build-for-testing 编译验证）。
 - [x] API Key/敏感信息静态扫描通过（无真实密钥、无 URLSession、无网络请求代码）。
 - [x] 签名、sandbox、首次启动、升级、恢复和核心 UI smoke test：签名/sandbox 已自动验证（archive entitlements + codesign verify）；升级/恢复由 Stage 13/14 自动覆盖；首次启动与核心 UI 运行时 smoke test 由用户人工执行（见 Completion Checklist）。
 - [x] 在无 API Key、无网络和 Mock Provider 环境验证本地功能（Stage 17 已覆盖；应用无网络代码，Mock 仅 Debug）。
 
 ### Acceptance Criteria
 
-- [ ] Release 可安装、启动、保存数据、重启、升级和恢复（待人工 Gate）。
+- [x] Release 可安装、启动、保存数据、重启、升级和恢复（2026-08-12 用户 Final Manual Release Gate 14 项全部通过）。
 - [x] 无明文 API Key、敏感日志、Debug 后门或绝对路径依赖（静态扫描通过）。
 - [x] README、架构、数据、存储、AI、UI 和 Known Issues 与实现一致（本次同步核对，无偏差）。
-- [x] 所有未完成项被明确列入 Known Issues/Future，不伪装完成（App Icon、签名、未加密备份、人工 ChatGPT 流程等均已记录）。
+- [x] 所有未完成项被明确列入 Known Issues/Future，不伪装完成（签名、未加密备份、人工 ChatGPT 流程等均已记录；App Icon 已完成，不再列为未完成项）。
 
 ### Documentation Updates
 
@@ -1528,7 +1528,7 @@
 ### Completion Checklist
 
 - [x] Release checklist 自动部分全部完成。
-- [ ] 人工完成最终安全、数据恢复和核心流程验收（Final Manual Release Gate pending，见下方清单）。
+- [x] 人工完成最终安全、数据恢复和核心流程验收（2026-08-12 用户确认 14 项全部通过，见下方结果记录）。
 - [x] 建立下一版本 Schema/功能变更前的文档与 Migration 流程（`WardrobeSchemaV1` 冻结 + `DATA_MODEL.md` 版本策略 + Migration fixture 流程已具备）。
 
 ### Execution Record（2026-08-12）
@@ -1554,13 +1554,23 @@
 
 ### Finalization Pass（2026-08-12，HEAD `9868887`）
 
-- App Icon：复查仓库与桌面/下载等常见位置，无最终确认图标文件；**Final App Icon manual asset pending**（不伪造完成）。需要用户提供：一张最终确认的方形图标（建议 1024×1024 PNG，macOS Big Sur 风格，含安全边距），放入仓库（如 `WardrobeApp/Resources/AppIcon.png`）或给出文件路径；随后可生成完整 AppIcon asset（16/32/64/128/256/512/1024 各 @1x/@2x）并接入 target。
+- App Icon：复查仓库与桌面/下载等常见位置，无最终确认图标文件；**Final App Icon manual asset pending**（不伪造完成）。需要用户提供：一张最终确认的方形图标（建议 1024×1024 PNG，macOS Big Sur 风格，含安全边距），放入仓库（如 `WardrobeApp/Resources/AppIcon.png`）或给出文件路径；随后可生成完整 AppIcon asset（16/32/64/128/256/512/1024 各 @1x/@2x）并接入 target。→ **已解决**：用户于 Pass II 提供正式图标并完成 asset 生成与工程接入（见下）。
 - Full Unit Suite：按用户指示跳过（本次运行在构建阶段即被中断，0 项执行）；最近完整证据仍为 Stage 17：192 passed / 0 failed / 1 skipped。**Release 配置完整测试通过未勾选**，待用户决定是否重跑。
 - Security-scoped 回归测试：确认 `SettingsViewModel` 无直接测试覆盖（真实小缺口）；按用户指示不运行测试，未补 focused 测试。缺口已记录：`createBackup` / `validateSelectedPackage` / `confirmRestore` 的 security-scoped 包装路径待回归测试（可后续在 `Stage14BackupRestoreTests` 内补，无需改 pbxproj）。
 - 重新验证（本次执行）：Release build `BUILD SUCCEEDED`；Archive `ARCHIVE SUCCEEDED`（`/tmp/WardrobeStage18-Final-Archive/Wardrobe.xcarchive`，1.0.0 (1)）；`build-for-testing`（含 WardrobeUITests）`TEST BUILD SUCCEEDED`；`codesign --verify --deep --strict` 通过；archive entitlements 仅 app-sandbox + user-selected.read-write（无 get-task-allow）；`git diff --check` 通过。
 - 未修改：`WardrobeSchemaV1`、Migration、Backup 格式、Repository 公开协议、稳定业务逻辑。全部日志在 `/tmp/wardrobe-stage18-final-*.log`。
 
-### Final Manual Release Gate（待用户执行）
+### Finalization Pass II（2026-08-12，HEAD `0e91211`）
+
+- App Icon 完成：用户提供最终方形图标（`/Users/lishunjie/Downloads/ChatGPT Image 2026年8月12日 15_48_54.png`，PNG 1254×1254 RGB、无 alpha、非交错），经 `file`/`sips` 校验后按原样复制为 `WardrobeApp/Resources/AppIcon.png`（SHA-256 与源文件一致，未修改视觉内容）。
+- Asset 生成：新增 `WardrobeApp/Resources/Assets.xcassets`（`Contents.json`）与 `AppIcon.appiconset`（`Contents.json` + 10 个 PNG：16/32/128/256/512 @1x，32/64/256/512/1024 @2x），全部由源图经 `sips` 等比缩放生成（仅尺寸变化，无视觉修改）。
+- 工程接入：`project.pbxproj` 新增 `Assets.xcassets` fileRef/buildFile，加入 Resources group 与 app target Resources build phase；app target Debug/Release 均设置 `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`；`AppIcon.png` 以 fileRef 保留在 Resources group（不入 build phase、不打进 bundle）；`plutil -lint` 通过。
+- 构建验证：`xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe -configuration Release -derivedDataPath /tmp/wardrobe-icon-dd build` → `BUILD SUCCEEDED`；产物 `Contents/Resources/AppIcon.icns`（约 103 KB）与 `Assets.car` 生成；Info.plist `CFBundleIconFile`/`CFBundleIconName` 均为 `AppIcon`（经 actool 编译确认）。
+- 文档同步：`docs/RELEASE_NOTES.md` 更新为正式图标；`docs/KNOWN_ISSUES.md` 移除“App Icon 待人工提供”条目；本清单 Scope/Implementation/Acceptance/Manual Gate 第 12 项同步更新。
+- 验证补充：接入图标后的 `xcodebuild build-for-testing`（scheme 默认 Debug 配置，含 WardrobeTests + WardrobeUITests）→ `TEST BUILD SUCCEEDED`（exit 0，0 error；仅 3 条与本次改动无关的既有 mysql-client ld search path 警告）。
+- 未修改：`WardrobeSchemaV1`、Migration、Backup 格式、Repository 公开协议、稳定业务逻辑。Release 配置完整测试仍未重跑（同 Finalization Pass 记录，待用户决定）；Runtime 14 项人工 Gate 仍待用户执行。
+
+### Final Manual Release Gate（2026-08-12 用户确认通过）
 
 自动验证完成后不自动关闭 Stage 18。请用户验收以下 14 项：
 
@@ -1575,11 +1585,17 @@
 9. Backup creation
 10. Restore preview
 11. Storage Maintenance report（缓存/孤儿）
-12. About/version/icon/menu（1.0.0 (1)、Wardrobe、占位图标）
+12. About/version/icon/menu（1.0.0 (1)、Wardrobe、正式 App Icon）
 13. 无 Debug Mock UI
 14. 无异常权限请求（不应出现网络/辅助功能等权限弹窗）
 
 如计划真实恢复，请先在隔离资料库验证，不要用唯一真实资料库首测。
+
+**Final Manual Release Gate result（2026-08-12）**：用户确认 14 项全部通过（1–14），无异常权限弹窗，正式 App Icon 显示正常；真实恢复流程未执行（按提示先隔离验证，无唯一生产库风险）。
+
+**Go/No-Go（2026-08-12）**：用户决定 **GO — Stage 18 passed. Proceed to Stage 19 Free DMG Distribution.**
+
+**Stage 18 closed（2026-08-12）**：自动验证 + 人工验收 + Go/No-Go 全部完成；允许进入 Stage 19。
 
 ---
 ## 阶段顺序调整记录
