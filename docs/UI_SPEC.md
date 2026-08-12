@@ -138,9 +138,9 @@ Stage 12 实际界面采用原生 toolbar + 历史 List + Detail 分栏。Toolba
 - 凭据：新增、替换或移除 API Key；完整密钥不回显，所有操作经过 Keychain Service。
 - 生成：默认图片质量、宽高比和通用参数。
 - 数据与存储：显示资料库位置、持久资源和 Cache 占用、清理 Cache。
-- 备份与恢复：创建备份、查看最近结果、选择备份恢复并展示验证/影响摘要。
+- 备份与恢复（Stage 14 已实现）：创建备份（NSSavePanel 选择目标）→ 显示摘要（记录数/资产数/字节/未加密警告）；恢复为“选择 `.wardrobebackup` 包 → 预览 sheet（格式版本、schema/layout、来源库、记录数、资产数、替换语义）→ 确认 sheet（明示替换 + 未加密）→ 重启应用后应用 → 结果横幅”。
 
-恢复属于高风险流程：必须显示格式版本、记录数、资源大小和将采用的恢复模式；执行前要求确认，并在完成后显示一致性检查结果。
+恢复属于高风险流程：必须显示格式版本、记录数、资源大小和将采用的恢复模式（V1 仅替换恢复）；执行前要求确认，并在完成后显示一致性检查结果。备份/恢复控件带有可测试 accessibility IDs（`backup.create`、`backup.restore.select`、`backup.restore.preview`、`backup.restore.confirm`、`backup.progress`、`backup.error`、`backup.restore.quit`、`backup.restore.result`）。
 
 ## 9. 状态与反馈
 

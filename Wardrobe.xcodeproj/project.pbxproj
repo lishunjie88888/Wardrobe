@@ -67,6 +67,17 @@
 		A0000000000000000000003D /* LibraryMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000003D /* LibraryMigration.swift */; };
 		A0000000000000000000003E /* Stage13SchemaMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000003E /* Stage13SchemaMigrationTests.swift */; };
 		A0000000000000000000003F /* fixture.json in Resources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000003F /* fixture.json */; };
+		A00000000000000000000040 /* BackupModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000040 /* BackupModels.swift */; };
+		A00000000000000000000041 /* BackupChecksum.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000041 /* BackupChecksum.swift */; };
+		A00000000000000000000042 /* BackupCapacity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000042 /* BackupCapacity.swift */; };
+		A00000000000000000000043 /* BackupMetadataExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000043 /* BackupMetadataExport.swift */; };
+		A00000000000000000000044 /* BackupPackageStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000044 /* BackupPackageStorage.swift */; };
+		A00000000000000000000045 /* BackupValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000045 /* BackupValidator.swift */; };
+		A00000000000000000000046 /* BackupExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000046 /* BackupExporter.swift */; };
+		A00000000000000000000047 /* BackupRestore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000047 /* BackupRestore.swift */; };
+		A00000000000000000000048 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000048 /* SettingsViewModel.swift */; };
+		A00000000000000000000049 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000049 /* SettingsView.swift */; };
+		A0000000000000000000004A /* Stage14BackupRestoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000004A /* Stage14BackupRestoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -150,6 +161,17 @@
 		B0000000000000000000003D /* LibraryMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryMigration.swift; sourceTree = "<group>"; };
 		B0000000000000000000003E /* Stage13SchemaMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage13SchemaMigrationTests.swift; sourceTree = "<group>"; };
 		B0000000000000000000003F /* fixture.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Fixtures/Migration/V1/fixture.json; sourceTree = "<group>"; };
+		B00000000000000000000040 /* BackupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupModels.swift; sourceTree = "<group>"; };
+		B00000000000000000000041 /* BackupChecksum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupChecksum.swift; sourceTree = "<group>"; };
+		B00000000000000000000042 /* BackupCapacity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupCapacity.swift; sourceTree = "<group>"; };
+		B00000000000000000000043 /* BackupMetadataExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupMetadataExport.swift; sourceTree = "<group>"; };
+		B00000000000000000000044 /* BackupPackageStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupPackageStorage.swift; sourceTree = "<group>"; };
+		B00000000000000000000045 /* BackupValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupValidator.swift; sourceTree = "<group>"; };
+		B00000000000000000000046 /* BackupExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupExporter.swift; sourceTree = "<group>"; };
+		B00000000000000000000047 /* BackupRestore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupRestore.swift; sourceTree = "<group>"; };
+		B00000000000000000000048 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		B00000000000000000000049 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B0000000000000000000004A /* Stage14BackupRestoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage14BackupRestoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -259,6 +281,7 @@
 				B0000000000000000000003C /* Stage12GenerationHistoryTests.swift */,
 				B0000000000000000000003E /* Stage13SchemaMigrationTests.swift */,
 				B0000000000000000000003F /* fixture.json */,
+				B0000000000000000000004A /* Stage14BackupRestoreTests.swift */,
 			);
 			path = WardrobeTests;
 			sourceTree = "<group>";
@@ -289,6 +312,7 @@
 				G00000000000000000000018 /* Database */,
 				G00000000000000000000019 /* Storage */,
 				G0000000000000000000001A /* ImageProcessing */,
+				G0000000000000000000001B /* Backup */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -300,7 +324,8 @@
 		G00000000000000000000010 /* TryOn */ = {isa = PBXGroup; children = (B00000000000000000000029 /* TryOnViewModel.swift */, B0000000000000000000002A /* TryOnView.swift */,); path = TryOn; sourceTree = "<group>"; };
 		G00000000000000000000011 /* Outfit */ = {isa = PBXGroup; children = (B00000000000000000000035 /* OutfitViewModel.swift */, B00000000000000000000036 /* OutfitView.swift */,); path = Outfit; sourceTree = "<group>"; };
 		G00000000000000000000012 /* GenerationHistory */ = {isa = PBXGroup; children = (B0000000000000000000003A /* GenerationHistoryViewModel.swift */, B0000000000000000000003B /* GenerationHistoryView.swift */,); path = GenerationHistory; sourceTree = "<group>"; };
-		G00000000000000000000013 /* Settings */ = {isa = PBXGroup; children = (); path = Settings; sourceTree = "<group>"; };
+		G00000000000000000000013 /* Settings */ = {isa = PBXGroup; children = (B00000000000000000000048 /* SettingsViewModel.swift */, B00000000000000000000049 /* SettingsView.swift */,); path = Settings; sourceTree = "<group>"; };
+		G0000000000000000000001B /* Backup */ = {isa = PBXGroup; children = (B00000000000000000000040 /* BackupModels.swift */, B00000000000000000000041 /* BackupChecksum.swift */, B00000000000000000000042 /* BackupCapacity.swift */, B00000000000000000000043 /* BackupMetadataExport.swift */, B00000000000000000000044 /* BackupPackageStorage.swift */, B00000000000000000000045 /* BackupValidator.swift */, B00000000000000000000046 /* BackupExporter.swift */, B00000000000000000000047 /* BackupRestore.swift */,); path = Backup; sourceTree = "<group>"; };
 		G00000000000000000000014 /* WardrobeUITests */ = {isa = PBXGroup; children = (B0000000000000000000000A /* WardrobeLaunchUITests.swift */,); path = WardrobeUITests; sourceTree = "<group>"; };
 		G00000000000000000000015 /* Models */ = {isa = PBXGroup; children = (B0000000000000000000000B /* DomainCodes.swift */, B0000000000000000000000C /* WardrobeSchemaV1.swift */, B00000000000000000000019 /* ClothingFeatureModels.swift */, B0000000000000000000001E /* PersonFeatureModels.swift */, B00000000000000000000028 /* TryOnFeatureModels.swift */, B0000000000000000000002C /* ExternalGenerationModels.swift */, B00000000000000000000032 /* OutfitFeatureModels.swift */, B00000000000000000000038 /* GenerationHistoryModels.swift */,); path = Models; sourceTree = "<group>"; };
 		G00000000000000000000016 /* Repositories */ = {isa = PBXGroup; children = (B0000000000000000000000D /* WardrobeRepositories.swift */,); path = Repositories; sourceTree = "<group>"; };
@@ -455,6 +480,16 @@
 				A0000000000000000000003A /* GenerationHistoryViewModel.swift in Sources */,
 				A0000000000000000000003B /* GenerationHistoryView.swift in Sources */,
 				A0000000000000000000003D /* LibraryMigration.swift in Sources */,
+				A00000000000000000000040 /* BackupModels.swift in Sources */,
+				A00000000000000000000041 /* BackupChecksum.swift in Sources */,
+				A00000000000000000000042 /* BackupCapacity.swift in Sources */,
+				A00000000000000000000043 /* BackupMetadataExport.swift in Sources */,
+				A00000000000000000000044 /* BackupPackageStorage.swift in Sources */,
+				A00000000000000000000045 /* BackupValidator.swift in Sources */,
+				A00000000000000000000046 /* BackupExporter.swift in Sources */,
+				A00000000000000000000047 /* BackupRestore.swift in Sources */,
+				A00000000000000000000048 /* SettingsViewModel.swift in Sources */,
+				A00000000000000000000049 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -475,6 +510,7 @@
 				A00000000000000000000037 /* Stage11OutfitManagementTests.swift in Sources */,
 				A0000000000000000000003C /* Stage12GenerationHistoryTests.swift in Sources */,
 				A0000000000000000000003E /* Stage13SchemaMigrationTests.swift in Sources */,
+				A0000000000000000000004A /* Stage14BackupRestoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

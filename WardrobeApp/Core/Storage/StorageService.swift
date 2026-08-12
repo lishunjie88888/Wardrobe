@@ -117,7 +117,7 @@ protocol StorageServing: Sendable {
     func storageRootLocation() async -> URL
 }
 
-actor StorageService: StorageServing, ImageProcessingStorageServing {
+actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAssetReading {
     nonisolated let libraryRootURL: URL
     private static let managedDirectories = [
         "database", "garments", "persons", "generations", "outfits", "staging", "cache", "backups",
@@ -497,6 +497,42 @@ actor StorageService: StorageServing, ImageProcessingStorageServing {
 
     func libraryManifest() throws -> StorageLibraryManifest {
         try Self.readManifest(at: configuration.rootURL.appendingPathComponent("library.json"))
+    }
+
+    /// Replaces the library manifest after a restore so the restored library
+    /// keeps the logical identity of the backup source. Only the current
+    /// storage layout is accepted.
+    func writeLibraryManifest(_ manifest: StorageLibraryManifest) throws {
+        guard manifest.storageLayoutVersion == StorageConfiguration.layoutVersion else {
+            throw StorageError.unsupportedLayoutVersion(found: manifest.storageLayoutVersion)
+        }
+        let url = configuration.rootURL.appendingPathComponent("library.json")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(manifest).write(to: url, options: [.atomic])
+    }
+
+    /// Streams a referenced resource into a backup package destination without
+    /// loading it into memory, returning its digest.
+    func copyAssetToBackup(_ resourceID: StorageResourceID, to destinationURL: URL) throws -> BackupFileDigest {
+        let sourceURL = try existingResolvedURL(for: resourceID)
+        return try BackupChecksum.copyAndDigest(from: sourceURL, to: destinationURL)
+    }
+
+    /// Imports a validated package asset into this library. The destination is
+    /// resolved and guarded exactly like every other managed resource.
+    func importBackupAsset(from sourceURL: URL, to resourceID: StorageResourceID) throws {
+        let destination = try resolvedURL(for: resourceID)
+        guard !fileManager.fileExists(atPath: destination.path) else {
+            throw StorageError.resourceAlreadyExists(resourceID)
+        }
+        let ownerDirectory = destination.deletingLastPathComponent()
+        try ensureNoSymbolicLinkInExistingPath(to: ownerDirectory)
+        if !fileManager.fileExists(atPath: ownerDirectory.path) {
+            try fileManager.createDirectory(at: ownerDirectory, withIntermediateDirectories: false)
+        }
+        try fileManager.copyItem(at: sourceURL, to: destination)
     }
 
     private static func initializeLibrary(

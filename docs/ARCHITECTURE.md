@@ -178,6 +178,13 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - `TryOnWorkspaceCoordinator` 由 App Shell 明确持有，不是 singleton。Outfit 先生成显式 `OutfitLoadResult`，Shell 导航到 Try-On，工作区消费一次性请求并仅替换衣物槽位，人物选择保持不变。
 - Outfit 卡片与详情只用 current thumbnail 或 snapshot thumbnail 的只读加载；没有自动生成 cover。永久删除只删除 Outfit metadata/cascade items，不取得 Storage 删除能力。
 
+### 4.12 Stage 14 备份/恢复边界
+
+- `Core/Backup/` 是独立层：`BackupExporter`（actor）负责预检、快照导出、staging、自校验与原子发布；`BackupValidator` 是导出与恢复共用的唯一完整性裁决；`LibraryRestoreCoordinator` 负责隔离候选库构建与预览；`LibraryRestoreBootstrap` 负责下次启动 pre-open 应用/回滚；全部通过 `BackupAssetReading` 窄接口访问 Storage，不触碰 SwiftData 内部标识。
+- 备份 DTO（`BackupRecordsV1` 及 8 个记录类型）独立于冻结的 `WardrobeSchemaV1`；恢复时经 `BackupMetadataImporter` 依赖序导入当前 Schema。
+- 事务 workspace（`Wardrobe.restore-<uuid>`）位于生产库根之外；事务 marker 先落盘再执行，恢复期间原库在 `rollback/` 快照，候选库在隔离根构建并完整验证后才受控替换。
+- Settings 通过 `SettingsFeatureDependencies` 获取 `BackupCoordinator`；UI 只展示状态并触发创建/预览/确认/重启，不直接执行文件操作。
+
 ## 5. 关键流程
 
 ### 5.1 导入衣物
@@ -203,6 +210,13 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - 普通用户操作优先设置 `archivedAt`，不立即删除资源。
 - 永久删除由专用 Service 计算影响范围、确认引用、更新数据库后逐个删除明确资源。
 - OutfitItem 和生成输入保留 UUID 与名称快照；关系可置空，不让历史记录被级联删除。
+
+### 5.4 备份与恢复
+
+1. 创建备份：Settings 选择目标 → `BackupCoordinator` → `BackupExporter` 预检（当前库、无 pending restore、无非终态 generation、目标安全）→ 快照 A → 流式复制 assets → 快照 B 稳定性栅栏 → 写 manifest/records/checksums → 自校验 → 容量检查 → 原子发布 → 摘要。
+2. 恢复准备：选择包 → `BackupValidator` 全量校验 → `prepare` 构建隔离候选库（不同根 + 独立 container + 一致性/计数/资产检查）→ 写 `.prepared` 事务 → 预览与确认。
+3. 应用恢复：下次启动在 `AppEnvironment` 创建 Storage/Container 前调用 `LibraryRestoreBootstrap.applyPendingRestore`；按事务 phase 推进并在任何失败时从 `rollback/` 还原原库；回滚失败返回 blocking error，应用不打开半恢复资料库。
+4. 提交后清理 workspace 并写结果 marker；内部 `backups/` 中的备份包在替换中保留副本。
 
 ## 6. 错误、日志与隐私
 

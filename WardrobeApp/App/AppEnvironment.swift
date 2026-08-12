@@ -10,6 +10,10 @@ struct WardrobeFeatureDependencies {
     let imageLoader: any ClothingImageLoading
 }
 
+struct SettingsFeatureDependencies {
+    let backupCoordinator: BackupCoordinator
+}
+
 struct AppEnvironment {
     let applicationName: String
     let modelContainer: ModelContainer
@@ -20,6 +24,7 @@ struct AppEnvironment {
     let outfit: OutfitFeatureDependencies
     let generationHistory: GenerationHistoryFeatureDependencies
     let tryOnWorkspaceCoordinator: TryOnWorkspaceCoordinator
+    let settings: SettingsFeatureDependencies
 
     @MainActor
     init(
@@ -148,6 +153,13 @@ struct AppEnvironment {
 #else
         let injectedResultURL: URL? = nil
 #endif
+        self.settings = SettingsFeatureDependencies(
+            backupCoordinator: BackupCoordinator(
+                container: modelContainer,
+                storageService: storageService,
+                configuration: StorageConfiguration(rootURL: storageService.libraryRootURL)
+            )
+        )
         self.tryOn = TryOnFeatureDependencies(
             clothing: ClothingManagementService(repository: repository),
             person: PersonManagementService(repository: repository),
@@ -206,6 +218,7 @@ struct AppEnvironment {
     @MainActor
     static func production() throws -> AppEnvironment {
         let storageConfiguration = try StorageConfiguration.production()
+        _ = try LibraryRestoreBootstrap.applyPendingRestore(configuration: storageConfiguration)
         guard StorageService.migrationPreflight(configuration: storageConfiguration) == .current else {
             throw StorageError.migrationBlocked
         }

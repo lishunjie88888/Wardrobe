@@ -87,6 +87,8 @@ struct WardrobeShellView: View {
                     environment.tryOnWorkspaceCoordinator.requestRegenerate(request)
                     selection = .tryOn
                 }
+            case .settings:
+                SettingsView(viewModel: SettingsViewModel(coordinator: environment.settings.backupCoordinator))
             case let route:
                 PlaceholderFeatureView(route: route)
             }

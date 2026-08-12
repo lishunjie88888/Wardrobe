@@ -1120,16 +1120,16 @@
 
 ### Scope
 
-- [ ] 版本化 `.wardrobebackup` 包、manifest、逻辑 metadata 导出、assets 和 checksums。
-- [ ] Garments、Persons、Generations、Outfits 与必要元数据/资源。
-- [ ] 备份预检、导出、验证、恢复预览、替换恢复和回滚快照。
-- [ ] 恢复后数据/文件一致性检查。
+- [x] 版本化 `.wardrobebackup` 包、manifest、逻辑 metadata 导出、assets 和 checksums。
+- [x] Garments、Persons、Generations、Outfits 与必要元数据/资源。
+- [x] 备份预检、导出、验证、恢复预览、替换恢复和回滚快照。
+- [x] 恢复后数据/文件一致性检查。
 
 ### Out of Scope
 
-- [ ] V1 不实现合并恢复、增量备份、定时备份、云备份或备份加密。
-- [ ] 不复制运行中的 SwiftData SQLite 文件作为正式格式。
-- [ ] 不备份 API Key、Keychain、日志、staging 或可重建 Cache。
+- [x] V1 不实现合并恢复、增量备份、定时备份、云备份或备份加密。
+- [x] 不复制运行中的 SwiftData SQLite 文件作为正式格式。
+- [x] 不备份 API Key、Keychain、日志、staging 或可重建 Cache。
 
 ### Dependencies
 
@@ -1137,42 +1137,54 @@
 
 ### Implementation Tasks
 
-- [ ] 定义 backup format version、manifest Codable schema 和 checksums 算法。
-- [ ] 以稳定 UUID、关系和 resource ID 逻辑导出全部记录。
-- [ ] 收集被元数据引用的持久 assets，保留相对布局并检测缺失/孤儿。
-- [ ] 在 staging 创建备份，完成校验后原子发布到明确目标。
-- [ ] 恢复前校验路径、格式版本、校验和、空间、UUID 和关系冲突。
-- [ ] 将旧逻辑记录通过 Migration 层转换到当前 Schema。
-- [ ] 创建当前资料库可回滚快照，在隔离根完成导入验证后受控切换。
-- [ ] 恢复失败自动回滚；成功后运行一致性检查并生成摘要。
-- [ ] UI 明确 V1 是替换恢复，并在执行前要求人工确认。
+- [x] 定义 backup format version、manifest Codable schema 和 checksums 算法。
+- [x] 以稳定 UUID、关系和 resource ID 逻辑导出全部记录。
+- [x] 收集被元数据引用的持久 assets，保留相对布局并检测缺失/孤儿。
+- [x] 在 staging 创建备份，完成校验后原子发布到明确目标。
+- [x] 恢复前校验路径、格式版本、校验和、空间、UUID 和关系冲突。
+- [x] 将旧逻辑记录通过 Migration 层转换到当前 Schema。
+- [x] 创建当前资料库可回滚快照，在隔离根完成导入验证后受控切换。
+- [x] 恢复失败自动回滚；成功后运行一致性检查并生成摘要。
+- [x] UI 明确 V1 是替换恢复，并在执行前要求人工确认。
 
 ### Tests
 
-- [ ] 测试完整资料库 backup→清空测试容器→restore→逐记录/资源比较。
-- [ ] 测试损坏 manifest、checksum、路径逃逸、缺文件、空间不足和不支持版本。
-- [ ] 测试恢复中断和失败回滚，不留下半恢复状态。
-- [ ] 测试 Keychain、cache、staging 和日志未进入备份。
-- [ ] 测试资料库根路径变化后相对 resource ID 仍可解析。
-- [ ] 运行 build 和全部 tests。
+- [x] 测试完整资料库 backup→清空测试容器→restore→逐记录/资源比较。
+- [x] 测试损坏 manifest、checksum、路径逃逸、缺文件、空间不足和不支持版本。
+- [x] 测试恢复中断和失败回滚，不留下半恢复状态。
+- [x] 测试 Keychain、cache、staging 和日志未进入备份。
+- [x] 测试资料库根路径变化后相对 resource ID 仍可解析。
+- [x] 运行 build 和全部 tests。
 
 ### Acceptance Criteria
 
-- [ ] 完整用户数据可在不同绝对根路径下恢复。
-- [ ] 备份具有格式版本、Schema/storage 版本和完整性校验。
-- [ ] 失败恢复可回滚，原资料库保持可用。
-- [ ] 敏感凭据和可重建 Cache 不进入备份。
+- [x] 完整用户数据可在不同绝对根路径下恢复。
+- [x] 备份具有格式版本、Schema/storage 版本和完整性校验。
+- [x] 失败恢复可回滚，原资料库保持可用。
+- [x] 敏感凭据和可重建 Cache 不进入备份。
 
 ### Documentation Updates
 
-- [ ] 最终备份格式和恢复限制同步到 `STORAGE_SPEC.md`/`PRODUCT_SPEC.md`/`UI_SPEC.md`。
-- [ ] 记录兼容矩阵、恢复风险和人工操作说明。
-- [ ] 在本 Stage 下记录 round-trip 测试结果。
+- [x] 最终备份格式和恢复限制同步到 `STORAGE_SPEC.md`/`PRODUCT_SPEC.md`/`UI_SPEC.md`。
+- [x] 记录兼容矩阵、恢复风险和人工操作说明。
+- [x] 在本 Stage 下记录 round-trip 测试结果。
 
 ### Completion Checklist
 
-- [ ] 备份 round-trip、损坏输入和回滚 tests 通过。
+- [x] 备份 round-trip、损坏输入和回滚 tests 通过。
 - [ ] 人工在隔离测试资料库完成备份/恢复验收后继续；不得直接用唯一真实资料库首次验证。
+
+### Execution Record（2026-08-12）
+
+- Gate/Scope：HEAD `7c8962e`（main，与 origin 一致），只执行 Stage 14；`WardrobeSchemaV1` 未修改，未执行 Stage 15。
+- Format：V1 为 `.wardrobebackup` 目录包（manifest.json + metadata/records.json + checksums.json + assets/），不使用 ZIP/归档 API，不复制运行中的 SQLite；manifest 只存相对路径。
+- Export：独立 DTO（不冻结 Schema 直接耦合）逻辑导出 8 个模型，稳定 UUID、原值 code、可空 `...RelationID` 区分“快照 ID”与“当前关系”；assets 严格按 metadata 引用收集并保留相对布局，孤儿文件只计数不入包；staging 内流式 SHA-256（manifest/records/assets），快照 A/B digest 稳定性栅栏后原子发布（旧包先改名再替换）。
+- Validation/Restore：恢复前校验格式/schema/layout、路径白名单、symlink/逃逸、checksum、manifest 计数、UUID 唯一、关系完整、资源 ID 合法与磁盘空间；候选资料库在 sibling transaction workspace 的隔离根构建（不同根 + 独立 ModelContainer），导入后跑 `LibraryConsistencyValidator`、计数与资产存在性检查；重启前应用（pre-open），`.prepared → originalMoved → candidateInstalled → verifying → committed` 事务，任何失败回滚原资料库并重新打开，回滚失败阻断启动；内部 backups 包在替换中保留。
+- Settings UI：最小备份/恢复界面（创建、摘要、未加密提示、选择包、预览、确认替换、重启应用、结果横幅），全部带 accessibility IDs。
+- Focused Unit：`Stage14BackupRestoreTests` 18 个测试全部通过（round-trip 8 模型 18 assets 不同根、大文件流式、损坏 manifest/checksum/缺文件/路径逃逸/symlink/重复 UUID/坏关系、磁盘不足、敏感目录排除、非终态 generation 阻断、替换不丢旧包、pending 阻断、中断恢复（prepared/originalMoved）、失败候选回滚后原库重开、回滚失败阻断、内部备份存活）。
+- Full Unit：`-only-testing:WardrobeTests test` → `TEST SUCCEEDED`，173 tests passed、0 failed（既有 HEIF skip 不产生失败）。Debug terminal build → `BUILD SUCCEEDED`。
+- Data/Privacy：测试全部在 `/tmp/WardrobeStage14Tests-*`（唯一 base + library 子目录隔离事务 workspace），未触碰正式 Application Support；无 Keychain/网络/凭据；未加密限制已文档化。
+- Manual Acceptance：**Stage 14 Manual isolated backup/restore acceptance pending**（未在真实资料库验证；需在隔离测试资料库按下方步骤验收后才可用真实资料库）。
 
 ---
 

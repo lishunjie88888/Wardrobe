@@ -187,16 +187,36 @@ checksums.json
 - `checksums.json` 用于恢复前完整性验证。
 - API Key、Keychain 内容、日志、staging 和可重建 Cache 永不进入备份。
 
-### 7.2 恢复流程
+### 7.2 格式契约（Stage 14 定稿）
 
-1. 在 staging 中打开备份，校验格式、路径、校验和、可用空间与支持的版本。
-2. 将逻辑记录迁移到当前 Schema，并检查 UUID、关系和资源 ID 冲突。
-3. 恢复前创建当前资料库的可回滚快照。
-4. 在隔离的新资料库根完成数据库与资源导入验证。
-5. 原子切换资料库指针或受控替换；失败则回滚，不留下半恢复状态。
-6. 首次打开恢复资料库时运行一致性检查。
+- `backupFormatVersion = 1`，与 `schemaVersion`（产品 Schema，当前 `1.0.0`）和 `storageLayoutVersion`（当前 `1`）三个版本独立演进；manifest 同时携带三者，恢复时逐项校验。
+- `records.json` 是 8 个模型的稳定逻辑导出（ClothingItem、PersonProfile、PersonImage、Outfit、OutfitItem、GenerationRecord、GenerationPersonInput、GenerationGarmentInput），保留稳定 UUID、原始 code 值和快照字段；`...RelationID`（如 `clothingItemRelationID`）记录“当前关系”的 UUID，与快照 ID 分离，缺失时恢复为 nil 并保留快照。导出 DTO 独立于 `WardrobeSchemaV1`（冻结 Schema 不直接参与序列化）。
+- `assets/<kind>/<UUID>/<file>` 严格按 metadata 引用收集（含 generation 结果与快照引用），孤儿文件只计数不入包；资源 ID 始终是相对路径，manifest 不保存任何绝对路径。
+- `checksums.json` 对 `manifest.json`、`metadata/records.json` 与全部 assets 做流式 SHA-256（1 MiB 分块，不整文件入内存）；`checksums.json` 自身不包含自校验条目。校验和用于完整性（非安全），不替代加密。
+- 导出在 staging 目录（`. <name>.wardrobebackup.<uuid>.tmp`）完成：先复制 assets，再写 manifest/records/checksums，自校验通过后执行快照 A/B digest 稳定性栅栏（metadata 导出在复制前后一致），最后检查目标容量后原子发布（旧包先改名 `.old-<uuid>`，新包 rename 就位后才删除旧包）。
+- 备份排除 `database/`、`staging/`、`cache/`、`backups/`、`external-generations/`、`logs/`、`migration/`；存在 pending restore 事务或非终态 generation 时预检阻断。
 
-V1 若只支持替换恢复，UI 必须明确说明；合并恢复需要独立的 UUID 冲突和重复资源策略，不能伪装成简单覆盖。
+### 7.3 恢复流程（替换恢复）
+
+1. 预览前完整校验：格式/schema/layout 版本、严格路径白名单（拒绝 `..`、控制字符、绝对路径、未知文件）、symlink/逃逸、checksum 交叉核对、manifest 计数 vs 解析记录、UUID 唯一、关系与资源 ID 合法、磁盘空间（候选 + 当前库回滚快照 + 余量）。
+2. `prepare` 在 library 根的 sibling transaction workspace（`Wardrobe.restore-<uuid>/`，生产根之外）构建隔离候选库：不同绝对根 + 独立 `ModelContainer`，先导入 assets 再依赖序导入记录，跑 `LibraryConsistencyValidator`、记录计数与资产存在性检查；通过后写 `.prepared` 事务并生成恢复预览（数量、字节、schema/layout 版本）。
+3. 应用在下次启动、打开 `StorageService`/`ModelContainer` 之前执行（composition root pre-open bootstrap）：`prepared → originalMoved → candidateInstalled → verifying → committed`，每步先落盘事务再执行；任何失败自动回滚：候选移入 `failed/`、原资料库从 `rollback/` 还原并重新打开；回滚失败（原库快照丢失且候选从未安装）阻断启动，绝不打开半恢复资料库。
+4. 提交后写结果 marker 并清理 workspace；若备份包原位于当前库的 `backups/` 内，候选库会保留内部副本，替换不会删除用户备份。
+5. 多个 pending workspace 视为歧义并阻断；`discoverPending` 只认带 `transaction.json` 的 workspace，无事务残留可安全清理。
+
+V1 只支持替换恢复，UI 在确认前明确说明；合并恢复需要独立的 UUID 冲突和重复资源策略，不能伪装成简单覆盖。
+
+### 7.4 兼容矩阵
+
+| 维度 | 值 |
+| --- | --- |
+| backupFormatVersion | `1`（只接受 `1`） |
+| schemaVersion | `1.0.0`（只接受当前 `WardrobeSchemaV1`） |
+| storageLayoutVersion | `1`（只接受当前 `StorageConfiguration.layoutVersion`） |
+| checksum | SHA-256 流式，1 MiB 分块 |
+| 恢复语义 | 替换恢复 + 回滚快照，失败自动还原 |
+| 加密 | 无（UI 明示未加密警告） |
+| 路径 | 全部相对；导出/恢复均拒绝绝对路径与逃逸 |
 
 ## 8. 存储迁移
 
