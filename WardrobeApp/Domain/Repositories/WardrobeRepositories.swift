@@ -59,6 +59,8 @@ protocol OutfitRepository {
 protocol GenerationRepository {
     func insert(_ record: GenerationRecord) throws
     func generationRecord(id: UUID) throws -> GenerationRecord?
+    func allGenerationRecords() throws -> [GenerationRecord]
+    func nonterminalGenerationRecords() throws -> [GenerationRecord]
     func transitionGeneration(id: UUID, to status: GenerationStatus, at date: Date) throws
     func deleteGeneration(id: UUID) throws
     func save() throws

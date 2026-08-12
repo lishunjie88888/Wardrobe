@@ -757,6 +757,8 @@
 
 ## Stage 9：未来 API Provider（可选，当前产品方向不执行）
 
+**Status：Skipped — optional future API provider due to current no-paid-API product direction.** 保留以下规划供未来明确授权后使用；本状态不是 Failed、Incomplete 或 Blocked，且不阻塞 Stage 10 的 Mock Provider 完整生成链。
+
 ### Goal
 
 仅在用户未来明确选择承担 API 费用时，在不污染 Domain/UI 的前提下评估并实现可选 API Adapter。Stage 8 完成不依赖本 Stage。
@@ -816,8 +818,8 @@
 
 ### Completion Checklist
 
-- [ ] Contract/security tests 与 build 通过。
-- [ ] 人工完成隐私、费用、模型能力和错误行为评审后才可进入完整生成链路。
+- [x] 当前产品决策正式跳过本 Stage；未实现 API、API Key、CredentialStore 或付费 Provider。
+- [ ] 若未来恢复本 Stage，Contract/security tests、build 与人工隐私/费用/模型能力评审仍须全部完成。
 
 ---
 
@@ -829,59 +831,69 @@
 
 ### Scope
 
-- [ ] `VirtualTryOnService` 与生成状态机。
-- [ ] 输入快照、Provider 调用、结果 Storage 写入和 GenerationRecord 更新。
-- [ ] Loading、Failure、Cancel、受限 Retry 与 Regenerate。
-- [ ] Mock Provider 完整链路；OpenAI Provider 为可选人工路径。
+- [x] `VirtualTryOnService` 与生成状态机。
+- [x] 输入快照、Provider 调用、结果 Storage 写入和 GenerationRecord 更新。
+- [x] Loading、Failure、Cancel、受限 Retry 与 Regenerate。
+- [x] Mock Provider 完整链路；OpenAI Provider 依当前产品决策跳过。
 
 ### Out of Scope
 
-- [ ] 不实现穿搭保存和完整历史浏览页面。
-- [ ] 不覆盖旧 GenerationRecord；重新生成必须创建新记录。
-- [ ] 不做后台并发队列或无限自动重试。
+- [x] 不实现穿搭保存和完整历史浏览页面。
+- [x] 不覆盖旧 GenerationRecord；重新生成必须创建新记录。
+- [x] 不做后台并发队列或无限自动重试。
 
 ### Dependencies
 
-- [ ] Stage 2–3、5–7 已通过；Stage 9 仅对真实 API 路径可选。Stage 8 已负责 external manual result 持久化，Stage 10 不重复实现该 handoff。
+- [x] Stage 2–3、5–7 已通过；Stage 9 仅对真实 API 路径可选。Stage 8 已负责 external manual result 持久化，Stage 10 不重复实现该 handoff。
 
 ### Implementation Tasks
 
-- [ ] 在任何图片读取/网络调用前创建 queued GenerationRecord 与人物/衣物输入快照。
-- [ ] 实现 queued→preparing→running→succeeded/failed 和任意非终态→cancelled。
-- [ ] 通过 Storage 解析输入并构造 ProviderImage，不暴露永久路径给 Provider。
-- [ ] 校验人物数量、槽位、格式、大小和 Provider capabilities。
-- [ ] 成功结果先 staging 校验和原子写入，再提交 resultResourceID 与终态。
-- [ ] 保存脱敏错误、attemptCount、时间、Provider/模型/request ID 和 options JSON。
-- [ ] 实现瞬时错误受限 Retry；取消、鉴权、拒绝和输入错误不自动重试。
-- [ ] 实现 Regenerate 新记录和 `sourceGenerationID` 链接。
-- [ ] 实现启动恢复器处理异常退出遗留的非终态记录。
+- [x] 在任何图片读取/Provider 调用前创建 queued GenerationRecord 与人物/衣物输入快照。
+- [x] 实现 queued→preparing→running→succeeded/failed 和任意非终态→cancelled。
+- [x] 通过 Storage 解析输入并构造 ProviderImage，不暴露永久路径给 Provider。
+- [x] 校验人物数量、槽位、格式、大小和 Provider capabilities。
+- [x] 成功结果先 staging 校验和原子写入，再提交 resultResourceID 与终态。
+- [x] 保存脱敏错误、attemptCount、时间、Provider/模型/request ID 和 options JSON。
+- [x] 实现瞬时错误受限 Retry；取消、配置、输入及非瞬时错误不自动重试。
+- [x] 实现 Regenerate 新记录和 `sourceGenerationID` 链接。
+- [x] 实现启动恢复器处理异常退出遗留的非终态记录。
 
 ### Tests
 
-- [ ] 测试成功状态和结果文件/元数据一致性。
-- [ ] 测试准备、Provider、Storage、Repository 各阶段失败。
-- [ ] 测试取消竞态、迟到结果、Retry 次数和不重复计费策略。
-- [ ] 测试 Regenerate 不修改来源记录且输入快照正确。
-- [ ] 测试异常退出遗留记录恢复策略。
-- [ ] UI 测试 Mock 生成 Loading→Success/Failure/Cancel。
-- [ ] 运行 build 和全部非付费 tests。
+- [x] 测试成功状态和结果文件/元数据一致性。
+- [x] 测试准备/Provider/Storage/Repository 状态与失败补偿。
+- [x] 测试取消竞态、迟到结果、Retry 次数和有限尝试策略。
+- [x] 测试 Regenerate 不修改来源记录且输入快照正确。
+- [x] 测试异常退出遗留记录恢复策略。
+- [x] UI 状态沿用 Stage 7 的 Loading→Success/Failure/Cancel；本 Stage 按长期测试规则不运行 UI automation，保留人工验收。
+- [x] 最终运行 focused/full Unit、Debug build 与 `git diff --check`。
 
 ### Acceptance Criteria
 
-- [ ] Mock Provider 可完成输入→记录→结果落盘→展示全链路。
-- [ ] 每个生成尝试都有可诊断历史，失败/取消不丢记录。
-- [ ] 数据库与文件不会因部分失败静默不一致。
-- [ ] Regenerate 创建新记录，旧结果不可变。
+- [x] Mock Provider 可完成输入→记录→结果落盘→展示全链路。
+- [x] 每个生成尝试都有可诊断记录，失败/取消不丢记录。
+- [x] 数据库与文件不会因部分失败静默不一致。
+- [x] Regenerate 创建新记录，旧结果不可变。
 
 ### Documentation Updates
 
-- [ ] 实际状态机、恢复策略和补偿顺序同步到 `AI_ARCHITECTURE.md`/`ARCHITECTURE.md`。
-- [ ] Generation 字段变化同步到 `DATA_MODEL.md`。
-- [ ] 在本 Stage 下记录端到端测试结果。
+- [x] 实际状态机、恢复策略和补偿顺序同步到 `AI_ARCHITECTURE.md`/`ARCHITECTURE.md`。
+- [x] 未改变 Generation 字段或 WardrobeSchemaV1，因此无需修改 `DATA_MODEL.md`。
+- [x] 在本 Stage 下记录最终端到端测试结果。
+
+### Execution Record（2026-08-12）
+
+- Planning：Stage 9 已按当前 no-paid-API 产品决策正式标记 Skipped；Stage 10 只依赖已完成的 Stage 2–3、5–7，Stage 8 manual handoff 不重复实现。未执行 Stage 11/12。
+- Core：新增 `VirtualTryOnService`，在读取图片/调用 Provider 前保存 queued GenerationRecord 与人物/衣物快照；实现 preparing/running/terminal 状态、最多两次 transient retry、脱敏错误、attempt/time/provider diagnostics、Storage 原子发布与数据库失败补偿。`InterruptedGenerationRecoveryService` 在 composition root 启动时把遗留非终态记录标为 `failed/interrupted`。Regenerate API 创建新记录并链接 `sourceGenerationID`。
+- UI：External ChatGPT 仍为推荐生成方式；Debug Mock 测试入口改为完整持久化链，成功后展示正式 Generation Storage 结果及“快照已保存”说明。Loading/Failure/Cancel/Retry 沿用既有 Stage 7 状态。UI automation 按用户长期规则严格跳过，等待人工验收。
+- Stage 10 focused Unit：`xcodebuild -project Wardrobe.xcodeproj -scheme Wardrobe -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath /tmp/WardrobeStage10FinalDerivedData -collect-test-diagnostics never -only-testing:WardrobeTests/Stage10VirtualTryOnServiceTests test` → `TEST SUCCEEDED`；7/7 passed。
+- Full Unit：同一 project/scheme/destination/DerivedData，`-only-testing:WardrobeTests test` → `TEST SUCCEEDED`；125 total，124 passed、1 skipped、0 failed。skip 为既有 HEIF encoder fixture runtime 条件限制；HEIC tests 通过。
+- Debug Build：同一 project/scheme/configuration/destination/DerivedData 执行 `build` → `BUILD SUCCEEDED`；`git diff --check` 通过。
+- Data/Security：未修改 `WardrobeSchemaV1`；测试只使用 in-memory SwiftData、临时 Storage 和 injected fixture。正式 Application Support 只读检查显示业务文件最新时间早于本 Stage 测试，未产生 garments/persons/generations/outfits/staging 测试数据。Feature 未获得 destructive Storage、绝对路径或 ModelContext；Swift 源码静态扫描未发现 API/API Key/CredentialStore、URLSession、Accessibility/AppleScript/System Events/CGEvent 实现。
 
 ### Completion Checklist
 
-- [ ] 状态机、竞态和补偿测试通过。
+- [x] 状态机、竞态和补偿测试通过。
 - [ ] 人工验收取消、失败、重新生成和结果持久化后再实现历史 UI。
 
 ---

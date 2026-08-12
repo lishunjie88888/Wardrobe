@@ -150,6 +150,10 @@ queued → preparing → running → succeeded
 4. 失败保存规范化错误并标记 `failed`；取消标记 `cancelled`，不伪装成失败。
 5. 应用异常退出后，启动恢复器将长时间停留在非终态且无活跃任务的记录标记为可解释的中断失败，或提示用户重新生成。
 
+Stage 10 实际实现采用 `VirtualTryOnService` 单次任务编排。它先保存 queued 记录和人物/衣物 resource ID 快照，再构造短生命周期 Provider 图片；Provider 调用开始前进入 running 并递增/保存 attemptCount。当前受限 retry 只对 `transientFailure` 生效、最多两次，其他 Provider 错误、输入错误和取消不重试。
+
+成功结果通过窄的 generation result Storage 接口执行 staging、图片解码校验、thumbnail 与原子发布；数据库终态提交失败时删除本次 generation owner。取消和失败写入脱敏 `errorCode/errorMessage`，不保存迟到结果。Regenerate 创建新记录并写 `sourceGenerationID`。启动时 `InterruptedGenerationRecoveryService` 将所有遗留非终态记录转为 `failed`、错误 code 为 `interrupted`。此链当前只由 Debug Mock 驱动，不改变 External ChatGPT 主流程，也不要求 Stage 9 API Provider。
+
 ## 9. Error、Retry 与 Cancel
 
 Stage 6 已实现的基础规范化错误：

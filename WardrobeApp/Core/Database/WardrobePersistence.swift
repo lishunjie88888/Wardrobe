@@ -407,6 +407,17 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
         return try context.fetch(descriptor).first
     }
 
+    func allGenerationRecords() throws -> [GenerationRecord] {
+        try context.fetch(FetchDescriptor<GenerationRecord>(sortBy: [SortDescriptor(\.createdAt)]))
+    }
+
+    func nonterminalGenerationRecords() throws -> [GenerationRecord] {
+        try context.fetch(FetchDescriptor<GenerationRecord>()).filter {
+            guard case let .known(status) = $0.resolvedStatus else { return false }
+            return !status.isTerminal
+        }
+    }
+
     func transitionGeneration(id: UUID, to status: GenerationStatus, at date: Date = .now) throws {
         guard let record = try generationRecord(id: id) else {
             throw WardrobeRepositoryError.modelNotFound(model: "GenerationRecord", id: id)

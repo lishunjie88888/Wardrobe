@@ -106,6 +106,8 @@ Stage 7 实际工作区使用 macOS `HSplitView` 三栏：左栏为复用 Clothi
 
 Stage 8 的主按钮改为“使用 ChatGPT 生成”（推荐）；Debug 构建保留“Mock 测试生成”，Release 不展示不可工作的未来 Provider。准备完成 sheet 直接提供“打开 ChatGPT”“在 Finder 中显示素材”“再次复制 Prompt”“导入生成结果”“清理此临时素材”和“完成”，并显示人物/衣物数量及四步人工操作说明。系统 file importer 只接受可真实解码的图片；导入后中央区域显示并标记“ChatGPT 手动生成 · 已导入”。
 
+Stage 10 将 Debug 的“Mock 测试生成”接入完整本地持久化编排：界面继续显示验证、生成、成功、失败和取消状态；成功时加载正式 Generation Storage 中的结果并说明输入快照已保存，失败/取消可用当前 Session 重试。Release 的推荐入口仍是 External ChatGPT，不展示或暗示真实付费 Provider。完整 Generation History 列表/详情仍属于 Stage 12。
+
 稳定模式不会通过 Accessibility 控制 ChatGPT，也不会自动发送。所有新增按钮均有稳定 accessibility identifier；UI 测试可注入 clipboard/launcher/result fixture，运行时不打开真实 ChatGPT、不访问网络或控制其他 App。
 
 ## 6. 穿搭

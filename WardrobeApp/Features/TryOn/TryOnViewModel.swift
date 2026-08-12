@@ -6,6 +6,7 @@ struct TryOnFeatureDependencies {
     let person: PersonManagementService
     let imageLoader: any TryOnResourceLoading
     let provider: any VirtualTryOnProvider
+    let generationService: VirtualTryOnService?
     let externalWorkflow: ExternalGenerationWorkflow?
     let resultImporter: ExternalGenerationResultImporter?
     let injectedResultURL: URL?
@@ -15,6 +16,7 @@ struct TryOnFeatureDependencies {
         person: PersonManagementService,
         imageLoader: any TryOnResourceLoading,
         provider: any VirtualTryOnProvider,
+        generationService: VirtualTryOnService? = nil,
         externalWorkflow: ExternalGenerationWorkflow? = nil,
         resultImporter: ExternalGenerationResultImporter? = nil,
         injectedResultURL: URL? = nil
@@ -23,6 +25,7 @@ struct TryOnFeatureDependencies {
         self.person = person
         self.imageLoader = imageLoader
         self.provider = provider
+        self.generationService = generationService
         self.externalWorkflow = externalWorkflow
         self.resultImporter = resultImporter
         self.injectedResultURL = injectedResultURL
@@ -34,6 +37,7 @@ struct MockTryOnPreview: Equatable, Sendable {
     let personName: String
     let garmentsBySlot: [TryOnSlot: [String]]
     let requestID: UUID
+    let resultResourceID: StorageResourceID?
 }
 
 @MainActor
@@ -227,24 +231,41 @@ final class TryOnViewModel {
                 guard let references = currentReferences, let profile = selectedProfile else {
                     throw TryOnWorkspaceError.noPerson
                 }
-                let request = try await requestBuilder.build(
-                    session: session,
-                    person: references,
-                    clothing: allActiveClothing,
-                    capabilities: provider.capabilities
-                )
-                try Task.checkCancellation()
-                guard generationToken == token else { return }
                 generationState = .generating
-                try await provider.validateConfiguration()
-                _ = try await provider.generate(request: request)
+                let result: PersistedTryOnGeneration
+                if let service = dependencies.generationService {
+                    result = try await service.generate(
+                        session: session,
+                        person: references,
+                        personName: profile.draft.name,
+                        clothing: allActiveClothing
+                    )
+                } else {
+                    let request = try await requestBuilder.build(
+                        session: session,
+                        person: references,
+                        clothing: allActiveClothing,
+                        capabilities: provider.capabilities
+                    )
+                    try await provider.validateConfiguration()
+                    _ = try await provider.generate(request: request)
+                    result = PersistedTryOnGeneration(
+                        generationID: request.requestID,
+                        resultResourceID: try StorageResourceID(owner: StorageOwner(kind: .generation, id: request.requestID), kind: .generationResult(fileExtension: "png")),
+                        thumbnailResourceID: try StorageResourceID(owner: StorageOwner(kind: .generation, id: request.requestID), kind: .thumbnail),
+                        providerName: provider.descriptor.displayName,
+                        personName: profile.draft.name,
+                        garmentsBySlot: garmentNamesBySlot()
+                    )
+                }
                 try Task.checkCancellation()
                 guard generationToken == token else { return }
                 generationState = .success(MockTryOnPreview(
-                    providerName: provider.descriptor.displayName,
-                    personName: profile.draft.name,
-                    garmentsBySlot: garmentNamesBySlot(),
-                    requestID: request.requestID
+                    providerName: result.providerName,
+                    personName: result.personName,
+                    garmentsBySlot: result.garmentsBySlot,
+                    requestID: result.generationID,
+                    resultResourceID: dependencies.generationService == nil ? nil : result.resultResourceID
                 ))
             } catch is CancellationError {
                 if generationToken == token { generationState = .cancelled }
@@ -381,6 +402,10 @@ final class TryOnViewModel {
         case TryOnWorkspaceError.unsupportedClothing, TryOnWorkspaceError.incompatibleSlot: "衣物与试衣槽位不兼容。"
         case TryOnWorkspaceError.provider(let providerError): providerMessage(providerError)
         case let providerError as VirtualTryOnError: providerMessage(providerError)
+        case VirtualTryOnServiceError.provider(let providerError): providerMessage(providerError)
+        case VirtualTryOnServiceError.resultStorageFailed: "无法保存 Mock 结果，请检查本地存储后重试。"
+        case VirtualTryOnServiceError.recordCreationFailed, VirtualTryOnServiceError.recordUpdateFailed: "无法保存生成记录，请稍后重试。"
+        case VirtualTryOnServiceError.preparationFailed: "无法准备 Mock 生成，请检查当前素材。"
         default: "Mock 生成失败，请检查当前素材后重试。"
         }
     }

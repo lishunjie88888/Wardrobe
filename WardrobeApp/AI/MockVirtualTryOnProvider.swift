@@ -8,7 +8,7 @@ enum MockVirtualTryOnBehavior: Sendable {
 
 actor MockVirtualTryOnProvider: VirtualTryOnProvider {
     static let providerID = ProviderID(rawValue: "mock")
-    static let fixtureData = Data("wardrobe-mock-result-v1".utf8)
+    static let fixtureData = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")!
 
     nonisolated let descriptor = ProviderDescriptor(id: providerID, displayName: "Mock Preview")
     nonisolated let capabilities = VirtualTryOnCapabilities(
@@ -55,7 +55,7 @@ actor MockVirtualTryOnProvider: VirtualTryOnProvider {
             try Task.checkCancellation()
             return VirtualTryOnResult(
                 imageData: Self.fixtureData,
-                mediaType: "application/x-wardrobe-mock",
+                mediaType: "image/png",
                 providerRequestID: "mock-\(request.requestID.uuidString.lowercased())",
                 providerModelID: "mock-v1",
                 revisedPrompt: nil,

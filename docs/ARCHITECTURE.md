@@ -161,6 +161,14 @@ SwiftData / file system / Keychain / provider SDK or HTTP
 - `ExternalGenerationResultImporter` 是独立边界，真实解码用户选择的图片后调用窄的 generation result Storage 能力，再保存 V1 GenerationRecord 与输入快照；数据库失败会补偿删除本次 generation owner，不触碰人物、衣物或 package 外资源。
 - Stage 8 未实现 Accessibility auto-fill。若未来加入，必须作为默认关闭的实验 adapter，失败回退到上述稳定流程，且永远不执行 Send。
 
+### 4.12 Stage 10 Provider 生成编排边界
+
+- `VirtualTryOnService` 由 composition root 注入 Repository、窄的 generation result Storage、`VirtualTryOnRequestBuilder` 与 Provider；Try-On ViewModel 只提交 Session 意图并展示状态/结果，不接触 SwiftData、文件路径或 destructive Storage。
+- Service 在图片读取和 Provider 调用前创建 `queued` GenerationRecord 与不可变人物/衣物快照，再按 `preparing → running → terminal` 更新；每次 Provider 调用前持久化 `attemptCount`，仅对明确的 `transientFailure` 在同一记录内做最多两次尝试。
+- Provider 成功结果先由 Storage staging、真实图片校验、缩略图生成和原子发布，再提交资源 ID 与 `succeeded`。若终态数据库提交失败，Service 只补偿删除本次 generation owner；失败和取消保留记录，但不保留半成品结果。
+- Regenerate 复用同一 Service 并创建新 UUID，通过 `sourceGenerationID` 指向来源，不修改旧记录。应用 composition root 打开资料库后运行 `InterruptedGenerationRecoveryService`，将遗留的 `queued/preparing/running` 记录标为脱敏的 `failed/interrupted`。
+- 当前生产方向仍是 Stage 8 External ChatGPT 手动交接；Stage 10 的 UI 入口仅在 Debug 暴露 Mock 完整链，不新增 API、凭据、网络或付费 Provider，也不实现 Stage 12 历史浏览。
+
 ## 5. 关键流程
 
 ### 5.1 导入衣物

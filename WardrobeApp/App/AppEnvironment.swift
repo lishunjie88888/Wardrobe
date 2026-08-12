@@ -30,6 +30,7 @@ struct AppEnvironment {
         let mockProvider = MockVirtualTryOnProvider(behavior: .success(delay: .milliseconds(350)))
         self.providerRegistry = try ProviderRegistry(providers: [mockProvider])
         let repository = SwiftDataWardrobeRepository(container: modelContainer)
+        try InterruptedGenerationRecoveryService(repository: repository).recover()
 #if DEBUG
         if ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_CLOTHING"] == "1" {
             let seedID = UUID(uuidString: "00000000-0000-0000-0000-000000000404")!
@@ -141,6 +142,12 @@ struct AppEnvironment {
             person: PersonManagementService(repository: repository),
             imageLoader: tryOnLoader,
             provider: mockProvider,
+            generationService: VirtualTryOnService(
+                repository: repository,
+                storage: storageService,
+                requestBuilder: VirtualTryOnRequestBuilder(loader: tryOnLoader),
+                provider: mockProvider
+            ),
             externalWorkflow: ExternalGenerationWorkflow(
                 builder: ExternalGenerationPackageBuilder(loader: tryOnLoader, workspace: externalWorkspace),
                 clipboard: externalClipboard,

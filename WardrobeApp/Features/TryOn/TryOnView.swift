@@ -249,8 +249,12 @@ struct TryOnView: View {
                 .accessibilityIdentifier("tryon.generating")
         case let .success(preview):
             VStack(spacing: 6) {
+                if let resultResourceID = preview.resultResourceID {
+                    TryOnAssetImage(resources: [resultResourceID], loader: model.imageLoader)
+                        .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 190)
+                }
                 Label("Mock 试穿已完成", systemImage: "checkmark.circle.fill").foregroundStyle(.green).font(.headline)
-                Text("这是 \(preview.providerName) 的测试结果，不是真实 AI 图片。")
+                Text("这是 \(preview.providerName) 的本地测试结果，不是真实 AI 图片；结果与输入快照已保存。")
                     .font(.caption).foregroundStyle(.secondary)
                 Text(preview.garmentsBySlot.flatMap(\.value).joined(separator: "、"))
                     .font(.caption).lineLimit(2)

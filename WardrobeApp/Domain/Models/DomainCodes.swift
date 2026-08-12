@@ -97,7 +97,9 @@ enum GenerationStatus: String, CaseIterable, StableCodeValue {
 
     func canTransition(to next: GenerationStatus) -> Bool {
         switch (self, next) {
-        case (.queued, .preparing), (.preparing, .running), (.running, .succeeded), (.running, .failed):
+        case (.queued, .preparing), (.preparing, .running), (.running, .succeeded):
+            true
+        case let (current, .failed) where !current.isTerminal:
             true
         case let (current, .cancelled) where !current.isTerminal:
             true
