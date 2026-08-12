@@ -1133,7 +1133,7 @@
 
 ### Dependencies
 
-- [ ] Stage 2、12–13 已通过。
+- [x] Stage 2、12–13 已通过。
 
 ### Implementation Tasks
 
@@ -1172,7 +1172,7 @@
 ### Completion Checklist
 
 - [x] 备份 round-trip、损坏输入和回滚 tests 通过。
-- [ ] 人工在隔离测试资料库完成备份/恢复验收后继续；不得直接用唯一真实资料库首次验证。
+- [x] 人工在隔离测试资料库完成备份/恢复验收后继续；不得直接用唯一真实资料库首次验证。
 
 ### Execution Record（2026-08-12）
 
@@ -1184,7 +1184,7 @@
 - Focused Unit：`Stage14BackupRestoreTests` 18 个测试全部通过（round-trip 8 模型 18 assets 不同根、大文件流式、损坏 manifest/checksum/缺文件/路径逃逸/symlink/重复 UUID/坏关系、磁盘不足、敏感目录排除、非终态 generation 阻断、替换不丢旧包、pending 阻断、中断恢复（prepared/originalMoved）、失败候选回滚后原库重开、回滚失败阻断、内部备份存活）。
 - Full Unit：`-only-testing:WardrobeTests test` → `TEST SUCCEEDED`，173 tests passed、0 failed（既有 HEIF skip 不产生失败）。Debug terminal build → `BUILD SUCCEEDED`。
 - Data/Privacy：测试全部在 `/tmp/WardrobeStage14Tests-*`（唯一 base + library 子目录隔离事务 workspace），未触碰正式 Application Support；无 Keychain/网络/凭据；未加密限制已文档化。
-- Manual Acceptance：**Stage 14 Manual isolated backup/restore acceptance pending**（未在真实资料库验证；需在隔离测试资料库按下方步骤验收后才可用真实资料库）。
+- Manual Acceptance：**Stage 14 Manual isolated backup/restore acceptance passed**（用户于 2026-08-12 在隔离资料库完成并确认）。实际确认结果：创建完整 `.wardrobebackup` 通过；Restore Preview 通过；Replacement restore 通过；restart / pre-open apply 通过；Clothing / Person / Outfit / Generation 恢复通过；图片 assets 恢复通过；Outfit Slot / Accessories 顺序通过；原 backup package 保留通过；损坏 checksum backup 被拒绝通过；损坏 backup 未修改当前隔离资料库通过。
 
 ---
 
