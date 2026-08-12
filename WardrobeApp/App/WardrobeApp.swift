@@ -17,6 +17,8 @@ struct WardrobeApp: App {
         WindowGroup {
             WardrobeShellView(environment: environment)
         }
+        .defaultSize(width: 1_400, height: 900)
+        .windowResizability(.contentMinSize)
         .modelContainer(environment.modelContainer)
     }
 }

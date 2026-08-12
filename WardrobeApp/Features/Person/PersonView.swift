@@ -14,48 +14,49 @@ struct PersonView: View {
     @State private var deletingProfile: PersonProfileRecord?
     @State private var imageImpact: PersonImageDeleteImpact?
     @State private var profileImpact: PersonProfileDeleteImpact?
+    @State private var profileSearchText = ""
 
     init(dependencies: PersonFeatureDependencies) {
         _model = State(initialValue: PersonViewModel(dependencies: dependencies))
     }
 
     var body: some View {
-        HSplitView {
-            profileList.frame(minWidth: 260, idealWidth: 320, maxWidth: 380)
-            if let profile = model.selectedProfile {
-                PersonDetailView(
-                    profile: profile,
-                    loader: model.imageLoader,
-                    isImporting: model.isImporting,
-                    onEdit: { draft = profile.draft; editing = profile },
-                    onAddImage: { choosingImage = true },
-                    onDefault: { model.setDefault(profileID: profile.id) },
-                    onArchive: { model.setArchived(profileID: profile.id, value: !profile.isArchived) },
-                    onDeleteProfile: { prepareProfileDelete(profile) },
-                    onPreview: { previewImage = $0 },
-                    onPrimary: { model.setPrimary(imageID: $0.id, profileID: profile.id) },
-                    onDeleteImage: { prepareImageDelete($0) }
-                )
-                .frame(minWidth: 460)
-            } else {
-                ContentUnavailableView("选择人物", systemImage: "person.crop.rectangle.stack", description: Text("查看并管理人物参考照片。"))
-                    .frame(minWidth: 460)
+        VStack(spacing: 0) {
+            personHeader
+            Divider()
+            Group {
+                switch model.state {
+                case .loading:
+                    ProgressView("正在载入人物资料…")
+                case .empty:
+                    profileEmptyState(
+                        title: "还没有人物资料",
+                        systemImage: "person.crop.rectangle.stack",
+                        description: "添加你的第一组全身参考照片，用于之后的 AI 试衣。",
+                        actionTitle: "添加人物"
+                    ) {
+                        draft = PersonDraft()
+                        creating = true
+                    }
+                case let .error(message):
+                    profileEmptyState(
+                        title: "无法载入",
+                        systemImage: "exclamationmark.triangle",
+                        description: message,
+                        actionTitle: "重试"
+                    ) { model.load() }
+                case .content:
+                    if let profile = model.selectedProfile {
+                        personDashboard(profile)
+                    } else {
+                        ContentUnavailableView("选择人物", systemImage: "person.crop.rectangle.stack", description: Text("查看并管理人物参考照片。"))
+                    }
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("我的形象")
         .accessibilityIdentifier("person.feature")
-        .toolbar {
-            ToolbarItemGroup {
-                Picker("人物状态", selection: $model.archiveFilter) {
-                    Text("使用中").tag(PersonArchiveFilter.active)
-                    Text("已归档").tag(PersonArchiveFilter.archived)
-                    Text("全部").tag(PersonArchiveFilter.all)
-                }
-                .pickerStyle(.menu)
-                .onChange(of: model.archiveFilter) { _, _ in model.load() }
-                Button { draft = PersonDraft(); creating = true } label: { Label("添加人物", systemImage: "plus") }
-            }
-        }
         .task { model.load() }
         .fileImporter(isPresented: $choosingImage, allowedContentTypes: [.jpeg, .png, .heic, .heif], allowsMultipleSelection: false) { result in
             if case let .success(urls) = result, let url = urls.first {
@@ -95,15 +96,250 @@ struct PersonView: View {
         .alert("资源状态", isPresented: Binding(get: { model.cleanupNotice != nil }, set: { if !$0 { model.cleanupNotice = nil } })) { Button("好") {} } message: { Text(model.cleanupNotice ?? "") }
     }
 
+    private var filteredProfiles: [PersonProfileRecord] {
+        let query = profileSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return model.profiles }
+        return model.profiles.filter { $0.draft.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    private var personHeader: some View {
+        HStack(spacing: 12) {
+            Picker("人物", selection: $model.selectedID) {
+                ForEach(model.profiles) { profile in
+                    Text(profile.draft.name).tag(Optional(profile.id))
+                }
+            }
+            .pickerStyle(.menu)
+            .frame(width: 280)
+
+            TextField("搜索人物…", text: $profileSearchText)
+                .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: 360)
+
+            Picker("人物状态", selection: $model.archiveFilter) {
+                Text("使用中").tag(PersonArchiveFilter.active)
+                Text("已归档").tag(PersonArchiveFilter.archived)
+                Text("全部").tag(PersonArchiveFilter.all)
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .onChange(of: model.archiveFilter) { _, _ in model.load() }
+
+            Spacer()
+            Button {
+                draft = PersonDraft()
+                creating = true
+            } label: {
+                Label("添加人物", systemImage: "plus")
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding(16)
+    }
+
+    private func personDashboard(_ profile: PersonProfileRecord) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                GeometryReader { geometry in
+                    let mainWidth = min(max(geometry.size.width * 0.32, 280), 380)
+                    let detailWidth = min(max(geometry.size.width * 0.27, 270), 330)
+
+                    HStack(alignment: .top, spacing: 0) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("人物资料").font(.headline)
+                            ZStack(alignment: .topLeading) {
+                                PersonResourceImage(
+                                    resourceID: profile.primaryImage?.processedResourceID ?? profile.primaryImage?.originalResourceID,
+                                    loader: model.imageLoader
+                                )
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(.quaternary.opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
+                                Text("主图")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.accentColor, in: Capsule())
+                                    .padding(10)
+                            }
+                        }
+                        .padding(16)
+                        .frame(width: mainWidth)
+                        .frame(maxHeight: .infinity)
+
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("参考照片（\(profile.images.count)）")
+                                    .font(.headline)
+                                Spacer()
+                                Button { choosingImage = true } label: {
+                                    Label("添加参考照", systemImage: "plus")
+                                }
+                                .disabled(model.isImporting)
+                            }
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 105, maximum: 145), spacing: 12)], spacing: 12) {
+                                ForEach(profile.images) { image in
+                                    Button { previewImage = image } label: {
+                                        ZStack(alignment: .topLeading) {
+                                            PersonResourceImage(resourceID: image.thumbnailResourceID ?? image.processedResourceID, loader: model.imageLoader)
+                                                .frame(height: 150)
+                                                .frame(maxWidth: .infinity)
+                                                .background(.quaternary.opacity(0.14), in: RoundedRectangle(cornerRadius: 9))
+                                            if image.isPrimary {
+                                                Text("主图")
+                                                    .font(.caption2.bold())
+                                                    .foregroundStyle(.white)
+                                                    .padding(5)
+                                                    .background(Color.accentColor, in: Capsule())
+                                                    .padding(6)
+                                            }
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                    .contextMenu {
+                                        if !image.isPrimary {
+                                            Button("设为主图") { model.setPrimary(imageID: image.id, profileID: profile.id) }
+                                        }
+                                        Button("查看大图") { previewImage = image }
+                                        Divider()
+                                        Button("删除照片…", role: .destructive) { prepareImageDelete(image) }
+                                    }
+                                    .accessibilityIdentifier("person.image.\(image.id.uuidString)")
+                                }
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                        Divider()
+
+                        personDetailPanel(profile)
+                            .frame(width: detailWidth)
+                            .frame(maxHeight: .infinity)
+                    }
+                    .background(.background, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(.separator.opacity(0.65)))
+                }
+                .frame(height: 510)
+
+                Text("人物列表（\(filteredProfiles.count)）")
+                    .font(.headline)
+
+                ScrollView(.horizontal) {
+                    HStack(spacing: 14) {
+                        ForEach(filteredProfiles) { item in
+                            Button { model.selectedID = item.id } label: {
+                                HStack(spacing: 12) {
+                                    PersonResourceImage(resourceID: item.preferredThumbnailResourceID, loader: model.imageLoader)
+                                        .frame(width: 58, height: 66)
+                                        .clipShape(Circle())
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        HStack {
+                                            Text(item.draft.name).font(.headline)
+                                            if item.isDefault {
+                                                Text("默认")
+                                                    .font(.caption2.bold())
+                                                    .foregroundStyle(Color.accentColor)
+                                            }
+                                        }
+                                        Text("\(item.images.count) 张参考照")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer(minLength: 12)
+                                }
+                                .padding(14)
+                                .frame(width: 250, alignment: .leading)
+                                .background(item.id == model.selectedID ? Color.accentColor.opacity(0.10) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(item.id == model.selectedID ? Color.accentColor : Color.secondary.opacity(0.25)))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("person.profile.\(item.id.uuidString)")
+                        }
+                    }
+                    .padding(.bottom, 2)
+                }
+            }
+            .padding(18)
+        }
+    }
+
+    private func personDetailPanel(_ profile: PersonProfileRecord) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("详细信息").font(.headline)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("姓名").font(.caption).foregroundStyle(.secondary)
+                Text(profile.draft.name)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(.quaternary.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text("备注").font(.caption).foregroundStyle(.secondary)
+                Text(profile.draft.notes ?? "暂无备注")
+                    .foregroundStyle(profile.draft.notes == nil ? Color.secondary : Color.primary)
+                    .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
+                    .padding(8)
+                    .background(.quaternary.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+            }
+            Divider()
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("默认人物")
+                    Text("AI 试衣间优先使用")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: Binding(
+                    get: { profile.isDefault },
+                    set: { if $0 && !profile.isDefault { model.setDefault(profileID: profile.id) } }
+                ))
+                .labelsHidden()
+            }
+            Spacer()
+            HStack {
+                Menu {
+                    Button(profile.isArchived ? "恢复" : "归档") {
+                        model.setArchived(profileID: profile.id, value: !profile.isArchived)
+                    }
+                    Divider()
+                    Button("永久删除…", role: .destructive) { prepareProfileDelete(profile) }
+                } label: { Text("更多") }
+                Spacer()
+                Button("编辑") {
+                    draft = profile.draft
+                    editing = profile
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(16)
+    }
+
     @ViewBuilder private var profileList: some View {
         switch model.state {
         case .loading: ProgressView("正在载入人物资料…")
         case .empty:
-            ContentUnavailableView("还没有人物资料", systemImage: "person.crop.rectangle.stack", description: Text("添加你的第一组全身参考照片，用于之后的 AI 试衣。"))
-                .overlay(alignment: .bottom) { Button("添加人物") { draft = PersonDraft(); creating = true }.padding(.bottom, 70) }
+            profileEmptyState(
+                title: "还没有人物资料",
+                systemImage: "person.crop.rectangle.stack",
+                description: "添加你的第一组全身参考照片，用于之后的 AI 试衣。",
+                actionTitle: "添加人物"
+            ) {
+                draft = PersonDraft()
+                creating = true
+            }
         case let .error(message):
-            ContentUnavailableView("无法载入", systemImage: "exclamationmark.triangle", description: Text(message))
-                .overlay(alignment: .bottom) { Button("重试") { model.load() }.padding(.bottom, 70) }
+            profileEmptyState(
+                title: "无法载入",
+                systemImage: "exclamationmark.triangle",
+                description: message,
+                actionTitle: "重试"
+            ) { model.load() }
         case .content:
             List(model.profiles, selection: $model.selectedID) { profile in
                 PersonProfileRow(profile: profile, loader: model.imageLoader)
@@ -111,6 +347,30 @@ struct PersonView: View {
                     .accessibilityIdentifier("person.profile.\(profile.id.uuidString)")
             }
         }
+    }
+
+    private func profileEmptyState(
+        title: String,
+        systemImage: String,
+        description: String,
+        actionTitle: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 36))
+                .foregroundStyle(.secondary)
+            Text(title)
+                .font(.headline)
+            Text(description)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button(actionTitle, action: action)
+                .buttonStyle(.borderedProminent)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var imageDeleteMessage: String {

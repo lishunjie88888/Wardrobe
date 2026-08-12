@@ -41,6 +41,7 @@ final class WardrobeViewModel {
             }
 #endif
             if let selectedID, !items.contains(where: { $0.id == selectedID }) { self.selectedID = nil }
+            if selectedID == nil { selectedID = items.first?.id }
             state = items.isEmpty ? (query.hasActiveFilters ? .filteredEmpty : .empty) : .content
         } catch {
             state = .error("无法读取衣橱，请稍后重试。")

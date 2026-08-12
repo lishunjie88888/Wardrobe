@@ -24,10 +24,26 @@ struct TryOnView: View {
     }
 
     var body: some View {
-        HSplitView {
-            clothingBrowser.frame(minWidth: 230, idealWidth: 280, maxWidth: 360)
-            personCanvas.frame(minWidth: 330, idealWidth: 520)
-            outfitPanel.frame(minWidth: 280, idealWidth: 330, maxWidth: 430)
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let clothingWidth = min(max(width * 0.28, 250), 360)
+            let outfitWidth = min(max(width * 0.30, 290), 390)
+
+            HStack(spacing: 0) {
+                clothingBrowser
+                    .frame(width: clothingWidth)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                Divider()
+                personCanvas
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .layoutPriority(1)
+                Divider()
+                outfitPanel
+                    .frame(width: outfitWidth)
+                    .frame(maxHeight: .infinity, alignment: .top)
+            }
+            .frame(width: width, height: geometry.size.height)
+            .clipped()
         }
         .navigationTitle("AI 试衣间")
         .accessibilityIdentifier("tryon.feature")
@@ -52,8 +68,10 @@ struct TryOnView: View {
 
     private var clothingBrowser: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                TextField("搜索衣橱", text: $model.searchText)
+            VStack(alignment: .leading, spacing: 12) {
+                Text("选择服饰")
+                    .font(.headline)
+                TextField("搜索衣物名称、品牌、标签…", text: $model.searchText)
                     .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("tryon.clothing.search")
                     .onSubmit { model.filtersChanged() }
@@ -63,18 +81,22 @@ struct TryOnView: View {
                         ForEach(ClothingCategory.allCases, id: \.rawValue) { Text($0.tryOnDisplayName).tag(Optional($0.rawValue)) }
                     }
                     .labelsHidden()
-                    Toggle("收藏", isOn: $model.favoritesOnly).toggleStyle(.button)
+                    .frame(maxWidth: .infinity)
+                    Toggle(isOn: $model.favoritesOnly) {
+                        Label("收藏", systemImage: model.favoritesOnly ? "star.fill" : "star")
+                    }
+                    .toggleStyle(.button)
                 }
                 .onChange(of: model.categoryCode) { _, _ in model.filtersChanged() }
                 .onChange(of: model.favoritesOnly) { _, _ in model.filtersChanged() }
             }
-            .padding(12)
+            .padding(16)
             Divider()
             if model.clothing.isEmpty {
                 ContentUnavailableView("没有可用衣物", systemImage: "tshirt", description: Text("请先在“我的衣橱”中添加或调整筛选。"))
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 112, maximum: 165), spacing: 12)], spacing: 14) {
                         ForEach(model.clothing) { item in
                             TryOnClothingCard(item: item, loader: model.imageLoader) { slot in
                                 model.addClothing(item.id, to: slot)
@@ -83,7 +105,15 @@ struct TryOnView: View {
                             .accessibilityIdentifier("tryon.clothing.\(item.id.uuidString)")
                         }
                     }
-                    .padding(12)
+                    .padding(14)
+                }
+                .safeAreaInset(edge: .bottom) {
+                    Text("共 \(model.clothing.count) 件可用衣物")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                        .background(.bar)
                 }
             }
         }
@@ -91,56 +121,82 @@ struct TryOnView: View {
     }
 
     private var personCanvas: some View {
-        VStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: 14) {
             if model.profiles.isEmpty {
                 ContentUnavailableView("还没有人物资料", systemImage: "person.crop.rectangle", description: Text("请先在“我的形象”中添加人物参考照片。"))
             } else {
-                HStack {
-                    Picker("人物", selection: Binding(
-                        get: { model.session.personProfileID },
-                        set: { model.selectPerson($0) }
-                    )) {
-                        ForEach(model.profiles) { profile in
-                            Text(profile.isDefault ? "\(profile.draft.name) · 默认" : profile.draft.name).tag(Optional(profile.id))
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("选择人物")
+                        .font(.headline)
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 12) {
+                            ForEach(model.profiles) { profile in
+                                Button {
+                                    model.selectPerson(profile.id)
+                                } label: {
+                                    VStack(spacing: 5) {
+                                        ZStack {
+                                            TryOnAssetImage(
+                                                resources: [profile.preferredThumbnailResourceID].compactMap { $0 },
+                                                loader: model.imageLoader
+                                            )
+                                            .clipShape(Circle())
+                                            Circle()
+                                                .stroke(
+                                                    profile.id == model.session.personProfileID ? Color.accentColor : Color.secondary.opacity(0.25),
+                                                    lineWidth: profile.id == model.session.personProfileID ? 3 : 1
+                                                )
+                                        }
+                                        .frame(width: 52, height: 52)
+                                        Text(profile.draft.name)
+                                            .font(.caption)
+                                            .lineLimit(1)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier("tryon.person.option.\(profile.id.uuidString)")
+                            }
                         }
                     }
                     .accessibilityIdentifier("tryon.person.picker")
-                    Spacer()
-                    Text("Mock 工作区").font(.caption).foregroundStyle(.secondary)
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
 
                 if let profile = model.selectedProfile, let primary = model.currentReferences?.primaryImage {
-                    TryOnAssetImage(resources: [primary.processedResourceID, primary.originalResourceID].compactMap { $0 }, loader: model.imageLoader)
-                        .scaledToFit()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(.horizontal)
-                        .accessibilityIdentifier("tryon.person.canvas")
-                        .dropDestination(for: ClothingDragPayload.self) { payloads, _ in
-                            payloads.reduce(false) { accepted, payload in model.addClothing(payload.clothingID) || accepted }
-                        } isTargeted: { _ in }
-                    HStack {
-                        Text(profile.draft.name).font(.headline)
-                        if profile.isDefault { Label("默认人物", systemImage: "star.fill").font(.caption).foregroundStyle(.secondary) }
+                    ZStack(alignment: .bottomLeading) {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(.quaternary.opacity(0.2))
+                        TryOnAssetImage(resources: [primary.processedResourceID, primary.originalResourceID].compactMap { $0 }, loader: model.imageLoader)
+                            .padding(10)
+                        HStack(spacing: 6) {
+                            Text(profile.draft.name).font(.subheadline.bold())
+                            if profile.isDefault {
+                                Label("默认", systemImage: "star.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(.regularMaterial, in: Capsule())
+                        .padding(12)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityIdentifier("tryon.person.canvas")
+                    .dropDestination(for: ClothingDragPayload.self) { payloads, _ in
+                        payloads.reduce(false) { accepted, payload in model.addClothing(payload.clothingID) || accepted }
+                    } isTargeted: { _ in }
+                    .padding(.horizontal, 16)
                     referencePicker
                 } else {
                     ContentUnavailableView("当前人物没有可用参考照片", systemImage: "photo.badge.exclamationmark", description: Text("请先为此人物添加并设置主参考照。"))
                 }
                 generationStatus
-                if let imported = model.importedResult {
-                    VStack(spacing: 6) {
-                        TryOnAssetImage(resources: [imported.resultResourceID], loader: model.imageLoader)
-                            .frame(maxWidth: 340, maxHeight: 340)
-                        Label("ChatGPT 手动生成 · 已导入", systemImage: "square.and.arrow.down")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    .accessibilityIdentifier("tryon.external.imported-result")
-                }
             }
         }
-        .padding(.vertical)
-        .background(.quaternary.opacity(0.18))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.background)
     }
 
     @ViewBuilder private var referencePicker: some View {
@@ -177,7 +233,7 @@ struct TryOnView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 16)
         }
     }
 
@@ -214,79 +270,256 @@ struct TryOnView: View {
             HStack {
                 Text("当前搭配").font(.headline)
                 Spacer()
-                Button("清空") { model.clearOutfit() }
+                Button { model.clearOutfit() } label: {
+                    Label("清空搭配", systemImage: "trash")
+                }
                     .disabled(model.session.garmentCount == 0)
                     .accessibilityIdentifier("tryon.clear")
             }
-            .padding()
+            .padding(16)
             Divider()
             ScrollView {
-                VStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 14) {
                     ForEach(TryOnSlot.allCases, id: \.self) { slot in
                         TryOnSlotView(slot: slot, model: model)
                     }
-                }
-                .padding()
-            }
-            Divider()
-            VStack(spacing: 8) {
-                switch model.generationState {
-                case .generating, .validating:
-                    Button("取消生成", role: .cancel) { model.cancelGeneration() }
-                        .accessibilityIdentifier("tryon.cancel")
-                default:
-                    Button("使用 ChatGPT 生成") { model.prepareExternalGeneration() }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(!model.canGenerate)
-                        .keyboardShortcut("g", modifiers: [.command])
-                        .accessibilityIdentifier("tryon.external.generate")
+
+                    Text("生成方式")
+                        .font(.headline)
+                        .padding(.top, 4)
+
+                    HStack(spacing: 10) {
+                        generationMethodCard(
+                            title: "使用 ChatGPT 生成",
+                            subtitle: "准备素材后手动生成",
+                            icon: "sparkles",
+                            isSelected: true
+                        )
 #if DEBUG
-                    Button("Mock 测试生成") { model.generate() }
+                        Button { model.generate() } label: {
+                            generationMethodCard(
+                                title: "Mock 测试生成",
+                                subtitle: "快速检查搭配流程",
+                                icon: "cube",
+                                isSelected: false
+                            )
+                        }
+                        .buttonStyle(.plain)
                         .disabled(!model.canGenerate)
                         .keyboardShortcut("g", modifiers: [.command, .shift])
                         .accessibilityIdentifier("tryon.generate")
 #endif
+                    }
+
+                    Text("当前结果")
+                        .font(.headline)
+
+                    if let imported = model.importedResult {
+                        VStack(spacing: 8) {
+                            TryOnAssetImage(resources: [imported.resultResourceID], loader: model.imageLoader)
+                                .frame(maxWidth: .infinity, minHeight: 170, maxHeight: 220)
+                            Label("ChatGPT 手动生成 · 已导入", systemImage: "square.and.arrow.down")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(10)
+                        .background(.quaternary.opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
+                        .accessibilityIdentifier("tryon.external.imported-result")
+                    } else {
+                        VStack(spacing: 8) {
+                            Image(systemName: "photo.on.rectangle.angled")
+                                .font(.system(size: 30))
+                            Text("生成结果将显示在这里")
+                                .font(.subheadline)
+                            Text("完成 ChatGPT 生成后导入图片")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 130)
+                        .background(.quaternary.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(.separator, style: StrokeStyle(lineWidth: 1, dash: [5]))
+                        }
+                    }
+                }
+                .padding(14)
+            }
+            Divider()
+            VStack(spacing: 10) {
+                switch model.generationState {
+                case .generating, .validating:
+                    Button("取消生成", role: .cancel) { model.cancelGeneration() }
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("tryon.cancel")
+                default:
+                    Button {
+                        model.prepareExternalGeneration()
+                    } label: {
+                        Label("生成搭配", systemImage: "sparkles")
+                            .frame(maxWidth: .infinity)
+                    }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .disabled(!model.canGenerate)
+                        .keyboardShortcut("g", modifiers: [.command])
+                        .accessibilityIdentifier("tryon.external.generate")
                 }
                 if model.isPreparingExternal { ProgressView("正在准备本地素材…") }
-                Text("ChatGPT 手动交接 · Wardrobe 不上传图片、不调用 API").font(.caption).foregroundStyle(.secondary)
+                Text("Wardrobe 只准备本地素材，不上传图片、不调用 API")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
-            .padding()
+            .padding(14)
         }
         .background(.background)
     }
 
+    private func generationMethodCard(title: String, subtitle: String, icon: String, isSelected: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                Spacer()
+                if isSelected {
+                    Text("推荐")
+                        .font(.caption2.bold())
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            Text(title)
+                .font(.caption.bold())
+                .lineLimit(2)
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
+        .padding(10)
+        .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isSelected ? Color.accentColor : Color.secondary.opacity(0.25), lineWidth: isSelected ? 1.5 : 1)
+        }
+    }
+
     @ViewBuilder private var externalPackageSheet: some View {
         if let package = model.preparedPackage {
-            VStack(alignment: .leading, spacing: 16) {
-                Label("AI 试衣素材已准备完成", systemImage: "checkmark.circle.fill")
-                    .font(.title2.bold()).foregroundStyle(.green)
-                Text("已准备 \(package.personAttachmentCount) 张人物参考图、\(package.garmentAttachmentCount) 件衣物。Prompt 已写入 prompt.txt。")
-                Text("下一步：\n1. 将素材图片按文件名顺序拖入 ChatGPT\n2. 粘贴 Prompt\n3. 检查无误后由你亲自发送\n4. 生成完成后返回 Wardrobe 导入结果")
-                    .foregroundStyle(.secondary)
+            VStack(spacing: 18) {
+                VStack(spacing: 8) {
+                    Label("AI 试衣素材已准备完成", systemImage: "checkmark.circle.fill")
+                        .font(.title2.bold())
+                        .foregroundStyle(.green)
+                    Text("Prompt 已复制到剪贴板，参考图和衣物图已按上传顺序整理。")
+                        .foregroundStyle(.secondary)
+                    Text("请在 ChatGPT 中上传图片、粘贴 Prompt，并由你亲自确认发送。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
                 if case .ready(let result) = model.externalState, !result.promptCopied {
                     Label("自动复制提示词失败，可从 prompt.txt 手动复制。", systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.orange)
                 }
-                HStack {
-                    Button("打开 ChatGPT") { model.openChatGPT() }.accessibilityIdentifier("tryon.external.open-chatgpt")
-                    Button("在 Finder 中显示素材") { model.revealPreparedPackage() }.accessibilityIdentifier("tryon.external.reveal")
-                    Button("再次复制 Prompt") { model.copyPreparedPrompt() }.accessibilityIdentifier("tryon.external.copy-prompt")
+
+                GroupBox {
+                    HStack {
+                        packageSummaryItem(icon: "person.2", title: "人物参考图", value: "\(package.personAttachmentCount) 张")
+                        Divider()
+                        packageSummaryItem(icon: "tshirt", title: "衣物", value: "\(package.garmentAttachmentCount) 件")
+                        Divider()
+                        packageSummaryItem(icon: "photo", title: "参考图", value: "\(package.imageAttachments.count) 张")
+                    }
+                    .frame(maxWidth: .infinity)
+                } label: {
+                    Text("素材概览")
                 }
+
+                ScrollView(.horizontal) {
+                    HStack(spacing: 10) {
+                        ForEach(Array(package.imageAttachments.enumerated()), id: \.element.id) { index, attachment in
+                            VStack(spacing: 5) {
+                                TryOnAssetImage(resources: [attachment.resourceID], loader: model.imageLoader)
+                                    .frame(width: 92, height: 108)
+                                Text("图 \(index + 1)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                }
+
+                HStack(spacing: 12) {
+                    GroupBox("已复制的 Prompt") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("可直接粘贴到 ChatGPT", systemImage: "doc.on.clipboard")
+                                .font(.subheadline)
+                            Button("再次复制 Prompt") { model.copyPreparedPrompt() }
+                                .accessibilityIdentifier("tryon.external.copy-prompt")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    GroupBox("素材包内容") {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label("prompt.txt", systemImage: "doc.text")
+                            Label("manifest.json", systemImage: "doc.badge.gearshape")
+                            Text("共 \(package.imageAttachments.count + 2) 个文件")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                Divider()
                 HStack {
+                    Button("打开 ChatGPT") { model.openChatGPT() }
+                        .accessibilityIdentifier("tryon.external.open-chatgpt")
+                    Button("在 Finder 中显示素材") { model.revealPreparedPackage() }
+                        .accessibilityIdentifier("tryon.external.reveal")
                     Button("导入生成结果") {
                         if let injected = model.injectedResultURL { model.importExternalResult(from: injected) }
                         else { importsExternalResult = true }
-                    }.buttonStyle(.borderedProminent).keyboardShortcut("i", modifiers: [.command]).accessibilityIdentifier("tryon.external.import")
-                    Button("清理此临时素材") { model.cleanPreparedPackage(); showsExternalPackage = false }.accessibilityIdentifier("tryon.external.cleanup")
+                    }
+                    .keyboardShortcut("i", modifiers: [.command])
+                    .accessibilityIdentifier("tryon.external.import")
                     Spacer()
-                    Button("完成") { showsExternalPackage = false }.keyboardShortcut(.defaultAction)
+                    Menu {
+                        Button("清理此临时素材", role: .destructive) {
+                            model.cleanPreparedPackage()
+                            showsExternalPackage = false
+                        }
+                        .accessibilityIdentifier("tryon.external.cleanup")
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    Button("完成") { showsExternalPackage = false }
+                        .buttonStyle(.borderedProminent)
+                        .keyboardShortcut(.defaultAction)
                 }
             }
-            .padding(24)
-            .frame(minWidth: 620)
+            .padding(26)
+            .frame(width: 680)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("tryon.external.ready-sheet")
         }
+    }
+
+    private func packageSummaryItem(icon: String, title: String, value: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.caption).foregroundStyle(.secondary)
+                Text(value).font(.headline)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 4)
     }
 }
 
@@ -296,24 +529,31 @@ private struct TryOnClothingCard: View {
     let add: (TryOnSlot?) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 7) {
             TryOnAssetImage(resources: [item.processedResourceID, item.thumbnailResourceID].compactMap { $0 }, loader: loader)
-                .frame(height: 105)
+                .frame(height: 120)
             Text(item.draft.name).font(.subheadline.bold()).lineLimit(1)
             HStack {
                 Text(ClothingCategory(rawValue: item.draft.categoryCode)?.tryOnDisplayName ?? "未知分类")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 if case let .supported(slot) = ClothingToTryOnSlotMapper().slot(for: item.draft.categoryCode) {
-                    Button { add(slot) } label: { Image(systemName: "plus.circle") }
-                        .buttonStyle(.plain)
+                    Button { add(slot) } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                    }
+                    .buttonStyle(.plain)
                         .accessibilityLabel("添加 \(item.draft.name) 到 \(slot.displayName)")
                         .accessibilityIdentifier("tryon.add.\(item.id.uuidString)")
                 }
             }
         }
-        .padding(7)
-        .background(.quaternary.opacity(0.22), in: RoundedRectangle(cornerRadius: 8))
+        .padding(9)
+        .background(.background, in: RoundedRectangle(cornerRadius: 11))
+        .overlay {
+            RoundedRectangle(cornerRadius: 11)
+                .stroke(.separator.opacity(0.65))
+        }
         .accessibilityElement(children: .contain)
         .contextMenu {
             switch ClothingToTryOnSlotMapper().slot(for: item.draft.categoryCode) {
@@ -356,8 +596,8 @@ private struct TryOnSlotView: View {
             }
         }
         .padding(10)
-        .background(.quaternary.opacity(0.18), in: RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(.separator.opacity(0.5)))
+        .background(.quaternary.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(.separator.opacity(0.55)))
         .dropDestination(for: ClothingDragPayload.self) { payloads, _ in
             payloads.reduce(false) { accepted, payload in model.addClothing(payload.clothingID, to: slot) || accepted }
         } isTargeted: { _ in }
@@ -388,11 +628,11 @@ private struct TryOnAssetImage: View {
 extension TryOnSlot {
     var displayName: String {
         switch self {
-        case .upperBody: "Upper Body"
-        case .outerwear: "Outerwear"
-        case .lowerBody: "Lower Body"
-        case .footwear: "Footwear"
-        case .accessories: "Accessories"
+        case .upperBody: "上衣"
+        case .outerwear: "外套"
+        case .lowerBody: "下装"
+        case .footwear: "鞋履"
+        case .accessories: "配饰"
         }
     }
 

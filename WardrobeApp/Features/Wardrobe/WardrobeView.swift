@@ -17,26 +17,58 @@ struct WardrobeView: View {
     }
 
     var body: some View {
-        HSplitView {
-            content
-                .frame(minWidth: 440)
-            if let item = model.selectedItem {
-                ClothingDetailView(
-                    item: item,
-                    loader: model.imageLoader,
-                    onEdit: { editDraft = item.draft; editingItem = item },
-                    onFavorite: { model.toggleFavorite(item) },
-                    onArchive: { model.setArchived(item, value: !item.isArchived) },
-                    onDelete: { prepareDelete(item) }
-                )
-                .frame(minWidth: 260, idealWidth: 320, maxWidth: 420)
+        GeometryReader { geometry in
+            let detailWidth = min(max(geometry.size.width * 0.32, 330), 390)
+
+            HStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    wardrobeHeader
+                    Divider()
+                    content
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    if case .content = model.state {
+                        Text("共 \(model.items.count) 件衣物")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 10)
+                    }
+                }
+                .layoutPriority(1)
+
+                Divider()
+                VStack(spacing: 0) {
+                    HStack {
+                        Spacer()
+                        Button { isChoosingImage = true } label: {
+                            Label("添加衣服", systemImage: "plus")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(model.isImporting)
+                    }
+                    .padding(14)
+                    Divider()
+
+                    if let item = model.selectedItem {
+                    ClothingDetailView(
+                        item: item,
+                        loader: model.imageLoader,
+                        onEdit: { editDraft = item.draft; editingItem = item },
+                        onFavorite: { model.toggleFavorite(item) },
+                        onArchive: { model.setArchived(item, value: !item.isArchived) },
+                        onDelete: { prepareDelete(item) }
+                    )
+                    } else {
+                        ContentUnavailableView("选择衣物", systemImage: "tshirt", description: Text("查看衣物详情和管理操作。"))
+                    }
+                }
+                .frame(width: detailWidth)
+                .frame(maxHeight: .infinity)
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
         }
         .navigationTitle("我的衣橱")
         .accessibilityIdentifier("wardrobe.feature")
-        .searchable(text: $model.query.searchText, prompt: "搜索名称、品牌、颜色、材质或标签")
-        .onChange(of: model.query.searchText) { _, _ in model.searchChanged() }
-        .toolbar { toolbarContent }
         .task { model.load() }
         .fileImporter(
             isPresented: $isChoosingImage,
@@ -90,19 +122,73 @@ struct WardrobeView: View {
         )) { Button("好") {} } message: { Text(model.cleanupNotice ?? "") }
     }
 
+    private var wardrobeHeader: some View {
+        HStack(spacing: 12) {
+            TextField("搜索衣物名称、品牌、标签…", text: $model.query.searchText)
+                .textFieldStyle(.roundedBorder)
+                .onChange(of: model.query.searchText) { _, _ in model.searchChanged() }
+            Menu {
+                Picker("归档状态", selection: $model.query.archive) {
+                    Text("使用中").tag(ClothingArchiveFilter.active)
+                    Text("已归档").tag(ClothingArchiveFilter.archived)
+                    Text("全部").tag(ClothingArchiveFilter.all)
+                }
+                Toggle("仅收藏", isOn: $model.query.favoritesOnly)
+                Menu("分类") {
+                    Button("全部分类") { model.query.categoryCode = nil }
+                    ForEach(ClothingCategory.allCases, id: \.rawValue) { category in
+                        Button(category.displayName) { model.query.categoryCode = category.rawValue }
+                    }
+                }
+                Divider()
+                Button("清除筛选") { model.clearFilters() }
+            } label: {
+                Label("筛选", systemImage: "line.3.horizontal.decrease")
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            Picker("排序", selection: $model.query.sort) {
+                Text("最近添加").tag(ClothingSort.newest)
+                Text("最近修改").tag(ClothingSort.recentlyUpdated)
+                Text("名称").tag(ClothingSort.name)
+                Text("收藏优先").tag(ClothingSort.favoritesFirst)
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .fixedSize()
+        }
+        .padding(16)
+        .onChange(of: model.query.archive) { _, _ in model.filtersChanged() }
+        .onChange(of: model.query.favoritesOnly) { _, _ in model.filtersChanged() }
+        .onChange(of: model.query.categoryCode) { _, _ in model.filtersChanged() }
+        .onChange(of: model.query.sort) { _, _ in model.filtersChanged() }
+    }
+
     @ViewBuilder private var content: some View {
         switch model.state {
         case .loading:
             ProgressView("正在载入衣橱…")
         case .empty:
-            ContentUnavailableView("衣橱还是空的", systemImage: "cabinet", description: Text("添加第一件衣服，建立你的本地衣橱。"))
-                .overlay(alignment: .bottom) { Button("添加第一件衣服") { isChoosingImage = true }.padding(.bottom, 80) }
+            emptyState(
+                title: "衣橱还是空的",
+                systemImage: "cabinet",
+                description: "添加第一件衣服，建立你的本地衣橱。",
+                actionTitle: "添加第一件衣服"
+            ) { isChoosingImage = true }
         case .filteredEmpty:
-            ContentUnavailableView.search(text: model.query.searchText)
-                .overlay(alignment: .bottom) { Button("清除筛选") { model.clearFilters() }.padding(.bottom, 80) }
+            emptyState(
+                title: "没有找到衣物",
+                systemImage: "magnifyingglass",
+                description: "没有符合当前搜索或筛选条件的衣物。",
+                actionTitle: "清除筛选"
+            ) { model.clearFilters() }
         case let .error(message):
-            ContentUnavailableView("无法载入", systemImage: "exclamationmark.triangle", description: Text(message))
-                .overlay(alignment: .bottom) { Button("重试") { model.load() }.padding(.bottom, 80) }
+            emptyState(
+                title: "无法载入",
+                systemImage: "exclamationmark.triangle",
+                description: message,
+                actionTitle: "重试"
+            ) { model.load() }
         case .content:
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 160, maximum: 220), spacing: 16)], spacing: 18) {
@@ -124,6 +210,29 @@ struct WardrobeView: View {
                 .padding()
             }
         }
+    }
+
+    private func emptyState(
+        title: String,
+        systemImage: String,
+        description: String,
+        actionTitle: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        VStack(spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.system(size: 42))
+                .foregroundStyle(.secondary)
+            Text(title)
+                .font(.title2.bold())
+            Text(description)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button(actionTitle, action: action)
+                .buttonStyle(.borderedProminent)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     @ToolbarContentBuilder private var toolbarContent: some ToolbarContent {
@@ -236,19 +345,95 @@ private struct ClothingDetailView: View {
     let onDelete: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                ClothingAssetImage(record: item, loader: loader).frame(height: 260)
-                HStack { Text(item.draft.name).font(.title2.bold()); Spacer(); Button(action: onFavorite) { Image(systemName: item.draft.isFavorite ? "heart.fill" : "heart") }.accessibilityIdentifier("wardrobe.detail.favorite") }
-                LabeledContent("分类", value: ClothingCategory(rawValue: item.draft.categoryCode)?.displayName ?? "其他 / 未知")
-                if let brand = item.draft.brand { LabeledContent("品牌", value: brand) }
-                if !item.draft.tags.isEmpty { LabeledContent("标签", value: item.draft.tags.joined(separator: "、")) }
-                if let notes = item.draft.notes { Text(notes).foregroundStyle(.secondary) }
-                Divider()
-                HStack { Button("编辑", action: onEdit).accessibilityIdentifier("wardrobe.detail.edit"); Button(item.isArchived ? "恢复" : "归档", action: onArchive).accessibilityIdentifier("wardrobe.detail.archive") }
-                Button("永久删除…", role: .destructive, action: onDelete)
-            }.padding()
+        VStack(spacing: 0) {
+            HStack(spacing: 34) {
+                Text("详情")
+                    .font(.headline)
+                    .foregroundStyle(Color.accentColor)
+                Text("搭配记录")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 13)
+            .overlay(alignment: .bottomLeading) {
+                Capsule()
+                    .fill(Color.accentColor)
+                    .frame(width: 44, height: 2)
+                    .padding(.leading, 18)
+            }
+
+            Divider()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 13) {
+                    ZStack(alignment: .topTrailing) {
+                        ClothingAssetImage(record: item, loader: loader)
+                            .frame(height: 220)
+                            .frame(maxWidth: .infinity)
+                            .background(.quaternary.opacity(0.16), in: RoundedRectangle(cornerRadius: 10))
+                        Button(action: onEdit) { Image(systemName: "pencil") }
+                            .buttonStyle(.bordered)
+                            .padding(8)
+                    }
+
+                    detailRow("名称", value: item.draft.name)
+                    detailRow("类别", value: ClothingCategory(rawValue: item.draft.categoryCode)?.displayName ?? "其他 / 未知")
+                    detailRow("品牌", value: item.draft.brand ?? "—")
+                    detailRow("颜色", value: item.draft.colorCodes.isEmpty ? "—" : item.draft.colorCodes.joined(separator: "、"))
+                    detailRow("季节", value: item.draft.seasonCodes.isEmpty ? "—" : item.draft.seasonCodes.joined(separator: "、"))
+                    detailRow("风格", value: item.draft.styleCodes.isEmpty ? "—" : item.draft.styleCodes.joined(separator: "、"))
+                    detailRow("材质", value: item.draft.materials.isEmpty ? "—" : item.draft.materials.joined(separator: "、"))
+                    detailRow("标签", value: item.draft.tags.isEmpty ? "—" : item.draft.tags.joined(separator: "、"))
+                    if let notes = item.draft.notes {
+                        detailRow("备注", value: notes, multiline: true)
+                    }
+
+                    HStack {
+                        Text("收藏")
+                        Spacer()
+                        Button(action: onFavorite) {
+                            Image(systemName: item.draft.isFavorite ? "star.fill" : "star")
+                                .foregroundStyle(item.draft.isFavorite ? Color.accentColor : .secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("wardrobe.detail.favorite")
+                    }
+                }
+                .padding(16)
+            }
+
+            Divider()
+            HStack {
+                Menu {
+                    Button(item.isArchived ? "恢复" : "归档", action: onArchive)
+                    Divider()
+                    Button("永久删除…", role: .destructive, action: onDelete)
+                } label: {
+                    Text("更多")
+                }
+                Spacer()
+                Button("编辑", action: onEdit)
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("wardrobe.detail.edit")
+            }
+            .padding(14)
         }
+    }
+
+    private func detailRow(_ title: String, value: String, multiline: Bool = false) -> some View {
+        HStack(alignment: multiline ? .top : .center, spacing: 10) {
+            Text(title)
+                .frame(width: 42, alignment: .leading)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .lineLimit(multiline ? 4 : 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(.quaternary.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+        }
+        .font(.subheadline)
     }
 }
 

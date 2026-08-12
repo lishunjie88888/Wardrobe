@@ -46,6 +46,7 @@ final class PersonViewModel {
             }
 #endif
             if let selectedID, !profiles.contains(where: { $0.id == selectedID }) { self.selectedID = nil }
+            if selectedID == nil { selectedID = profiles.first?.id }
             state = profiles.isEmpty ? .empty : .content
         } catch {
             state = .error("无法读取人物资料，请稍后重试。")
