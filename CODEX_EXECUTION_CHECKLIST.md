@@ -1336,7 +1336,7 @@
 ### Completion Checklist
 
 - [x] 关键性能预算与可靠性测试通过。
-- [ ] 人工审查 orphan cleanup 和所有自动删除边界后继续（**待用户确认**，见下方 Manual Gate）。
+- [x] 人工审查 orphan cleanup 和所有自动删除边界后继续（**已通过**，见下方 Manual Gate）。
 
 ### Execution Record（2026-08-12）
 
@@ -1362,11 +1362,11 @@
 - 测试：Stage16 focused 16 项全过；Full Wardrobe Unit 189 项（188 passed / 0 failed / 1 skipped=HEIC runtime）；Debug build 与 Release build 均 `BUILD SUCCEEDED`；`git diff --check` 通过；未运行 GUI UI automation。
 - Data/Privacy：全部测试使用 in-memory SwiftData / 隔离临时 Storage；xctrace 启动 trace 使用 `/tmp` 隔离根；未触碰生产 Application Support，无网络，无真实照片。
 - Manual Review 跟进（2026-08-12）：人工 orphan safety review 发现 `deleteEligibleUnreferenced()` 原先只在删除循环前读取一次全局引用快照，循环内多次 `await` 期间 metadata 变化后后续删除仍可能依据旧快照。已改为逐 candidate 删除前重新读取全局引用、重验 `StorageResourceID` 合法性与 modification date 仍超宽限期，任一条件不满足即 retained 不删除；新增 2 项回归测试（删除中途被重新引用必须保留、report 后 mtime 刷新到宽限期内必须保留），单独 commit 并 push。
-- **Manual Gate（待用户）**：
-  - 性能：启动、1000 项衣橱、搜索/筛选、快速滚动、重复详情、Generation History、内存行为（Allocations CLI 不可用，建议 Instruments GUI 复核）。
-  - File Safety 边界确认：允许自动 cleanup = `cache/previews`、`cache/provider`（LRU 驱逐，仅文件）；`staging/<UUID>` 超过 24h（仅启动时，仅 UUID 目录）；`generations|garments|persons|outfits/<UUID>/` 下经显式确认且再次核对引用的无引用文件（7 天宽限，仅文件）。
-  - 永不自动 cleanup = `backups/`、`migration/`、`external-generations/`、`database/`、`library.json`、owner 目录本身、被引用文件、非 UUID staging 条目。
+- **Manual Gate（2026-08-12 人工确认通过）**：用户实际确认 Performance 与 File Safety 审查全部通过。
+  - Performance（实际人工复核）：启动性能通过；1000 项规模性能基线通过；Wardrobe 快速滚动通过；搜索/筛选响应通过；连续打开/关闭详情约 30 次通过；Generation History 快速切换通过；操作停止后内存趋于稳定，无持续阶梯式增长。
+  - File Safety（全部人工确认）：Cache 512 MB 上限确认；Cache 自动清理仅限 `cache/previews` 与 `cache/provider` 确认；staging 仅清理超过 24h 的规范 UUID operation 确认；orphan 默认只读扫描确认；orphan 7 天宽限期确认；orphan 删除前逐 candidate 重新检查 ResourceID / 当前全局引用 / modification date 确认；orphan 仅用户显式确认后永久删除确认；orphan 仅删除单个 managed file、不删除 owner directory 确认；`backups/`、`migration/`、`external-generations/`、`database/`、`library.json` 永不自动 cleanup 确认；被当前 metadata 或历史 snapshot 引用的资源受保护确认；非 UUID staging 条目不自动删除确认。
   - Orphan 展示：Missing referenced / Unreferenced candidate / Eligible cleanup 三类计数（Settings → 存储维护 → 扫描）；默认不删除。
+  - 结论：**Stage 16 closed（2026-08-12）**，人工验收通过，允许进入 Stage 17。
 
 ---
 
@@ -1390,7 +1390,7 @@
 
 ### Dependencies
 
-- [ ] Stage 0–16 全部通过。
+- [x] Stage 0–16 全部通过（Stage 16 Manual Gate 已于 2026-08-12 人工确认）。
 
 ### Implementation Tasks
 
