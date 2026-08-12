@@ -449,20 +449,20 @@ final class TryOnViewModel {
         case TryOnWorkspaceError.provider(let providerError): providerMessage(providerError)
         case let providerError as VirtualTryOnError: providerMessage(providerError)
         case VirtualTryOnServiceError.provider(let providerError): providerMessage(providerError)
-        case VirtualTryOnServiceError.resultStorageFailed: "无法保存 Mock 结果，请检查本地存储后重试。"
+        case VirtualTryOnServiceError.resultStorageFailed: "无法保存生成结果，请检查本地存储后重试。"
         case VirtualTryOnServiceError.recordCreationFailed, VirtualTryOnServiceError.recordUpdateFailed: "无法保存生成记录，请稍后重试。"
-        case VirtualTryOnServiceError.preparationFailed: "无法准备 Mock 生成，请检查当前素材。"
-        default: "Mock 生成失败，请检查当前素材后重试。"
+        case VirtualTryOnServiceError.preparationFailed: "无法准备生成，请检查当前素材。"
+        default: "生成失败，请检查当前素材后重试。"
         }
     }
 
     private static func providerMessage(_ error: VirtualTryOnError) -> String {
         switch error {
-        case .transientFailure: "Mock Provider 暂时不可用，可以重试。"
-        case .providerUnavailable, .configurationUnavailable: "Mock Provider 当前不可用。"
+        case .transientFailure: "生成服务暂时不可用，可以重试。"
+        case .providerUnavailable, .configurationUnavailable: "生成服务当前不可用。"
         case .cancelled: "生成已取消。"
         case .invalidInput, .unsupportedCapability: "当前人物、衣物或选项不满足 Provider 要求。"
-        case .invalidResponse: "Mock Provider 返回了无效结果。"
+        case .invalidResponse: "生成服务返回了无效结果。"
         }
     }
 

@@ -7,9 +7,18 @@ struct TryOnView: View {
     @State private var importsExternalResult = false
     @State private var showsSaveOutfit = false
     @State private var saveDraft = OutfitDraft()
+    @State private var isCanvasDropTargeted = false
 
     init(dependencies: TryOnFeatureDependencies) {
         _model = State(initialValue: TryOnViewModel(dependencies: dependencies))
+    }
+
+    private var showsMockGeneration: Bool {
+#if DEBUG
+        ProcessInfo.processInfo.environment["WARDROBE_DEBUG_MOCK_GENERATION"] == "1"
+#else
+        false
+#endif
     }
 
     var body: some View {
@@ -179,7 +188,11 @@ struct TryOnView: View {
                         payloads.compactMap(UUID.init(uuidString:)).reduce(false) { accepted, clothingID in
                             model.addClothing(clothingID) || accepted
                         }
-                    } isTargeted: { _ in }
+                    } isTargeted: { isCanvasDropTargeted = $0 }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(isCanvasDropTargeted ? Color.accentColor : .clear, lineWidth: 2)
+                    }
                     .padding(.horizontal, 16)
                     referencePicker
                 } else {
@@ -238,7 +251,7 @@ struct TryOnView: View {
         case .validating:
             ProgressView("正在验证人物与衣物资源…")
         case .generating:
-            HStack { ProgressView(); Text("Mock Provider 正在生成测试结果…") }
+            HStack { ProgressView(); Text("正在生成试穿结果…") }
                 .accessibilityIdentifier("tryon.generating")
         case let .success(preview):
             VStack(spacing: 6) {
@@ -246,8 +259,8 @@ struct TryOnView: View {
                     TryOnAssetImage(resources: [resultResourceID], loader: model.imageLoader)
                         .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 190)
                 }
-                Label("Mock 试穿已完成", systemImage: "checkmark.circle.fill").foregroundStyle(.green).font(.headline)
-                Text("这是 \(preview.providerName) 的本地测试结果，不是真实 AI 图片；结果与输入快照已保存。")
+                Label("试穿已完成", systemImage: "checkmark.circle.fill").foregroundStyle(.green).font(.headline)
+                Text("本地测试结果已生成，结果与输入快照已保存。")
                     .font(.caption).foregroundStyle(.secondary)
                 Text(preview.garmentsBySlot.flatMap(\.value).joined(separator: "、"))
                     .font(.caption).lineLimit(2)
@@ -256,7 +269,7 @@ struct TryOnView: View {
             .background(.green.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
             .accessibilityIdentifier("tryon.mock.result")
         case let .failure(message):
-            VStack { Label("Mock 生成失败", systemImage: "exclamationmark.triangle").foregroundStyle(.red); Text(message).font(.caption); Button("重试") { model.retry() }.accessibilityIdentifier("tryon.retry") }
+            VStack { Label("生成失败", systemImage: "exclamationmark.triangle").foregroundStyle(.red); Text(message).font(.caption); Button("重试") { model.retry() }.accessibilityIdentifier("tryon.retry") }
         case .cancelled:
             VStack { Text("生成已取消").foregroundStyle(.secondary); Button("重试") { model.retry() }.accessibilityIdentifier("tryon.retry") }
         }
@@ -300,20 +313,20 @@ struct TryOnView: View {
                             icon: "sparkles",
                             isSelected: true
                         )
-#if DEBUG
-                        Button { model.generate() } label: {
-                            generationMethodCard(
-                                title: "Mock 测试生成",
-                                subtitle: "快速检查搭配流程",
-                                icon: "cube",
-                                isSelected: false
-                            )
+                        if showsMockGeneration {
+                            Button { model.generate() } label: {
+                                generationMethodCard(
+                                    title: "Mock 测试生成",
+                                    subtitle: "快速检查搭配流程",
+                                    icon: "cube",
+                                    isSelected: false
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(!model.canGenerate)
+                            .keyboardShortcut("g", modifiers: [.command, .shift])
+                            .accessibilityIdentifier("tryon.generate")
                         }
-                        .buttonStyle(.plain)
-                        .disabled(!model.canGenerate)
-                        .keyboardShortcut("g", modifiers: [.command, .shift])
-                        .accessibilityIdentifier("tryon.generate")
-#endif
                     }
 
                     Text("当前结果")
@@ -579,6 +592,7 @@ private struct TryOnClothingCard: View {
                 .stroke(.separator.opacity(0.65))
         }
         .accessibilityElement(children: .contain)
+        .accessibilityHint("可拖拽到人物画布或槽位，也可使用添加按钮")
         .contextMenu {
             switch ClothingToTryOnSlotMapper().slot(for: item.draft.categoryCode) {
             case let .supported(slot): Button("添加到\(slot.displayName)") { add(slot) }
@@ -591,13 +605,17 @@ private struct TryOnClothingCard: View {
 private struct TryOnSlotView: View {
     let slot: TryOnSlot
     @Bindable var model: TryOnViewModel
+    @State private var isDropTargeted = false
 
     var body: some View {
+        let borderColor: Color = isDropTargeted ? Color.accentColor : Color(nsColor: .separatorColor).opacity(0.55)
+        let borderWidth: CGFloat = isDropTargeted ? 2 : 1
+
         VStack(alignment: .leading, spacing: 8) {
             Label(slot.displayName, systemImage: slot.systemImage).font(.subheadline.bold())
             let ids = model.session.garmentIDs(in: slot)
             if ids.isEmpty {
-                Text("拖入\(slot.emptyPrompt)").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 42)
+                Text("从左侧添加或拖入\(slot.emptyPrompt)").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 42)
             } else {
                 ForEach(Array(ids.enumerated()), id: \.element) { index, id in
                     if let item = model.clothingRecord(id: id) {
@@ -620,13 +638,16 @@ private struct TryOnSlotView: View {
             }
         }
         .padding(10)
-        .background(.quaternary.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(.separator.opacity(0.55)))
+        .background(
+            isDropTargeted ? AnyShapeStyle(Color.accentColor.opacity(0.10)) : AnyShapeStyle(.quaternary.opacity(0.12)),
+            in: RoundedRectangle(cornerRadius: 10)
+        )
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(borderColor, lineWidth: borderWidth))
         .dropDestination(for: String.self) { payloads, _ in
             payloads.compactMap(UUID.init(uuidString:)).reduce(false) { accepted, clothingID in
                 model.addClothing(clothingID, to: slot) || accepted
             }
-        } isTargeted: { _ in }
+        } isTargeted: { isDropTargeted = $0 }
         .accessibilityIdentifier("tryon.slot.\(slot.rawValue)")
     }
 }

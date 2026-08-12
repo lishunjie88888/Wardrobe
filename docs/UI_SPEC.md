@@ -110,6 +110,8 @@ Stage 10 将 Debug 的“Mock 测试生成”接入完整本地持久化编排�
 
 稳定模式不会通过 Accessibility 控制 ChatGPT，也不会自动发送。所有新增按钮均有稳定 accessibility identifier；UI 测试可注入 clipboard/launcher/result fixture，运行时不打开真实 ChatGPT、不访问网络或控制其他 App。
 
+Stage 15 将 Mock 生成入口从正式 Try-On UI 默认隐藏：仅当 Debug 构建显式设置环境变量 `WARDROBE_DEBUG_MOCK_GENERATION=1` 时显示“Mock 测试生成”卡片与 ⌘⇧G 快捷键；Release 永不展示。`MockVirtualTryOnProvider`、Provider 抽象、`VirtualTryOnService` 与 Mock 测试保持不变。画布与错误提示不再出现“Mock Provider / Mock 生成失败”等测试性文案，改用中性表述（生成服务、生成结果、试穿已完成）。五个 Slot 与中央人物画布提供 drop 目标高亮（accent 描边 + 底色），无效 drop 仍被拒绝并解释原因；槽位空态文案为“从左侧添加或拖入…”，衣物卡带 accessibilityHint 说明拖拽与添加按钮两种路径。
+
 ## 6. 穿搭
 
 - 使用网格或列表展示名称、衣物缩略图组合、收藏和修改时间。

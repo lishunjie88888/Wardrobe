@@ -121,6 +121,7 @@ final class WardrobeLaunchUITests: XCTestCase {
             .appendingPathComponent("WardrobeUITryOnFlow-\(UUID().uuidString)", isDirectory: true)
         app.launchEnvironment["WARDROBE_STORAGE_ROOT_OVERRIDE"] = isolatedStorageRoot.path
         app.launchEnvironment["WARDROBE_UI_TEST_SEED_TRYON"] = "1"
+        app.launchEnvironment["WARDROBE_DEBUG_MOCK_GENERATION"] = "1"
         app.launchEnvironment["WARDROBE_UI_TEST_INITIAL_ROUTE"] = "tryOn"
         addTeardownBlock { app.terminate() }
         app.launch()
@@ -135,7 +136,7 @@ final class WardrobeLaunchUITests: XCTestCase {
         XCTAssertTrue(generate.waitForExistence(timeout: 2)); XCTAssertTrue(generate.isEnabled)
         app.typeKey("g", modifierFlags: [.command, .shift])
         XCTAssertTrue(app.descendants(matching: .any)["tryon.mock.result"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Mock 试穿已完成"].exists)
+        XCTAssertTrue(app.staticTexts["试穿已完成"].exists)
     }
 
     func testExternalChatGPTFixturePreparesPackageAndImportsResult() {

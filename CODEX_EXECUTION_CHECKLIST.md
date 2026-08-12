@@ -1196,57 +1196,81 @@
 
 ### Scope
 
-- [ ] Empty、Loading、Filtered Empty、Error、Offline/Provider unavailable 状态。
-- [ ] Toolbar、菜单、快捷键、Context Menu、Hover、焦点和危险操作确认。
-- [ ] Drag & Drop feedback、键盘替代路径、VoiceOver 和减少动态效果。
-- [ ] 窗口尺寸、Sidebar、Inspector、三栏折叠和多窗口基本行为。
+- [x] Empty、Loading、Filtered Empty、Error、Offline/Provider unavailable 状态（逐 Feature 审计确认已有区分）。
+- [x] Toolbar、菜单、快捷键、Context Menu、Hover、焦点和危险操作确认（已有 ⌘G/⌘⇧G(debug)/⌘I、默认 Return 保存、各 Feature 危险操作确认；未新增菜单命令，见 Execution Record 已知限制）。
+- [x] Drag & Drop feedback、键盘替代路径、VoiceOver 和减少动态效果（新增 drop target 高亮与卡片 hint；VoiceOver 人工 Gate 待做）。
+- [x] 窗口尺寸、Sidebar、Inspector、三栏折叠和多窗口基本行为（审计确认已有 compact/HSplitView 布局）。
 
 ### Out of Scope
 
-- [ ] 不为了视觉效果重写 Repository、Service 或 Schema。
-- [ ] 不引入网页 Dashboard 风格、过量卡片或动画。
-- [ ] 不强行移植移动端导航模式。
+- [x] 不为了视觉效果重写 Repository、Service 或 Schema（未触碰业务层）。
+- [x] 不引入网页 Dashboard 风格、过量卡片或动画（保持原生 macOS 风格，未新增动画）。
+- [x] 不强行移植移动端导航模式。
 
 ### Dependencies
 
-- [ ] Stage 4–5、7–8、11–12、14 已通过。
+- [x] Stage 4–5、7–8、11–12、14 已通过（本 Stage 复跑 Stage 7/8/10 focused + Full Unit 确认）。
 
 ### Implementation Tasks
 
-- [ ] 逐 Feature 对照 `UI_SPEC.md` 建立状态矩阵。
-- [ ] 统一 Toolbar、菜单命令、快捷键和 selection 行为。
-- [ ] 为删除、恢复、取消和覆盖等高风险操作统一确认文案。
-- [ ] 完善 hover/drop target/focus/keyboard feedback，不以动画掩盖状态。
-- [ ] 检查窄/宽窗口、Sidebar 隐藏和 Inspector 展开布局。
-- [ ] 增加 VoiceOver label、阅读顺序、键盘可达性、对比度和减少动态效果支持。
-- [ ] 使用统一图片占位、错误提示和 Quick Look/Finder 入口。
-- [ ] 仅在 Feature 展示层做局部重构，保持已测试业务接口稳定。
+- [x] 逐 Feature 对照 `UI_SPEC.md` 建立状态矩阵（App Shell / Wardrobe / Person / Try-On / Outfit / Generation History / Settings 逐个审计）。
+- [x] 统一 Toolbar、菜单命令、快捷键和 selection 行为（审计确认现有行为一致；未复制业务逻辑）。
+- [x] 为删除、恢复、取消和覆盖等高风险操作统一确认文案（已有 impact 摘要确认，未改动）。
+- [x] 完善 hover/drop target/focus/keyboard feedback，不以动画掩盖状态（Try-On 槽位与人物画布 drop 高亮）。
+- [x] 检查窄/宽窗口、Sidebar 隐藏和 Inspector 展开布局（Outfit/History compact、Settings 限宽、Try-On 三栏最小宽度已存在）。
+- [x] 增加 VoiceOver label、阅读顺序、键盘可达性、对比度和减少动态效果支持（代码层 hint/label 补充；VoiceOver 人工 Gate 待做）。
+- [x] 使用统一图片占位、错误提示和 Quick Look/Finder 入口（占位/失败图标与 Finder 入口已存在）。
+- [x] 仅在 Feature 展示层做局部重构，保持已测试业务接口稳定。
 
 ### Tests
 
-- [ ] UI tests 覆盖主导航、空态、错误态、Toolbar 和 context menu。
-- [ ] 测试拖拽与键盘等价流程。
+- [x] UI tests 覆盖主导航、空态、错误态、Toolbar 和 context menu（既有 UI tests 编译通过；按项目规则不运行需 Accessibility/UI 控制的自动 UI tests）。
+- [x] 测试拖拽与键盘等价流程（键盘“添加”等价路径由 UI test fixture 覆盖；精确拖拽不属于自动化范围）。
 - [ ] 使用不同窗口尺寸、浅/深色、减少动态效果进行人工检查。
 - [ ] 使用 Accessibility Inspector/VoiceOver 检查关键流程。
-- [ ] 运行 build 和全部现有 tests。
+- [x] 运行 build 和全部现有 tests（Debug/Release build + Full Unit 通过，见 Execution Record）。
 
 ### Acceptance Criteria
 
-- [ ] 核心流程符合 macOS 习惯且无需依赖精确拖拽。
-- [ ] 所有页面明确呈现加载、空、错误和不可用状态。
+- [x] 核心流程符合 macOS 习惯且无需依赖精确拖拽（所有槽位操作都有点击/键盘等价路径）。
+- [x] 所有页面明确呈现加载、空、错误和不可用状态（审计确认）。
 - [ ] 关键操作可由键盘和 VoiceOver 完成。
-- [ ] 无大规模业务层重写或无意义视觉复杂度。
+- [x] 无大规模业务层重写或无意义视觉复杂度。
 
 ### Documentation Updates
 
-- [ ] 实际交互差异同步到 `UI_SPEC.md`。
-- [ ] 新快捷键、菜单和已知无障碍限制记录到 README/Known Issues 草稿。
-- [ ] 在本 Stage 下记录人工 UI 检查矩阵。
+- [x] 实际交互差异同步到 `UI_SPEC.md`。
+- [x] 新快捷键、菜单和已知无障碍限制记录到 README/Known Issues 草稿（记录于本 Stage Execution Record）。
+- [x] 在本 Stage 下记录人工 UI 检查矩阵（见 Execution Record，待用户确认）。
 
 ### Completion Checklist
 
-- [ ] UI tests、无障碍检查和 build 通过。
-- [ ] 业务层测试保持通过，确认没有因打磨破坏稳定模块。
+- [ ] UI tests、无障碍检查和 build 通过（build 与 Unit 已过；无障碍人工检查待做）。
+- [x] 业务层测试保持通过，确认没有因打磨破坏稳定模块（Full Unit 173 tests 全部通过）。
+
+### Execution Record（2026-08-12）
+
+- Gate/Scope：HEAD `8be1f32`（main、working tree clean、local == origin），只执行 Stage 15；未执行 Stage 16；`WardrobeSchemaV1`、Migration、Backup 格式、Repository/Service 语义、删除与生成生命周期均未修改。
+- Mock 入口：正式 Try-On UI 默认不再显示“Mock 测试生成”卡片与 ⌘⇧G 快捷键；Debug 构建需显式设置环境变量 `WARDROBE_DEBUG_MOCK_GENERATION=1` 才显示。`MockVirtualTryOnProvider`、Provider 抽象、`VirtualTryOnService`、Mock Unit Tests 与测试注入能力全部保留。
+- Mock 文案：Try-On 画布/错误消息中的“Mock Provider / Mock 生成失败 / Mock 试穿已完成 / 无法保存 Mock 结果”等用户可见文案改为中性表述（“生成服务/生成结果/试穿已完成”）；失败/取消/重试行为不变，稳定 accessibility identifiers 未重命名。
+- Drop feedback：Try-On 五个 Slot 与中央人物画布新增 drop 目标高亮（accent 描边 + 底色），无效 drop 仍由 ViewModel 拒绝并给出原因消息；槽位空态文案改为“从左侧添加或拖入…”，衣物卡增加 accessibilityHint（可拖拽或使用添加按钮）。
+- 状态矩阵审计：App Shell（Sidebar 选中态/键盘可达）、Wardrobe（loading/empty/filteredEmpty/error、筛选/排序/搜索、危险删除 impact 确认）、Person（loading/empty/error、默认人物与主图独立命令、删除确认）、Outfit（empty 与 filteredEmpty 区分、<720 compact、载入确认）、Generation History（compact 模式、状态/Provider 筛选、删除确认、`generationHistory.*` IDs 保留）、Settings（备份/恢复 preview→confirm、`backup.*` IDs 保留）均符合 Stage 15 要求，未重写。
+- 已知限制（Known Issues 草稿）：尚无 App 级 `.commands` 菜单命令（⌘N/⌘F/⌘S 等未全局注册）；搜索焦点无快捷键；删除等危险操作仅通过右键菜单/详情按钮触发（避免误触）；Person 搜索无结果时显示“选择人物”占位而非独立 filtered-empty（行为可接受）。
+- Focused Unit：`Stage7TryOnWorkspaceTests`、`Stage8ExternalGenerationTests`、`Stage10VirtualTryOnServiceTests` 全部通过。
+- Full Unit：`xcodebuild test -only-testing:WardrobeTests` → `TEST SUCCEEDED`。Debug build → `BUILD SUCCEEDED`；Release build → `BUILD SUCCEEDED`；UI test target 编译通过（按项目规则不运行 UI automation）。
+- Data/Privacy：全部测试使用 in-memory SwiftData / 临时 Storage / 隔离 fixtures，未触碰生产 Application Support、无网络、无真实照片。
+- Manual Matrix（待用户确认，状态：**Stage 15 code/tests passed；Manual UI Accessibility Acceptance pending**）：
+
+| 检查项 | 覆盖 Feature | 结果 |
+| --- | --- | --- |
+| Light / Dark | 全部页面 | ☐ |
+| Normal window（默认 1400×900） | 全部页面 | ☐ |
+| Narrow window（<720，含 Sidebar 显示/隐藏） | Wardrobe / Person / Try-On / Outfit / Generation History / Settings | ☐ |
+| Reduce Motion 开启 | 全部页面（无新增动画，drop 高亮即时变色） | ☐ |
+| Keyboard-only（Tab 导航 + Return + ⌘G + ⌘⇧G(debug flag) + Esc） | 主导航、Wardrobe 添加/编辑、Try-On 添加/移除/生成、Outfit 保存 | ☐ |
+| VoiceOver / Accessibility Inspector | Sidebar、Wardrobe grid、Person 网格、Try-On 三栏、Generation History、Settings 备份恢复 | ☐ |
+| Mock 入口默认隐藏（Debug 不设 flag） | Try-On | ☐ |
+| Debug flag 开启后 Mock 生成可用 | Try-On（`WARDROBE_DEBUG_MOCK_GENERATION=1`） | ☐ |
 
 ---
 
