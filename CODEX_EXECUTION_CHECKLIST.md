@@ -37,6 +37,7 @@
 | 16 | 性能与可靠性 | 10、14–15 | 是 |
 | 17 | 完整测试 | 0–16 | 是 |
 | 18 | Release 准备 | 17 | 是 |
+| 19 | Free DMG Distribution | 18 | 是 |
 
 ---
 
@@ -1596,6 +1597,100 @@
 **Go/No-Go（2026-08-12）**：用户决定 **GO — Stage 18 passed. Proceed to Stage 19 Free DMG Distribution.**
 
 **Stage 18 closed（2026-08-12）**：自动验证 + 人工验收 + Go/No-Go 全部完成；允许进入 Stage 19。
+
+---
+
+## Stage 19：Free DMG Distribution
+
+### Goal
+
+把已通过 Stage 18 Final Release Gate 的 Wardrobe 1.0.0 制作成可免费发送给其他 macOS 用户测试使用的 DMG。
+
+### Scope
+
+- [x] 免费测试分发（FREE / UNSIGNED-DEVELOPER DISTRIBUTION）：Xcode ad-hoc / Sign to Run Locally，免费制作 DMG，接收者经「隐私与安全性 → 仍要打开」人工放行。
+- [x] 从 Stage 18 已验证配置重新生成干净 Release（1.0.0 (1)，universal arm64 + x86_64，min macOS 15.0，Bundle ID `com.lishunjie.Wardrobe`）。
+- [x] App Icon Gate：正式图标已接入（`Assets.xcassets/AppIcon.appiconset`，Release 产物含 `AppIcon.icns`），非 placeholder。
+- [x] 生成 `Wardrobe-1.0.0.dmg`（含 `Wardrobe.app` 与 `Applications` 链接），记录 SHA-256 供接收者校验。
+- [x] 更新 README / Known Issues / Release Notes / 本清单，明确免费测试分发、未签名/未公证与「仍要打开」指引（不教 `sudo spctl --master-disable`）。
+
+### Out of Scope
+
+- [x] 不加入 Apple Developer Program、不使用 Developer ID、不 notarize、不 stapler。
+- [x] 不新增产品功能；不修改 Schema / Migration / Backup format。
+- [x] 不自签证书冒充 Developer ID、不关闭整个 Gatekeeper、不把删除 quarantine 作为默认方案。
+- [x] 不存在 Stage 20。
+
+### Dependencies
+
+- [x] Stage 18 Final Manual Release Gate = passed（2026-08-12 用户确认 14 项全部通过）。
+- [x] Stage 18 Go/No-Go = GO；Stage 18 = closed（2026-08-12，提交 `e1f511b`）。
+
+### Implementation
+
+- [x] Git Gate：branch main、working tree clean、local == origin（提交 `e1f511b` 后验证通过）。
+- [x] 干净 Release archive：`xcodebuild archive -configuration Release -derivedDataPath /tmp/WardrobeStage19/DerivedData -archivePath /tmp/WardrobeStage19/Wardrobe.xcarchive` → `ARCHIVE SUCCEEDED`（日志 `/tmp/WardrobeStage19/archive.log`）。
+- [x] 产物验证：`Wardrobe.app` executable 存在；`CFBundleShortVersionString 1.0.0`、`CFBundleVersion 1`、`CFBundleIdentifier com.lishunjie.Wardrobe`、`LSMinimumSystemVersion 15.0`、`CFBundleIconName AppIcon`；`lipo -archs` = x86_64 + arm64。
+- [x] DMG：`hdiutil create -volname Wardrobe -srcfolder dmg-staging -format UDZO` → `/tmp/WardrobeStage19/Wardrobe-1.0.0.dmg`（staging 含 `Wardrobe.app` + `Applications -> /Applications` 符号链接）。
+- [x] DMG 验证：`hdiutil attach -readonly` 挂载检查（含 Applications 链接），挂载内 app `codesign --verify --deep --strict` 通过，随后 detach。
+- [x] SHA-256：`4adf8499803277a222d4ca236423152702212a6d0cc857bb6e15168f4556a087`（文件大小 5,175,791 字节，约 4.9 MB）。
+
+### Tests
+
+- [x] Codesign audit：`codesign --verify --deep --strict --verbose=2` → valid on disk / satisfies its Designated Requirement；`codesign -dv --verbose=4` → `flags=0x2(adhoc)`、`Signature=adhoc`（无 Developer ID）。
+- [x] Entitlements audit：仅 `com.apple.security.app-sandbox` + `com.apple.security.files.user-selected.read-write`；无 get-task-allow、无 network、无 automation、无 Accessibility、无 camera/mic、无 Keychain entitlement。
+- [x] Privacy/Secrets scan：app 代码无 `URLSession`、无真实 API Key/Bearer/Token/Cookie/password、无 `/Users/` 绝对路径；命中项仅为脱敏逻辑关键词（`GenerationHistoryService` 敏感键表与 `Bearer ***` 正则）、`TryOnViewModel` UUID generation token（非凭据）、`disk-` 对 `sk-` 的注释误报；测试 fixture 字符串已知无害（Stage 12/16）。
+- [ ] 人工 DMG Gate：打开 DMG → 拖入 Applications → 首次启动 → Gatekeeper 行为记录 → Open Anyway → 核心流程 smoke（见 Completion Checklist，待用户执行）。
+
+### Acceptance
+
+- [x] 自动部分：Release 构建/签名/权限/隐私扫描/DMG 制作与校验/SHA-256 全部完成并通过。
+- [x] 不伪造人工结果：首次启动与 Gatekeeper 人工放行未自动执行，留给 Final DMG Manual Gate。
+- [x] 产物不入库：DMG、`.app`、`.xcarchive`、DerivedData、dSYM 均不提交 Git（仅 docs/scripts/project config 提交）。
+
+### Documentation
+
+- [x] `README.md`：安装段新增 DMG 分发步骤与「仍要打开」指引，明确未签名/未公证，禁止 `sudo spctl --master-disable`。
+- [x] `docs/RELEASE_NOTES.md`：签名与分发段更新为免费测试分发 + DMG 文件名/大小/SHA-256。
+- [x] `docs/KNOWN_ISSUES.md`：发布状态改为「免费测试分发（未公证）」，说明为已知限制而非 bug。
+- [x] 本清单新增 Stage 19 段与总览表行。
+
+### Completion Checklist
+
+- [x] Stage 19 自动阶段完成（构建、审计、DMG、文档）。
+- [ ] 人工完成 Final DMG Manual Gate（18 项 smoke 清单，见下）后由用户确认 GO 才关闭 Stage 19。
+- [x] 未创建 v1.0.0 tag（等 Final DMG Manual Gate GO 后由用户决定）。
+
+### Execution Record（2026-08-12，HEAD `e1f511b`）
+
+- Gate/Scope：Stage 18 closed 后执行；只执行 Stage 19；未修改 `WardrobeSchemaV1`、Migration、Backup 格式、Repository 公开协议与业务逻辑；无任何删除操作。
+- 环境：macOS 26.5.2，MacBook Air（Apple Silicon），Xcode 26.6 / Swift 6。
+- 产物：`/tmp/WardrobeStage19/Wardrobe-1.0.0.dmg`（约 4.9 MB，SHA-256 `4adf8499803277a222d4ca236423152702212a6d0cc857bb6e15168f4556a087`）。
+- 签名状态：ad-hoc（`Sign to Run Locally`）；Developer ID = none；Notarization = none；Distribution = free test distribution。
+- Git：提交 `e1f511b`（Stage 18 关闭）已推送；Stage 19 docs 改动提交后推送（见下）。
+
+### Final DMG Manual Gate（待用户执行）
+
+1. 打开 DMG
+2. 拖入 Applications
+3. 首次启动
+4. Gatekeeper 行为符合预期（被拦截 → 系统设置 → 隐私与安全性 → 仍要打开）
+5. Clothing import
+6. Person 创建
+7. Try-On workspace
+8. External ChatGPT package
+9. 手动结果导入
+10. Save Outfit
+11. Generation History
+12. Quit
+13. Reopen
+14. 数据仍存在
+15. Backup 创建
+16. Restore Preview
+17. Storage Maintenance report
+18. 无异常权限请求
+
+用户全部通过并给出 **GO — distribute Wardrobe 1.0.0** 后，Stage 19 才 closed；之后再由用户决定是否创建 `v1.0.0` tag。
 
 ---
 ## 阶段顺序调整记录

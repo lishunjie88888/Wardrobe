@@ -20,6 +20,7 @@ xcodebuild archive -project Wardrobe.xcodeproj -scheme Wardrobe -configuration R
 ```
 
 - Release 应用位于 `Build/Products/Release/Wardrobe.app` 或 `Wardrobe.xcarchive/Products/Applications/Wardrobe.app`，直接复制到「应用程序」即可运行。
+- DMG 分发：`Wardrobe-1.0.0.dmg`（免费测试分发，ad-hoc 签名，未 Developer ID 签名、未 notarize）。打开 DMG → 把 `Wardrobe.app` 拖入 `Applications` → 首次启动若被 Gatekeeper 拦截，请到「系统设置 → 隐私与安全性」点击「仍要打开」。**不要使用 `sudo spctl --master-disable` 关闭 Gatekeeper**。
 
 ## 资料库位置
 

@@ -44,5 +44,6 @@
 
 ### 签名与分发
 
-- 本机构建：ad-hoc 签名（`Sign to Run Locally`），未 Developer ID 签名、未 notarize；仅限本机/个人自用分发。
+- 免费测试分发（`Wardrobe-1.0.0.dmg`，约 4.9 MB，SHA-256 `4adf8499803277a222d4ca236423152702212a6d0cc857bb6e15168f4556a087`）：ad-hoc 签名（`Sign to Run Locally`），**未 Developer ID 签名、未 notarize**；首次启动若被 Gatekeeper 拦截，请在「系统设置 → 隐私与安全性」点击「仍要打开」，不要使用 `sudo spctl --master-disable`。
+- 本机构建：同上 ad-hoc 签名；仅限本机/个人自用分发。
 - App Icon 使用正式 Wardrobe 图标（`WardrobeApp/Resources/AppIcon.png` 源图 + `Assets.xcassets/AppIcon.appiconset` 全尺寸 asset，16–1024 各 @1x/@2x，经 actool 生成 `AppIcon.icns` 并接入 app target）。
