@@ -28,6 +28,7 @@ struct OutfitView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("穿搭")
         .accessibilityIdentifier("outfit.feature")
         .task { model.load() }
@@ -85,11 +86,13 @@ struct OutfitView: View {
                 ContentUnavailableView("没有符合条件的穿搭", systemImage: "line.3.horizontal.decrease.circle", description: Text("清除搜索和筛选后重试。"))
                 Button("清除筛选") { model.clearFilters() }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             VStack(spacing: 14) {
                 ContentUnavailableView("还没有保存的穿搭", systemImage: "square.grid.2x2", description: Text("在 AI 试衣间中搭配衣物后，可以保存到这里。"))
                 Button("前往 AI 试衣间") { goToTryOn() }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
