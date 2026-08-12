@@ -23,8 +23,13 @@ struct OutfitView: View {
                 emptyState
             } else {
                 HSplitView {
-                    outfitGrid.frame(minWidth: 430)
-                    if let outfit = model.selectedOutfit { detail(outfit).frame(minWidth: 330, idealWidth: 390) }
+                    outfitGrid
+                        .frame(minWidth: 430, maxWidth: .infinity)
+                        .layoutPriority(1)
+                    if let outfit = model.selectedOutfit {
+                        detail(outfit)
+                            .frame(width: 390)
+                    }
                 }
             }
         }
@@ -60,7 +65,9 @@ struct OutfitView: View {
     private var toolbar: some View {
         HStack(spacing: 12) {
             TextField("搜索名称或备注", text: $model.query.searchText)
-                .textFieldStyle(.roundedBorder).frame(maxWidth: 300)
+                .textFieldStyle(.roundedBorder)
+                .frame(minWidth: 160, idealWidth: 260, maxWidth: 300)
+                .layoutPriority(1)
                 .accessibilityIdentifier("outfit.search").onSubmit { model.load() }
             Toggle("仅收藏", isOn: $model.query.favoritesOnly).toggleStyle(.button)
             Picker("范围", selection: $model.query.archive) {
@@ -75,8 +82,9 @@ struct OutfitView: View {
                 Text("收藏优先").tag(OutfitSort.favoritesFirst)
             }.frame(width: 135)
             Button("应用") { model.load() }
-            Spacer()
+            Spacer(minLength: 8)
             Button { goToTryOn() } label: { Label("前往 AI 试衣间", systemImage: "sparkles.rectangle.stack") }
+                .fixedSize()
         }.padding(14)
     }
 
