@@ -1428,8 +1428,8 @@
 ### Completion Checklist
 
 - [x] 完整自动测试和 Release build 通过。
-- [ ] 人工执行一次核心闭环并核对持久化结果。
-- [ ] 人工 Go/No-Go 后才能进入 Release 准备。
+- [x] 人工执行一次核心闭环并核对持久化结果（**已通过**，见下方 Manual Gate）。
+- [x] 人工 Go/No-Go 后才能进入 Release 准备（**GO**，2026-08-12）。
 
 ### Execution Record（2026-08-12）
 
@@ -1463,7 +1463,9 @@
   - `git diff --check` 通过；完整 `xcodebuild` 输出按 Log Discipline 写入 `/tmp/wardrobe-stage17-*.log`。
 - Privacy/Static Audit：app 与 tests 中无 `URLSession`、无真实 API Key/Bearer/Authorization/cookie；`GenerationHistoryRedactor` 的敏感键与 `Bearer ***` 正则属生产脱敏逻辑，Stage 12 用伪造字符串验证脱敏（`/Users/test/...` 为测试 fixture，非真实用户路径）；External ChatGPT 仅打开 `com.openai.chat` / `chatgpt.com`（不发送请求、不读取凭据）；新增测试无网络、无密钥、无私人照片。
 - 已知限制：HEIF 编码 skip 依运行时能力；UI 交互（滚动/删除确认/备份预览/存储维护报告）与真实 ChatGPT 手动流程不在自动范围，见 Manual Gate。
-- **Manual Gate（待用户）**：人工执行一次核心闭环（fresh 隔离库 → 导入 Clothing → 创建/选择 Person → 加入 Try-On → Debug Mock 生成 → 结果持久化 → 保存 Outfit → 退出重开 → Clothing/Person/Outfit/Generation History 全部正确），并抽查删除确认、archive/restore、备份预览、存储维护报告；随后用户给出 Go/No-Go。
+- **Manual Gate（2026-08-12 人工确认通过）**：用户实际完成核心闭环并全部通过：Fresh isolated library；Clothing import；Person 创建/选择/图片；Try-On 衣物与 Slot；Debug Mock generation；Generation result persistence；Save Outfit；Archive / Restore；Delete confirmation；Backup Restore Preview；Storage Maintenance / orphan report；App quit / reopen；Clothing / Person / Outfit / Generation History 重启后持久化。
+- **Go/No-Go（2026-08-12）**：用户决定 **GO — Stage 17 passed. Proceed to Stage 18 Release Preparation.**
+- **Stage 17 closed（2026-08-12）**：自动验证 + 人工闭环 + Go/No-Go 全部完成；允许进入 Stage 18（尚未执行 Stage 18）。
 
 ---
 
