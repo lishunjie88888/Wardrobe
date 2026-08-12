@@ -4,6 +4,7 @@ import SwiftUI
 struct GenerationHistoryView: View {
     @State private var model: GenerationHistoryViewModel
     @State private var outfitDraft = OutfitDraft()
+    @State private var compactShowsDetail = false
     let regenerate: (GenerationRegenerateRequest) -> Void
 
     init(dependencies: GenerationHistoryFeatureDependencies, regenerate: @escaping (GenerationRegenerateRequest) -> Void) {
@@ -12,26 +13,25 @@ struct GenerationHistoryView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            toolbar
-            Divider()
-            if model.records.isEmpty { emptyState }
-            else {
-                HSplitView {
-                    List(model.records, selection: Binding(get: { model.selection }, set: { if let value = $0 { model.select(value) } })) { record in
-                        GenerationHistoryRow(record: record, loader: model.imageLoader)
-                            .tag(record.id)
-                            .accessibilityIdentifier("generationHistory.row.\(record.id.uuidString)")
-                            .contextMenu {
-                                if record.status.isTerminal {
-                                    Button("打开详情") { model.select(record.id) }
-                                    Button("删除历史", role: .destructive) { model.select(record.id); if let detail = model.detail { model.preflightDelete(detail) } }
-                                }
-                            }
+        GeometryReader { proxy in
+            let compact = proxy.size.width < 720
+
+            VStack(spacing: 0) {
+                toolbar(compact: proxy.size.width < 700)
+                Divider()
+                if model.records.isEmpty { emptyState }
+                else if compact {
+                    compactContent
+                } else {
+                    HSplitView {
+                        historyList(compact: false)
+                            .frame(minWidth: 310, idealWidth: 380)
+                        if let detail = model.detail {
+                            GenerationHistoryDetail(detail: detail, model: model, regenerate: regenerate, enforcesMinimumWidth: true)
+                        } else {
+                            ContentUnavailableView("选择一条生成记录", systemImage: "clock.arrow.circlepath")
+                        }
                     }
-                    .frame(minWidth: 310, idealWidth: 380)
-                    if let detail = model.detail { GenerationHistoryDetail(detail: detail, model: model, regenerate: regenerate) }
-                    else { ContentUnavailableView("选择一条生成记录", systemImage: "clock.arrow.circlepath") }
                 }
             }
         }
@@ -52,8 +52,53 @@ struct GenerationHistoryView: View {
         .alert("生成历史提示", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) { Button("好") {} } message: { Text(model.message ?? "") }
     }
 
-    private var toolbar: some View {
-        HStack(spacing: 12) {
+    @ViewBuilder private var compactContent: some View {
+        if compactShowsDetail, let detail = model.detail {
+            VStack(spacing: 0) {
+                HStack {
+                    Button {
+                        compactShowsDetail = false
+                    } label: {
+                        Label("返回历史", systemImage: "chevron.left")
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                Divider()
+                GenerationHistoryDetail(detail: detail, model: model, regenerate: regenerate, enforcesMinimumWidth: false)
+            }
+        } else {
+            historyList(compact: true)
+        }
+    }
+
+    private func historyList(compact: Bool) -> some View {
+        List(model.records, selection: Binding(get: { model.selection }, set: {
+            guard let value = $0 else { return }
+            model.select(value)
+            if compact { compactShowsDetail = true }
+        })) { record in
+            GenerationHistoryRow(record: record, loader: model.imageLoader)
+                .tag(record.id)
+                .accessibilityIdentifier("generationHistory.row.\(record.id.uuidString)")
+                .contextMenu {
+                    if record.status.isTerminal {
+                        Button("打开详情") {
+                            model.select(record.id)
+                            if compact { compactShowsDetail = true }
+                        }
+                        Button("删除历史", role: .destructive) {
+                            model.select(record.id)
+                            if let detail = model.detail { model.preflightDelete(detail) }
+                        }
+                    }
+                }
+        }
+    }
+
+    @ViewBuilder private func toolbar(compact: Bool) -> some View {
+        let filters = HStack(spacing: 12) {
             Picker("状态", selection: $model.query.status) {
                 Text("全部").tag(GenerationStatusFilter.all)
                 Text("成功").tag(GenerationStatusFilter.succeeded)
@@ -65,10 +110,26 @@ struct GenerationHistoryView: View {
                 Text("全部 Provider").tag(String?.none)
                 ForEach(model.providerIDs, id: \.self) { Text(GenerationHistoryPresentation.providerName($0)).tag(Optional($0)) }
             }.frame(width: 190).accessibilityIdentifier("generationHistory.providerFilter")
+        }
+        let actions = HStack(spacing: 12) {
             Button("应用") { model.load() }
             if model.query.hasActiveFilters { Button("清除筛选") { model.clearFilters() } }
             Spacer()
-        }.padding(14)
+        }
+
+        if compact {
+            VStack(alignment: .leading, spacing: 10) {
+                filters
+                actions
+            }
+            .padding(14)
+        } else {
+            HStack(spacing: 12) {
+                filters
+                actions
+            }
+            .padding(14)
+        }
     }
 
     @ViewBuilder private var emptyState: some View {
@@ -103,6 +164,7 @@ private struct GenerationHistoryDetail: View {
     let detail: GenerationDetailRecord
     let model: GenerationHistoryViewModel
     let regenerate: (GenerationRegenerateRequest) -> Void
+    let enforcesMinimumWidth: Bool
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -144,7 +206,9 @@ private struct GenerationHistoryDetail: View {
                         .disabled(!detail.status.isTerminal).accessibilityIdentifier("generationHistory.delete")
                 }
             }.padding(20)
-        }.frame(minWidth: 400).accessibilityIdentifier("generationHistory.detail")
+        }
+        .frame(minWidth: enforcesMinimumWidth ? 400 : nil)
+        .accessibilityIdentifier("generationHistory.detail")
     }
 
     private var inputSections: some View {

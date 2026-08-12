@@ -51,10 +51,6 @@ struct TryOnView: View {
                 showsSaveOutfit = false
             }
         }
-        .fileImporter(isPresented: $importsExternalResult, allowedContentTypes: [.image], allowsMultipleSelection: false) { result in
-            if case .success(let urls) = result, let url = urls.first { model.importExternalResult(from: url) }
-            else if case .failure = result { model.message = "无法读取所选图片，请重新选择。" }
-        }
         .alert("试衣间提示", isPresented: Binding(
             get: { model.message != nil },
             set: { if !$0 { model.message = nil } }
@@ -514,6 +510,25 @@ struct TryOnView: View {
             .frame(width: 680)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("tryon.external.ready-sheet")
+            .fileImporter(
+                isPresented: $importsExternalResult,
+                allowedContentTypes: [.image],
+                allowsMultipleSelection: false,
+                onCompletion: handleExternalResultSelection
+            )
+        }
+    }
+
+    private func handleExternalResultSelection(_ result: Result<[URL], any Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else {
+                model.message = "没有选择图片，请重新选择。"
+                return
+            }
+            model.importExternalResult(from: url)
+        case .failure:
+            model.message = "无法读取所选图片，请重新选择。"
         }
     }
 
