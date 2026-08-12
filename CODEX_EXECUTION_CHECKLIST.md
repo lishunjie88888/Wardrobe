@@ -1226,15 +1226,15 @@
 
 - [x] UI tests 覆盖主导航、空态、错误态、Toolbar 和 context menu（既有 UI tests 编译通过；按项目规则不运行需 Accessibility/UI 控制的自动 UI tests）。
 - [x] 测试拖拽与键盘等价流程（键盘“添加”等价路径由 UI test fixture 覆盖；精确拖拽不属于自动化范围）。
-- [ ] 使用不同窗口尺寸、浅/深色、减少动态效果进行人工检查。
-- [ ] 使用 Accessibility Inspector/VoiceOver 检查关键流程。
+- [x] 使用不同窗口尺寸、浅/深色、减少动态效果进行人工检查（用户 2026-08-12 全部确认通过）。
+- [x] 使用 Accessibility Inspector/VoiceOver 检查关键流程（用户 2026-08-12 确认通过）。
 - [x] 运行 build 和全部现有 tests（Debug/Release build + Full Unit 通过，见 Execution Record）。
 
 ### Acceptance Criteria
 
 - [x] 核心流程符合 macOS 习惯且无需依赖精确拖拽（所有槽位操作都有点击/键盘等价路径）。
 - [x] 所有页面明确呈现加载、空、错误和不可用状态（审计确认）。
-- [ ] 关键操作可由键盘和 VoiceOver 完成。
+- [x] 关键操作可由键盘和 VoiceOver 完成（用户 2026-08-12 人工确认通过）。
 - [x] 无大规模业务层重写或无意义视觉复杂度。
 
 ### Documentation Updates
@@ -1245,7 +1245,7 @@
 
 ### Completion Checklist
 
-- [ ] UI tests、无障碍检查和 build 通过（build 与 Unit 已过；无障碍人工检查待做）。
+- [x] UI tests、无障碍检查和 build 通过（build 与 Unit 已过；无障碍人工检查于 2026-08-12 确认通过）。
 - [x] 业务层测试保持通过，确认没有因打磨破坏稳定模块（Full Unit 173 tests 全部通过）。
 
 ### Execution Record（2026-08-12）
@@ -1259,18 +1259,20 @@
 - Focused Unit：`Stage7TryOnWorkspaceTests`、`Stage8ExternalGenerationTests`、`Stage10VirtualTryOnServiceTests` 全部通过。
 - Full Unit：`xcodebuild test -only-testing:WardrobeTests` → `TEST SUCCEEDED`。Debug build → `BUILD SUCCEEDED`；Release build → `BUILD SUCCEEDED`；UI test target 编译通过（按项目规则不运行 UI automation）。
 - Data/Privacy：全部测试使用 in-memory SwiftData / 临时 Storage / 隔离 fixtures，未触碰生产 Application Support、无网络、无真实照片。
-- Manual Matrix（待用户确认，状态：**Stage 15 code/tests passed；Manual UI Accessibility Acceptance pending**）：
+- Manual Acceptance：**Stage 15 Manual UI Accessibility Acceptance passed**（用户于 2026-08-12 确认）。实际确认结果：Light Mode 通过；Dark Mode 通过；Normal window 通过；Narrow window <720 通过；Sidebar 显示/隐藏通过；Reduce Motion 通过；Keyboard-only 通过；VoiceOver / Accessibility Inspector 通过；Try-On drop feedback 与非拖拽等价操作通过；Mock 入口默认隐藏通过；`WARDROBE_DEBUG_MOCK_GENERATION=1` 后 Mock 入口与测试生成通过。
+- Manual Matrix（用户已确认，状态：**Stage 15 closed**）：
 
 | 检查项 | 覆盖 Feature | 结果 |
 | --- | --- | --- |
-| Light / Dark | 全部页面 | ☐ |
-| Normal window（默认 1400×900） | 全部页面 | ☐ |
-| Narrow window（<720，含 Sidebar 显示/隐藏） | Wardrobe / Person / Try-On / Outfit / Generation History / Settings | ☐ |
-| Reduce Motion 开启 | 全部页面（无新增动画，drop 高亮即时变色） | ☐ |
-| Keyboard-only（Tab 导航 + Return + ⌘G + ⌘⇧G(debug flag) + Esc） | 主导航、Wardrobe 添加/编辑、Try-On 添加/移除/生成、Outfit 保存 | ☐ |
-| VoiceOver / Accessibility Inspector | Sidebar、Wardrobe grid、Person 网格、Try-On 三栏、Generation History、Settings 备份恢复 | ☐ |
-| Mock 入口默认隐藏（Debug 不设 flag） | Try-On | ☐ |
-| Debug flag 开启后 Mock 生成可用 | Try-On（`WARDROBE_DEBUG_MOCK_GENERATION=1`） | ☐ |
+| Light / Dark | 全部页面 | ✅ 通过 |
+| Normal window（默认 1400×900） | 全部页面 | ✅ 通过 |
+| Narrow window（<720，含 Sidebar 显示/隐藏） | Wardrobe / Person / Try-On / Outfit / Generation History / Settings | ✅ 通过 |
+| Reduce Motion 开启 | 全部页面（无新增动画，drop 高亮即时变色） | ✅ 通过 |
+| Keyboard-only（Tab 导航 + Return + ⌘G + ⌘⇧G(debug flag) + Esc） | 主导航、Wardrobe 添加/编辑、Try-On 添加/移除/生成、Outfit 保存 | ✅ 通过 |
+| VoiceOver / Accessibility Inspector | Sidebar、Wardrobe grid、Person 网格、Try-On 三栏、Generation History、Settings 备份恢复 | ✅ 通过 |
+| Try-On drop feedback 与非拖拽等价操作 | Try-On 三栏 | ✅ 通过 |
+| Mock 入口默认隐藏（Debug 不设 flag） | Try-On | ✅ 通过 |
+| Debug flag 开启后 Mock 生成可用 | Try-On（`WARDROBE_DEBUG_MOCK_GENERATION=1`） | ✅ 通过 |
 
 ---
 
