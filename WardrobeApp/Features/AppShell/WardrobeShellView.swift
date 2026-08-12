@@ -88,7 +88,11 @@ struct WardrobeShellView: View {
                     selection = .tryOn
                 }
             case .settings:
-                SettingsView(viewModel: SettingsViewModel(coordinator: environment.settings.backupCoordinator))
+                SettingsView(viewModel: SettingsViewModel(
+                    coordinator: environment.settings.backupCoordinator,
+                    storageService: environment.settings.storageService,
+                    orphanReportService: environment.settings.orphanReport
+                ))
             case let route:
                 PlaceholderFeatureView(route: route)
             }

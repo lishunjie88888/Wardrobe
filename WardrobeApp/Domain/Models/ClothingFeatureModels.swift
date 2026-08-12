@@ -90,6 +90,18 @@ struct ClothingRecord: Identifiable, Equatable, Sendable {
 
     var isArchived: Bool { archivedAt != nil }
     var preferredDisplayResourceID: StorageResourceID? { processedResourceID ?? thumbnailResourceID }
+
+    /// Grid/list loading order: thumbnail first so the full processed image is
+    /// never decoded just to render a small card. Falls back to processed only
+    /// when the thumbnail is missing.
+    var gridResourceIDs: [StorageResourceID] {
+        [thumbnailResourceID, processedResourceID].compactMap { $0 }
+    }
+
+    /// Detail loading order: full processed image first, thumbnail fallback.
+    var detailResourceIDs: [StorageResourceID] {
+        [processedResourceID, thumbnailResourceID].compactMap { $0 }
+    }
 }
 
 struct ClothingDeleteImpact: Equatable, Sendable {

@@ -270,6 +270,10 @@ final class InterruptedGenerationRecoveryService {
         self.now = now
     }
 
+    /// Marks every non-terminal generation as failed at startup. Records with
+    /// a known non-terminal status use the validated transition; records with
+    /// an unknown status code (for example from a future schema version) are
+    /// set to failed directly so startup recovery can never crash on them.
     @discardableResult
     func recover() throws -> Int {
         let records = try repository.nonterminalGenerationRecords()
@@ -277,7 +281,14 @@ final class InterruptedGenerationRecoveryService {
             record.errorCode = "interrupted"
             record.errorMessage = "Generation was interrupted before completion."
             record.completedAt = now()
-            try repository.transitionGeneration(id: record.id, to: .failed, at: now())
+            if record.resolvedStatus == .known(.queued)
+                || record.resolvedStatus == .known(.preparing)
+                || record.resolvedStatus == .known(.running) {
+                try repository.transitionGeneration(id: record.id, to: .failed, at: now())
+            } else {
+                record.setStatus(.failed, at: now())
+                try repository.save()
+            }
         }
         return records.count
     }

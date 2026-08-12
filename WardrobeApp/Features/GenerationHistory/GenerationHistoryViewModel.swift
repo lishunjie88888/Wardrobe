@@ -25,8 +25,9 @@ final class GenerationHistoryViewModel {
 
     func load() {
         do {
-            providerIDs = Array(Set(try dependencies.service.history().map(\.providerID))).sorted()
-            records = try dependencies.service.history(matching: query)
+            let unfiltered = try dependencies.service.history()
+            providerIDs = Array(Set(unfiltered.map(\.providerID))).sorted()
+            records = query.hasActiveFilters ? try dependencies.service.history(matching: query) : unfiltered
             if let selection, !records.contains(where: { $0.id == selection }) { self.selection = records.first?.id }
             else if selection == nil { selection = records.first?.id }
             loadDetail()

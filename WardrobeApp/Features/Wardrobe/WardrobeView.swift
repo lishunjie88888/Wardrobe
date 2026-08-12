@@ -389,7 +389,7 @@ private struct ClothingDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 13) {
                     ZStack(alignment: .topTrailing) {
-                        ClothingAssetImage(record: item, loader: loader)
+                        ClothingAssetImage(record: item, loader: loader, loadThumbnailFirst: false)
                             .frame(height: 220)
                             .frame(maxWidth: .infinity)
                             .background(.quaternary.opacity(0.16), in: RoundedRectangle(cornerRadius: 10))
@@ -461,6 +461,7 @@ private struct ClothingDetailView: View {
 private struct ClothingAssetImage: View {
     let record: ClothingRecord
     let loader: any ClothingImageLoading
+    var loadThumbnailFirst: Bool = true
     @State private var image: NSImage?
     @State private var failed = false
 
@@ -471,7 +472,8 @@ private struct ClothingAssetImage: View {
         }
         .task(id: record.id) {
             image = nil; failed = false
-            for resource in [record.processedResourceID, record.thumbnailResourceID].compactMap({ $0 }) {
+            let resources = loadThumbnailFirst ? record.gridResourceIDs : record.detailResourceIDs
+            for resource in resources {
                 if let data = try? await loader.data(for: resource), let decoded = NSImage(data: data) { image = decoded; return }
             }
             failed = true

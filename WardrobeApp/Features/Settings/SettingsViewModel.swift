@@ -129,14 +129,84 @@ final class SettingsViewModel: ObservableObject {
     @Published private(set) var readyInfo: BackupRestoreReadyInfo?
     @Published private(set) var restoreResult: BackupRestoreResult?
     @Published private(set) var previewError: BackupError?
+    @Published private(set) var cacheUsageBytes: Int64?
+    @Published private(set) var cacheCleanupResult: CacheCleanupResult?
+    @Published private(set) var orphanReport: OrphanReport?
+    @Published private(set) var orphanCleanupResult: OrphanCleanupResult?
+    @Published private(set) var maintenanceMessage: String?
+    @Published private(set) var isMaintenanceBusy = false
     @Published var showsPreview = false
     @Published var showsConfirmRestore = false
+    @Published var showsOrphanCleanupConfirmation = false
 
     let coordinator: BackupCoordinator
+    private let storageService: StorageService
+    private let orphanReportService: OrphanReportService
 
-    init(coordinator: BackupCoordinator) {
+    init(
+        coordinator: BackupCoordinator,
+        storageService: StorageService,
+        orphanReportService: OrphanReportService
+    ) {
         self.coordinator = coordinator
+        self.storageService = storageService
+        self.orphanReportService = orphanReportService
         self.restoreResult = coordinator.lastRestoreResult()
+    }
+
+    func loadStorageDiagnostics() async {
+        cacheUsageBytes = try? await storageService.cacheStorageSize()
+        orphanReport = try? await orphanReportService.generateReport()
+    }
+
+    func enforceCacheLimit() async {
+        guard !isMaintenanceBusy else { return }
+        isMaintenanceBusy = true
+        defer { isMaintenanceBusy = false }
+        do {
+            let result = try await storageService.enforceCacheLimit()
+            cacheCleanupResult = result
+            cacheUsageBytes = try? await storageService.cacheStorageSize()
+            maintenanceMessage = result.removedFileCount == 0
+                ? "缓存未超过上限，无需清理。"
+                : "已清理 \(result.removedFileCount) 个缓存文件（\(ByteCountFormatter.string(fromByteCount: result.removedBytes, countStyle: .file))）。"
+        } catch {
+            maintenanceMessage = "缓存清理失败：\(error.localizedDescription)"
+        }
+    }
+
+    func generateOrphanReport() async {
+        guard !isMaintenanceBusy else { return }
+        isMaintenanceBusy = true
+        defer { isMaintenanceBusy = false }
+        do {
+            orphanReport = try await orphanReportService.generateReport()
+            maintenanceMessage = "扫描完成。孤儿文件仅报告，默认不删除。"
+        } catch {
+            maintenanceMessage = "扫描失败：\(error.localizedDescription)"
+        }
+    }
+
+    func requestOrphanCleanup() {
+        showsOrphanCleanupConfirmation = true
+    }
+
+    func confirmOrphanCleanup() async {
+        showsOrphanCleanupConfirmation = false
+        guard !isMaintenanceBusy else { return }
+        isMaintenanceBusy = true
+        defer { isMaintenanceBusy = false }
+        do {
+            let result = try await orphanReportService.deleteEligibleUnreferenced()
+            orphanCleanupResult = result
+            orphanReport = try? await orphanReportService.generateReport()
+            cacheUsageBytes = try? await storageService.cacheStorageSize()
+            maintenanceMessage = result.deletedResources.isEmpty
+                ? "没有符合条件的文件被删除。"
+                : "已删除 \(result.deletedResources.count) 个无引用文件；\(result.retainedResources.count) 个文件因仍被引用而保留。"
+        } catch {
+            maintenanceMessage = "清理失败：\(error.localizedDescription)"
+        }
     }
 
     func chooseBackupDestination() -> URL? {

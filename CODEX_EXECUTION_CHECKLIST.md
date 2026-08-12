@@ -1284,59 +1284,88 @@
 
 ### Scope
 
-- [ ] 大量衣物/人物/历史记录下的 SwiftData 查询和 Grid 性能。
-- [ ] Thumbnail 使用、图片解码/释放、内存峰值和任务取消。
-- [ ] Cache 容量、staging 恢复、文件一致性和 orphan report/cleanup。
-- [ ] AI 请求、恢复和长任务生命周期可靠性。
+- [x] 大量衣物/人物/历史记录下的 SwiftData 查询和 Grid 性能。
+- [x] Thumbnail 使用、图片解码/释放、内存峰值和任务取消。
+- [x] Cache 容量、staging 恢复、文件一致性和 orphan report/cleanup。
+- [x] AI 请求、恢复和长任务生命周期可靠性。
 
 ### Out of Scope
 
-- [ ] 不凭猜测进行大规模优化或架构重写。
-- [ ] 不自动永久删除未经确认的孤儿文件。
-- [ ] 不用降低图片/数据正确性换取不可测量的性能收益。
+- [x] 不凭猜测进行大规模优化或架构重写。
+- [x] 不自动永久删除未经确认的孤儿文件。
+- [x] 不用降低图片/数据正确性换取不可测量的性能收益。
 
 ### Dependencies
 
-- [ ] Stage 10、14–15 已通过。
+- [x] Stage 10、14–15 已通过。
 
 ### Implementation Tasks
 
-- [ ] 定义代表性数据规模、图片尺寸、机器环境和性能预算。
-- [ ] 创建不含私人素材的可重复性能 fixture。
-- [ ] 使用 Instruments 测量启动、Grid 滚动、搜索、图片导入、生成准备和历史加载。
-- [ ] 确认列表只加载 thumbnail，原图/processed 按需加载并及时释放。
-- [ ] 检查 async Task 所有权、页面离开取消、actor contention 和迟到结果。
-- [ ] 为高频 SwiftData 查询建立合理 predicate/sort/fetch limit，基于测量决定是否索引/分页。
-- [ ] 实现 Cache 上限与安全清理策略。
-- [ ] 实现只读 orphan 扫描报告；自动清理必须有引用检查、宽限期和明确范围。
-- [ ] 实现启动时过期 staging 与中断 generation 的受控恢复。
+- [x] 定义代表性数据规模、图片尺寸、机器环境和性能预算。
+- [x] 创建不含私人素材的可重复性能 fixture。
+- [x] 使用 Instruments 测量启动、Grid 滚动、搜索、图片导入、生成准备和历史加载（CLI xctrace 启动 trace；滚动/交互测量留给 Manual Gate）。
+- [x] 确认列表只加载 thumbnail，原图/processed 按需加载并及时释放。
+- [x] 检查 async Task 所有权、页面离开取消、actor contention 和迟到结果。
+- [x] 为高频 SwiftData 查询建立合理 predicate/sort/fetch limit，基于测量决定是否索引/分页。
+- [x] 实现 Cache 上限与安全清理策略。
+- [x] 实现只读 orphan 扫描报告；自动清理必须有引用检查、宽限期和明确范围。
+- [x] 实现启动时过期 staging 与中断 generation 的受控恢复。
 
 ### Tests
 
-- [ ] 运行大数据 fixture 的性能基线和回归测量。
-- [ ] 运行内存峰值、重复打开详情和快速滚动检查。
-- [ ] 测试取消、并发导入、应用重启和磁盘不足。
-- [ ] 测试 orphan report 区分缺失文件与无引用文件，且默认不删除。
-- [ ] 测试 Cache 清理和 staging 恢复不影响持久资源。
-- [ ] 运行 build 和全部 tests。
+- [x] 运行大数据 fixture 的性能基线和回归测量。
+- [x] 运行内存峰值、重复打开详情和快速滚动检查（重复打开详情已自动覆盖；滚动与内存曲线留给 Manual Gate）。
+- [x] 测试取消、并发导入、应用重启和磁盘不足。
+- [x] 测试 orphan report 区分缺失文件与无引用文件，且默认不删除。
+- [x] 测试 Cache 清理和 staging 恢复不影响持久资源。
+- [x] 运行 build 和全部 tests。
 
 ### Acceptance Criteria
 
-- [ ] 达到已记录的可接受启动、滚动、搜索和导入预算。
-- [ ] 大图处理和列表浏览无持续内存增长或明显泄漏。
-- [ ] 取消与页面生命周期不会产生重复写入或悬空任务。
-- [ ] 文件一致性问题可报告，清理不会误删历史引用资源。
+- [x] 达到已记录的可接受启动、滚动、搜索和导入预算（自动测量部分；滚动与交互预算待 Manual Gate）。
+- [x] 大图处理和列表浏览无持续内存增长或明显泄漏（重复详情 50 次稳定；内存曲线待 Manual Gate/Instruments GUI）。
+- [x] 取消与页面生命周期不会产生重复写入或悬空任务（既有 Stage 10/7 覆盖 + 本阶段磁盘不足/恢复测试）。
+- [x] 文件一致性问题可报告，清理不会误删历史引用资源。
 
 ### Documentation Updates
 
-- [ ] 记录性能基线、测试机器、数据规模和优化原因。
-- [ ] Cache/orphan 策略变化同步到 `STORAGE_SPEC.md`。
-- [ ] 在本 Stage 下记录 Instruments 结果摘要。
+- [x] 记录性能基线、测试机器、数据规模和优化原因（见下方 Execution Record）。
+- [x] Cache/orphan 策略变化同步到 `STORAGE_SPEC.md`。
+- [x] 在本 Stage 下记录 Instruments 结果摘要。
 
 ### Completion Checklist
 
-- [ ] 关键性能预算与可靠性测试通过。
-- [ ] 人工审查 orphan cleanup 和所有自动删除边界后继续。
+- [x] 关键性能预算与可靠性测试通过。
+- [ ] 人工审查 orphan cleanup 和所有自动删除边界后继续（**待用户确认**，见下方 Manual Gate）。
+
+### Execution Record（2026-08-12）
+
+- Gate/Scope：HEAD `4ed2d5b`（main、working tree clean、local == origin），只执行 Stage 16；未执行 Stage 17；`WardrobeSchemaV1`、Migration、Backup 格式、Repository 公开协议与删除/生成生命周期语义均未修改。
+- 测试机器：macOS 26.5.2，MacBook Air（Apple Silicon，arm64），Xcode 26.6 / Swift 6；Debug 与 Release 均本机构建。
+- Fixture 规模（in-memory SwiftData + 隔离临时 Storage root，无私人素材）：Clothing 1000、PersonProfile 10、PersonImage 30、Outfit 250、Generation 500，含 active/archived、favorite、failed/cancelled/succeeded/in-progress、未知 statusCode、搜索/筛选/排序数据；另建小规模文件 fixture 覆盖 orphan/cache/staging/disk-full。
+- 性能基线（ContinuousClock 实测，`Stage16PerformanceReliabilityTests` 输出到测试进程临时目录 `wardrobe16-baselines.txt`）：
+  - 1000 衣物默认查询（fetchLimit 250）≈ 0.070s；category+favorites 下推查询 ≈ 0.002s；搜索 "棉质" ≈ 0.052s；name 排序 ≈ 0.062s。
+  - Person profiles 查询 ≈ 0.004s；Outfit 查询 ≈ 0.057s；Generation History 全量 ≈ 0.028s、状态筛选 ≈ 0.004s；重复打开详情 ×50 ≈ 0.004s 且结果稳定。
+  - 预算对照：search/filter 典型操作 < 200ms、500 条 History 首次查询 < 300ms 均达成；详情重复打开无持续增长（自动断言为稳定性 + 宽松上界，不做脆弱毫秒断言）。
+- Instruments/xctrace：`xcrun xctrace record --template 'Time Profiler' --time-limit 12s --launch`（Debug 构建，`WARDROBE_STORAGE_ROOT_OVERRIDE=/tmp/wardrobe-xctrace-root` 隔离根）成功完成：启动初始化活动集中在 dyld/CoreFoundation 前 ~0.8s，随后空闲（无 UI 自动化驱动），`potential-hangs` 与 `hang-risks` 表均为空（无 hang 记录）。Allocations CLI 录制在本环境失败（模板无 allocation 数据表），内存峰值/滚动曲线保留 **Manual Instruments Gate**；未使用 Accessibility 驱动 Instruments GUI。
+- 实际优化及原因：
+  1. **查询 predicate 下推**（`WardrobePersistence.swift`）：Clothing 的 archive/favorites/category、Person 的 archive、Outfit 的 archive/favorites、Generation History 的 providerID/status 均下推到 SwiftData fetch；`nonterminalGenerationRecords` 改为 statusCode 谓词。free-text 搜索与 season/color/style 数组筛选保留内存过滤：`localizedCaseInsensitiveContains` 无法谓词化，且本 SDK 中模型数组属性上的 `contains` 谓词会触发 Core Data `_NSCoreDataStringSearch` SIGSEGV（实测复现），推下去会以正确性换微小收益。未改 Schema、未加索引（V1 frozen）。
+  2. **Grid 默认只加载 thumbnail**（`WardrobeView.swift` + `ClothingRecord.gridResourceIDs/detailResourceIDs`）：衣橱网格先 thumbnail、缺失时才 fallback processed；详情页才先 processed。Person/Outfit/History 列表原本已是 thumbnail-first，未改。
+  3. **Generation History 去重查询**：无筛选时复用一次 `history()` 结果，不再执行两次全量查询。
+  4. **Cache 上限与 LRU 清理**（`StorageService.enforceCacheLimit`，`CachePolicy`）：`cache/` 总上限 512 MB（版本 1）；写入后超限即按 modification date（读缓存时刷新，作为最近访问代理）逐文件驱逐最旧文件；只清理 `cache/previews|provider` 直接子文件，绝不触碰持久资源与 SwiftData；清理失败不阻断缓存写入。
+  5. **启动 staging 过期清理**（`StorageService.recoverExpiredStagingOperations`，`StagingExpirationPolicy` 默认 24h 宽限）：AppEnvironment 启动时同步执行；只删除 `staging/` 下规范小写 UUID 目录且最后活动超过宽限期者，非 UUID 条目跳过；restore/migration 事务工作区、backups、external-generations 不在 `staging/` 内，不受影响；注入时钟可测。
+  6. **中断 generation 恢复加固**（`InterruptedGenerationRecoveryService`）：queued/preparing/running 走校验 transition；未知 statusCode 记录直接置为 failed（此前会被跳过且永远无法终态化，还会阻塞备份预检），启动恢复不再可能因未知状态崩溃。
+  7. **磁盘不足保护**（`StorageCapacityChecking` + `StorageError.insufficientSpace`，默认下限 8 MB）：write/importImage/saveGenerationResult/writeCache/createTemporaryFile/beginImageProcessing/publishImageProcessingOutputs 在触碰任何文件前先校验容量；失败不留半提交、不损已有资源；测试注入 fake capacity 确定性覆盖。
+  8. **只读 orphan 报告 + 显式安全清理**（`OrphanReportService` + `OrphanStorageScanning`）：报告区分 Missing referenced / Unreferenced candidate / Eligible cleanup（无引用且超过 7 天宽限）；默认只报告不删除；清理需显式确认，执行时重新读取引用集合并逐文件校验后删除，只删合法 `StorageResourceID` 文件、不删目录、不碰 cache/staging/backups/migration/external-generations。
+  9. **Settings 存储维护 UI**：设置页新增“存储维护”区（缓存用量 + 清理缓存；孤儿文件扫描 + 显式确认清理），accessibility identifiers `storage.cache.clean`、`storage.orphan.scan`、`storage.orphan.cleanup`。
+- Cache/orphan/staging 策略已同步 `docs/STORAGE_SPEC.md`（§4.5 临时文件、§4.6 Cache、新增 §5.2 磁盘容量、§10 维护与孤儿文件安全）。
+- 测试：Stage16 focused 16 项全过；Full Wardrobe Unit 189 项（188 passed / 0 failed / 1 skipped=HEIC runtime）；Debug build 与 Release build 均 `BUILD SUCCEEDED`；`git diff --check` 通过；未运行 GUI UI automation。
+- Data/Privacy：全部测试使用 in-memory SwiftData / 隔离临时 Storage；xctrace 启动 trace 使用 `/tmp` 隔离根；未触碰生产 Application Support，无网络，无真实照片。
+- **Manual Gate（待用户）**：
+  - 性能：启动、1000 项衣橱、搜索/筛选、快速滚动、重复详情、Generation History、内存行为（Allocations CLI 不可用，建议 Instruments GUI 复核）。
+  - File Safety 边界确认：允许自动 cleanup = `cache/previews`、`cache/provider`（LRU 驱逐，仅文件）；`staging/<UUID>` 超过 24h（仅启动时，仅 UUID 目录）；`generations|garments|persons|outfits/<UUID>/` 下经显式确认且再次核对引用的无引用文件（7 天宽限，仅文件）。
+  - 永不自动 cleanup = `backups/`、`migration/`、`external-generations/`、`database/`、`library.json`、owner 目录本身、被引用文件、非 UUID staging 条目。
+  - Orphan 展示：Missing referenced / Unreferenced candidate / Eligible cleanup 三类计数（Settings → 存储维护 → 扫描）；默认不删除。
 
 ---
 

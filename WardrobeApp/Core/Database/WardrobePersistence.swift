@@ -55,16 +55,9 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
     }
 
     func clothingItems(matching query: ClothingQuery) throws -> [ClothingRecord] {
-        let items = try context.fetch(FetchDescriptor<ClothingItem>())
+        let items = try context.fetch(FetchDescriptor<ClothingItem>(predicate: Self.clothingPredicate(for: query)))
         let needle = query.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = items.filter { item in
-            switch query.archive {
-            case .active where item.archivedAt != nil: return false
-            case .archived where item.archivedAt == nil: return false
-            default: break
-            }
-            if query.favoritesOnly && !item.isFavorite { return false }
-            if let code = query.categoryCode, item.categoryCode != code { return false }
             if let code = query.seasonCode, !item.seasonCodes.contains(code) { return false }
             if let code = query.colorCode, !item.colorCodes.contains(code) { return false }
             if let code = query.styleCode, !item.styleCodes.contains(code) { return false }
@@ -177,6 +170,28 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
         return result
     }
 
+    /// Archive, favorites and category filters are pushed down into the
+    /// SwiftData fetch. The free-text search and the season/color/style array
+    /// filters are evaluated in memory: `localizedCaseInsensitiveContains`
+    /// cannot be expressed as a SwiftData predicate, and `contains` on a model
+    /// array attribute crashes Core Data at runtime on this SDK, so pushing
+    /// those down would trade correctness for a marginal fetch win.
+    private static func clothingPredicate(for query: ClothingQuery) -> Predicate<ClothingItem>? {
+        let archiveRaw = query.archive.rawValue
+        let favoritesOnly = query.favoritesOnly
+        let categoryCode = query.categoryCode ?? ""
+        let activeRaw = ClothingArchiveFilter.active.rawValue
+        let archivedRaw = ClothingArchiveFilter.archived.rawValue
+        let hasStructuralFilter = favoritesOnly || !categoryCode.isEmpty || query.archive != .all
+        guard hasStructuralFilter else { return nil }
+        return #Predicate<ClothingItem> { item in
+            (archiveRaw != activeRaw || item.archivedAt == nil)
+                && (archiveRaw != archivedRaw || item.archivedAt != nil)
+                && (!favoritesOnly || item.isFavorite)
+                && (categoryCode.isEmpty || item.categoryCode == categoryCode)
+        }
+    }
+
     func deleteClothingItem(id: UUID) throws {
         guard let item = try clothingItem(id: id) else { return }
         context.delete(item)
@@ -223,14 +238,13 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
     }
 
     func personProfiles(archive: PersonArchiveFilter) throws -> [PersonProfileRecord] {
-        let profiles = try context.fetch(FetchDescriptor<PersonProfile>())
-            .filter { profile in
-                switch archive {
-                case .active: profile.archivedAt == nil
-                case .archived: profile.archivedAt != nil
-                case .all: true
-                }
-            }
+        let predicate: Predicate<PersonProfile>?
+        switch archive {
+        case .active: predicate = #Predicate { $0.archivedAt == nil }
+        case .archived: predicate = #Predicate { $0.archivedAt != nil }
+        case .all: predicate = nil
+        }
+        let profiles = try context.fetch(FetchDescriptor<PersonProfile>(predicate: predicate))
             .sorted {
                 if $0.isDefault != $1.isDefault { return $0.isDefault }
                 if $0.createdAt != $1.createdAt { return $0.createdAt < $1.createdAt }
@@ -393,13 +407,21 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
 
     func outfits(matching query: OutfitQuery) throws -> [OutfitRecord] {
         let needle = query.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let filtered = try context.fetch(FetchDescriptor<Outfit>()).filter { outfit in
-            switch query.archive {
-            case .active where outfit.archivedAt != nil: return false
-            case .archived where outfit.archivedAt == nil: return false
-            default: break
+        let archiveRaw = query.archive.rawValue
+        let favoritesOnly = query.favoritesOnly
+        let activeRaw = OutfitArchiveFilter.active.rawValue
+        let archivedRaw = OutfitArchiveFilter.archived.rawValue
+        let predicate: Predicate<Outfit>?
+        if query.archive != .all || favoritesOnly {
+            predicate = #Predicate<Outfit> { outfit in
+                (archiveRaw != activeRaw || outfit.archivedAt == nil)
+                    && (archiveRaw != archivedRaw || outfit.archivedAt != nil)
+                    && (!favoritesOnly || outfit.isFavorite)
             }
-            if query.favoritesOnly && !outfit.isFavorite { return false }
+        } else {
+            predicate = nil
+        }
+        let filtered = try context.fetch(FetchDescriptor<Outfit>(predicate: predicate)).filter { outfit in
             guard !needle.isEmpty else { return true }
             return outfit.name.localizedCaseInsensitiveContains(needle) ||
                 (outfit.notes?.localizedCaseInsensitiveContains(needle) == true) ||
@@ -517,24 +539,40 @@ final class SwiftDataWardrobeRepository: WardrobeRepository {
     }
 
     func nonterminalGenerationRecords() throws -> [GenerationRecord] {
-        try context.fetch(FetchDescriptor<GenerationRecord>()).filter {
-            guard case let .known(status) = $0.resolvedStatus else { return false }
-            return !status.isTerminal
+        let succeeded = GenerationStatus.succeeded.rawValue
+        let failed = GenerationStatus.failed.rawValue
+        let cancelled = GenerationStatus.cancelled.rawValue
+        let predicate = #Predicate<GenerationRecord> { record in
+            record.statusCode != succeeded && record.statusCode != failed && record.statusCode != cancelled
         }
+        return try context.fetch(FetchDescriptor<GenerationRecord>(predicate: predicate))
     }
 
     func generationHistory(matching query: GenerationHistoryQuery) throws -> [GenerationHistoryRecord] {
-        let records = try context.fetch(FetchDescriptor<GenerationRecord>()).filter { record in
-            if let providerID = query.providerID, record.providerID != providerID { return false }
-            switch query.status {
-            case .all: return true
-            case .succeeded: return record.statusCode == GenerationStatus.succeeded.rawValue
-            case .failed: return record.statusCode == GenerationStatus.failed.rawValue
-            case .cancelled: return record.statusCode == GenerationStatus.cancelled.rawValue
-            case .inProgress:
-                return [GenerationStatus.queued, .preparing, .running].map(\.rawValue).contains(record.statusCode)
+        let providerID = query.providerID ?? ""
+        let expectedStatusCodes: [String]
+        switch query.status {
+        case .all: expectedStatusCodes = []
+        case .succeeded: expectedStatusCodes = [GenerationStatus.succeeded.rawValue]
+        case .failed: expectedStatusCodes = [GenerationStatus.failed.rawValue]
+        case .cancelled: expectedStatusCodes = [GenerationStatus.cancelled.rawValue]
+        case .inProgress:
+            expectedStatusCodes = [
+                GenerationStatus.queued.rawValue,
+                GenerationStatus.preparing.rawValue,
+                GenerationStatus.running.rawValue,
+            ]
+        }
+        let predicate: Predicate<GenerationRecord>?
+        if !providerID.isEmpty || !expectedStatusCodes.isEmpty {
+            predicate = #Predicate<GenerationRecord> { record in
+                (providerID.isEmpty || record.providerID == providerID)
+                    && (expectedStatusCodes.isEmpty || expectedStatusCodes.contains(record.statusCode))
             }
-        }.sorted {
+        } else {
+            predicate = nil
+        }
+        let records = try context.fetch(FetchDescriptor<GenerationRecord>(predicate: predicate)).sorted {
             $0.createdAt == $1.createdAt ? $0.id.uuidString < $1.id.uuidString : $0.createdAt > $1.createdAt
         }
         return records.prefix(max(1, query.fetchLimit)).map(Self.generationHistoryRecord)

@@ -109,12 +109,16 @@ generations/89a1.../result.png
 
 - `staging/` 仅保存进行中的导入、导出、恢复和生成操作。
 - 文件使用 Operation UUID 隔离，并在成功或失败后删除明确操作目录中的文件；启动时可清理超过安全期限且没有活动操作标记的 staging 内容。
+- 启动恢复（`StorageService.recoverExpiredStagingOperations`，AppEnvironment 在创建 UI 前同步执行）只删除 `staging/` 下满足全部条件的条目：规范小写 UUID 目录名、最后活动时间（content modification date）早于 `StagingExpirationPolicy.gracePeriod`（默认 24 小时）。非 UUID 条目一律跳过并计入 `skippedNonOperationEntries`；符号链接条目跳过。启动时进程内不可能存在活动 operation，宽限期即安全窗口；时钟可注入以便测试。
+- restore/migration 事务工作区位于 `backups/` 与 `migration/`，`external-generations/`、`backups/`、`database/` 均不属于 `staging/`，恢复逻辑绝不触碰。
 - 系统临时目录可用于不需要跨启动恢复的瞬时数据，但不得作为持久资源地址。
 
 ### 4.6 Cache
 
 - 仅保存可从持久数据或远端响应重新构建的内容。
 - Cache 需要版本、容量上限和最近访问清理策略；清理 Cache 不更新 SwiftData 业务记录。
+- 当前 `CachePolicy`：version `1`，总容量上限 512 MB（`cache/previews` 与 `cache/provider` 合计）。`writeCache` 写入后若超限立即触发 `enforceCacheLimit()` 驱逐；Settings 也提供手动“清理缓存”入口。
+- 驱逐按最近访问（LRU）执行：以文件 content modification date 为代理，`readCache` 会刷新该时间；超限时从最旧文件开始逐文件删除，只删 `cache/<namespace>` 的直接子文件，绝不删除目录、其他 namespace、持久 owner 资源或 SwiftData 内容。单文件删除失败跳过并继续（驱逐尽力而为，不阻断缓存写入）。
 - 清理动作不得遍历删除未经 Storage Service 验证的路径。
 
 ### 4.7 External ChatGPT packages
@@ -148,6 +152,12 @@ generations/89a1.../result.png
 - 峰值长期对象限于一个 preset 尺寸的 sRGB processed bitmap 和一个 512 px thumbnail bitmap；original、processed 与 thumbnail 不会作为三个完整 bitmap 同时驻留。
 - CPU/解码/编码工作在 detached worker 上执行，不占用 SwiftUI MainActor；在校验、降采样、可选背景处理、颜色转换、两次编码和发布前检查 Task cancellation。
 
+### 5.3 磁盘容量保护
+
+- `StorageService` 注入 `StorageCapacityChecking`（生产实现读取 volume available capacity for important usage）；关键持久写入在触碰任何文件之前校验可用容量 ≥ `StorageCapacityRequirement.minimumWriteFreeBytes`（8 MiB），不足时抛 `StorageError.insufficientSpace`，不留半提交、不损已有资源。
+- 覆盖写入点：`write`、`importImage`、`saveGenerationResult`、`writeCache`、`createTemporaryFile`、`beginImageProcessing`、`publishImageProcessingOutputs`。
+- Backup 沿用独立容量 provider（§7），staging 写入 + 原子移动仍是最终一致性保障；容量校验让“磁盘满”失败确定且可见，测试通过注入 fake capacity 确定性覆盖，不真正填满磁盘。
+
 ## 6. 删除与孤儿清理
 
 ### 6.1 用户删除
@@ -167,6 +177,11 @@ generations/89a1.../result.png
 - 扫描器比较数据库声明资源与 Storage 目录，但只生成报告，默认不自动永久删除。
 - 区分“数据库引用缺失文件”和“文件无数据库引用”：前者优先报告数据损坏，后者在宽限期后才允许清理。
 - 任何自动清理都应限制在已验证 owner 目录、具备宽限期并产生脱敏日志。
+- Stage 16 实现（`OrphanReportService` + `OrphanStorageScanning`，Settings → 存储维护）：
+  - 扫描范围仅 `garments|persons|generations|outfits/<规范化 UUID>/` 下的直接文件，且相对路径必须能解析为合法 `StorageResourceID`；cache、staging、backups、migration、external-generations、database、library.json 与非法/嵌套路径永不进入报告或清理候选。
+  - 报告三类：`missingReferencedResources`（数据库引用但磁盘缺失，优先视为数据损坏）、`unreferencedCandidates`（磁盘存在但无引用）、`eligibleCleanupCandidates`（无引用且 content modification date 早于宽限期，默认 7 天）。
+  - **默认只报告，不删除任何文件。** 清理是独立显式入口（用户确认）：执行时重新读取全部引用集合，逐文件核对仍无引用后才删除；只删单个文件、不删目录、不删被引用资源；删除失败登记为 issue，不中断其余候选。
+  - 扫描与删除都是只读/点删，不修改 SwiftData；宽限期、范围与“默认不删除”边界见 `CODEX_EXECUTION_CHECKLIST.md` Stage 16 Manual Gate。
 
 ## 7. 备份与恢复
 

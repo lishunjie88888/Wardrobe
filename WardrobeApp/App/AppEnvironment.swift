@@ -12,6 +12,8 @@ struct WardrobeFeatureDependencies {
 
 struct SettingsFeatureDependencies {
     let backupCoordinator: BackupCoordinator
+    let storageService: StorageService
+    let orphanReport: OrphanReportService
 }
 
 struct AppEnvironment {
@@ -42,6 +44,7 @@ struct AppEnvironment {
         let tryOnWorkspaceCoordinator = TryOnWorkspaceCoordinator()
         self.tryOnWorkspaceCoordinator = tryOnWorkspaceCoordinator
         try InterruptedGenerationRecoveryService(repository: repository).recover()
+        _ = try Self.recoverExpiredStagingOperations(configuration: StorageConfiguration(rootURL: storageService.libraryRootURL))
 #if DEBUG
         if ProcessInfo.processInfo.environment["WARDROBE_UI_TEST_SEED_CLOTHING"] == "1" {
             let seedID = UUID(uuidString: "00000000-0000-0000-0000-000000000404")!
@@ -158,7 +161,9 @@ struct AppEnvironment {
                 container: modelContainer,
                 storageService: storageService,
                 configuration: StorageConfiguration(rootURL: storageService.libraryRootURL)
-            )
+            ),
+            storageService: storageService,
+            orphanReport: OrphanReportService(repository: repository, storage: storageService)
         )
         self.tryOn = TryOnFeatureDependencies(
             clothing: ClothingManagementService(repository: repository),
@@ -184,6 +189,13 @@ struct AppEnvironment {
         )
     }
 
+
+    @MainActor
+    private static func recoverExpiredStagingOperations(
+        configuration: StorageConfiguration
+    ) throws -> StagingRecoveryResult {
+        try StorageService.recoverExpiredStagingOperations(configuration: configuration)
+    }
 
 #if DEBUG
     @MainActor

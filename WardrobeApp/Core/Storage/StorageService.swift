@@ -78,6 +78,7 @@ enum StorageError: Error, Equatable, LocalizedError {
     case symbolicLinkNotAllowed
     case invalidCacheKey
     case invalidFileExtension
+    case insufficientSpace
 
     var errorDescription: String? {
         switch self {
@@ -93,6 +94,7 @@ enum StorageError: Error, Equatable, LocalizedError {
         case .symbolicLinkNotAllowed: "Symbolic links are not allowed in managed storage paths."
         case .invalidCacheKey: "The cache key is invalid."
         case .invalidFileExtension: "The temporary file extension is invalid."
+        case .insufficientSpace: "Not enough free disk space to complete this operation."
         }
     }
 }
@@ -127,18 +129,21 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
     private let configuration: StorageConfiguration
     private let thumbnailGenerator: any ImageThumbnailGenerating
     private let thumbnailConfiguration: ThumbnailConfiguration
+    private let capacityChecker: any StorageCapacityChecking
 
     init(
         configuration: StorageConfiguration,
         fileManager: FileManager = .default,
         thumbnailGenerator: any ImageThumbnailGenerating = ImageIOThumbnailGenerator(),
-        thumbnailConfiguration: ThumbnailConfiguration = .wardrobeDefault
+        thumbnailConfiguration: ThumbnailConfiguration = .wardrobeDefault,
+        capacityChecker: any StorageCapacityChecking = SystemStorageCapacity()
     ) throws {
         self.libraryRootURL = configuration.rootURL.standardizedFileURL
         self.configuration = configuration
         self.fileManager = fileManager
         self.thumbnailGenerator = thumbnailGenerator
         self.thumbnailConfiguration = thumbnailConfiguration
+        self.capacityChecker = capacityChecker
         try Self.initializeLibrary(configuration: configuration, fileManager: fileManager)
     }
 
@@ -187,6 +192,7 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
     }
 
     func write(_ data: Data, to resourceID: StorageResourceID) throws {
+        try ensureCapacityForWrite()
         let destination = try resolvedURL(for: resourceID)
         guard !fileManager.fileExists(atPath: destination.path) else {
             throw StorageError.resourceAlreadyExists(resourceID)
@@ -255,6 +261,7 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
     }
 
     func importImage(from sourceURL: URL, for owner: StorageOwner) throws -> StoredImageResources {
+        try ensureCapacityForWrite()
         guard owner.kind == .garment || owner.kind == .person else {
             throw StorageResourceIDError.incompatibleResourceKind
         }
@@ -306,6 +313,7 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
         mediaType: String,
         generationID: UUID
     ) throws -> StoredGenerationResources {
+        try ensureCapacityForWrite()
         let operationID = UUID()
         let temporary = try createTemporaryFile(
             data: data,
@@ -350,6 +358,7 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
     }
 
     func createTemporaryFile(data: Data, operationID: UUID = UUID(), fileExtension: String) throws -> StorageTemporaryFile {
+        try ensureCapacityForWrite()
         guard isSafeExtension(fileExtension) else { throw StorageError.invalidFileExtension }
         let directory = stagingDirectory.appendingPathComponent(operationID.uuidString.lowercased(), isDirectory: true)
         guard !fileManager.fileExists(atPath: directory.path) else {
@@ -375,6 +384,7 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
         originalResourceID: StorageResourceID
     ) throws -> ImageProcessingWorkspace {
         try Task.checkCancellation()
+        try ensureCapacityForWrite()
         let owner = originalResourceID.owner
         guard owner.kind == .garment || owner.kind == .person,
               originalResourceID.rawValue.split(separator: "/").last?.hasPrefix("original.") == true
@@ -411,6 +421,7 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
         from workspace: ImageProcessingWorkspace
     ) throws -> PublishedImageProcessingResources {
         try Task.checkCancellation()
+        try ensureCapacityForWrite()
         let directory = try validatedProcessingWorkspace(workspace)
         try ensureNoSymbolicLinkInExistingPath(to: workspace.processedOutputURL)
         try ensureNoSymbolicLinkInExistingPath(to: workspace.thumbnailOutputURL)
@@ -464,9 +475,11 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
 
     func writeCache(_ data: Data, namespace: String, key: UUID) throws {
         guard namespace == "previews" || namespace == "provider" else { throw StorageError.invalidCacheKey }
+        try ensureCapacityForWrite()
         let directory = cacheDirectory.appendingPathComponent(namespace, isDirectory: true)
         let destination = directory.appendingPathComponent(key.uuidString.lowercased())
         try data.write(to: destination, options: [.atomic])
+        _ = try? enforceCacheLimit()
     }
 
     func readCache(namespace: String, key: UUID) throws -> Data? {
@@ -475,6 +488,7 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
             .appendingPathComponent(namespace, isDirectory: true)
             .appendingPathComponent(key.uuidString.lowercased())
         guard fileManager.fileExists(atPath: url.path) else { return nil }
+        try? fileManager.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path)
         return try Data(contentsOf: url, options: [.mappedIfSafe])
     }
 
@@ -484,6 +498,117 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
             .appendingPathComponent(namespace, isDirectory: true)
             .appendingPathComponent(key.uuidString.lowercased())
         try removeIfExists(url)
+    }
+
+    /// Enforces the cache capacity limit by evicting the least recently used
+    /// files (approximated by modification date, refreshed on cache reads)
+    /// from the disposable `cache/` namespaces. Never touches persistent
+    /// resources or SwiftData.
+    func enforceCacheLimit(policy: CachePolicy = .wardrobeDefault) throws -> CacheCleanupResult {
+        let total = try cacheStorageSize()
+        guard total > policy.maximumBytes else {
+            return CacheCleanupResult(removedFileCount: 0, removedBytes: 0)
+        }
+        var candidates: [(url: URL, bytes: Int64, modified: Date)] = []
+        for namespace in ["previews", "provider"] {
+            let directory = cacheDirectory.appendingPathComponent(namespace, isDirectory: true)
+            guard let entries = try? fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+            for entry in entries {
+                let values = try entry.resourceValues(
+                    forKeys: [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey]
+                )
+                guard values.isRegularFile == true, let size = values.fileSize else { continue }
+                candidates.append((entry, Int64(size), values.contentModificationDate ?? .distantPast))
+            }
+        }
+        candidates.sort { $0.modified < $1.modified }
+        var over = total - policy.maximumBytes
+        var removedCount = 0
+        var removedBytes: Int64 = 0
+        for candidate in candidates where over > 0 {
+            do {
+                try removeIfExists(candidate.url)
+                removedCount += 1
+                removedBytes += candidate.bytes
+                over -= candidate.bytes
+            } catch {
+                continue
+            }
+        }
+        return CacheCleanupResult(removedFileCount: removedCount, removedBytes: removedBytes)
+    }
+
+    /// Startup recovery for abandoned staging operations. Only direct children
+    /// of `staging/` with a canonical UUID name whose last activity is older
+    /// than the grace period are removed; unknown entries are skipped so
+    /// reserved or future workspaces are never touched. Restore/migration
+    /// transaction workspaces, backups and external packages live outside
+    /// `staging/` and are unaffected.
+    func recoverExpiredStagingOperations(
+        now: Date = .now,
+        policy: StagingExpirationPolicy = .wardrobeDefault
+    ) throws -> StagingRecoveryResult {
+        try Self.recoverExpiredStagingOperations(
+            configuration: configuration,
+            fileManager: fileManager,
+            now: now,
+            policy: policy
+        )
+    }
+
+    /// Synchronous bootstrap variant so app startup can perform recovery
+    /// before the storage actor finishes wiring. Runs only file housekeeping
+    /// inside `staging/`; never touches persistent owners, backups, migration
+    /// or external packages.
+    static func recoverExpiredStagingOperations(
+        configuration: StorageConfiguration,
+        fileManager: FileManager = .default,
+        now: Date = .now,
+        policy: StagingExpirationPolicy = .wardrobeDefault
+    ) throws -> StagingRecoveryResult {
+        let root = configuration.rootURL.standardizedFileURL
+        let staging = root.appendingPathComponent("staging", isDirectory: true)
+        guard fileManager.fileExists(atPath: staging.path) else {
+            return StagingRecoveryResult(removedOperationCount: 0, removedFileCount: 0, skippedNonOperationEntries: [])
+        }
+        let stagingValues = try staging.resourceValues(forKeys: [.isSymbolicLinkKey])
+        if stagingValues.isSymbolicLink == true { throw StorageError.symbolicLinkNotAllowed }
+        let entries = try fileManager.contentsOfDirectory(
+            at: staging,
+            includingPropertiesForKeys: [.contentModificationDateKey, .isSymbolicLinkKey],
+            options: [.skipsHiddenFiles]
+        )
+        var removedOperations = 0
+        var removedFiles = 0
+        var skipped: [String] = []
+        for entry in entries {
+            let name = entry.lastPathComponent
+            guard let operationID = UUID(uuidString: name), operationID.uuidString.lowercased() == name else {
+                skipped.append(name)
+                continue
+            }
+            let values = try entry.resourceValues(forKeys: [.contentModificationDateKey, .isSymbolicLinkKey])
+            if values.isSymbolicLink == true { continue }
+            let lastActivity = values.contentModificationDate ?? .distantPast
+            guard now.timeIntervalSince(lastActivity) >= policy.gracePeriod else { continue }
+            do {
+                let fileCount = try fileManager.contentsOfDirectory(atPath: entry.path).count
+                try fileManager.removeItem(at: entry)
+                removedOperations += 1
+                removedFiles += fileCount
+            } catch {
+                continue
+            }
+        }
+        return StagingRecoveryResult(
+            removedOperationCount: removedOperations,
+            removedFileCount: removedFiles,
+            skippedNonOperationEntries: skipped
+        )
     }
 
     func persistentStorageSize() throws -> Int64 {
@@ -680,6 +805,13 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
         try fileManager.removeItem(at: url)
     }
 
+    private func ensureCapacityForWrite() throws {
+        let available = try capacityChecker.availableBytes(at: configuration.rootURL)
+        guard available >= StorageCapacityRequirement.minimumWriteFreeBytes else {
+            throw StorageError.insufficientSpace
+        }
+    }
+
     private func originalFileName(for format: SupportedImageFormat) -> String {
         "original.\(format.preferredFileExtension)"
     }
@@ -714,5 +846,41 @@ actor StorageService: StorageServing, ImageProcessingStorageServing, BackupAsset
             }
         }
         return total
+    }
+}
+
+extension StorageService: OrphanStorageScanning {
+    func scanManagedResources() throws -> Set<StorageResourceID> {
+        var result = Set<StorageResourceID>()
+        for topLevel in StorageOwnerKind.allCases {
+            let directory = configuration.rootURL.appendingPathComponent(topLevel.rawValue, isDirectory: true)
+            guard fileManager.fileExists(atPath: directory.path) else { continue }
+            try ensureNoSymbolicLinkInExistingPath(to: directory)
+            let ownerNames = try fileManager.contentsOfDirectory(atPath: directory.path)
+            for ownerName in ownerNames {
+                guard let ownerID = UUID(uuidString: ownerName),
+                      ownerID.uuidString.lowercased() == ownerName
+                else { continue }
+                let ownerDirectory = directory.appendingPathComponent(ownerName, isDirectory: true)
+                let fileNames = (try? fileManager.contentsOfDirectory(atPath: ownerDirectory.path)) ?? []
+                for fileName in fileNames {
+                    let relative = "\(topLevel.rawValue)/\(ownerName)/\(fileName)"
+                    if let resource = try? StorageResourceID(rawValue: relative) {
+                        result.insert(resource)
+                    }
+                }
+            }
+        }
+        return result
+    }
+
+    func modificationDate(of resourceID: StorageResourceID) throws -> Date? {
+        let url = try existingResolvedURL(for: resourceID)
+        return try url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+    }
+
+    func deleteUnreferencedFile(_ resourceID: StorageResourceID) throws {
+        let url = try existingResolvedURL(for: resourceID)
+        try removeIfExists(url)
     }
 }

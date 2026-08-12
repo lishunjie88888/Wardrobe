@@ -11,13 +11,104 @@ struct SettingsView: View {
                 restoreResultSection
                 progressSection
                 errorSection
+                maintenanceSection
             }
             .padding(24)
             .frame(maxWidth: 720, alignment: .leading)
         }
         .navigationTitle("设置")
+        .task { await viewModel.loadStorageDiagnostics() }
         .sheet(isPresented: $viewModel.showsPreview) { previewSheet }
         .sheet(isPresented: $viewModel.showsConfirmRestore) { confirmSheet }
+        .alert("确认清理孤儿文件？", isPresented: $viewModel.showsOrphanCleanupConfirmation) {
+            Button("清理", role: .destructive) {
+                Task { await viewModel.confirmOrphanCleanup() }
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("仅删除未被任何记录引用、且超过宽限期（7 天）的文件。删除前会再次核对引用，且只删除个别文件，不删除目录。")
+        }
+    }
+
+    // MARK: Storage maintenance
+
+    private var maintenanceSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("存储维护", systemImage: "internaldrive")
+                .font(.title3.bold())
+            Text("缓存可随时重建，清理不会影响衣物、人物或生成历史。孤儿文件报告只读；清理需要单独确认。")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 12) {
+                Text("缓存使用：\(cacheUsageText)")
+                    .font(.callout)
+                Spacer()
+                Button {
+                    Task { await viewModel.enforceCacheLimit() }
+                } label: {
+                    Text(viewModel.isMaintenanceBusy ? "处理中…" : "清理缓存")
+                }
+                .accessibilityIdentifier("storage.cache.clean")
+                .disabled(viewModel.isMaintenanceBusy)
+            }
+
+            Divider()
+
+            HStack(spacing: 12) {
+                Text("孤儿文件：\(orphanSummaryText)")
+                    .font(.callout)
+                Spacer()
+                Button {
+                    Task { await viewModel.generateOrphanReport() }
+                } label: {
+                    Text(viewModel.isMaintenanceBusy ? "处理中…" : "扫描")
+                }
+                .accessibilityIdentifier("storage.orphan.scan")
+                .disabled(viewModel.isMaintenanceBusy)
+            }
+
+            if let report = viewModel.orphanReport {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("缺失引用 \(report.missingReferencedResources.count) · 无引用候选 \(report.unreferencedCandidates.count) · 可清理（宽限期后）\(report.eligibleCleanupCandidates.count)")
+                        .font(.caption)
+                    Text("可清理候选不会自动删除；执行前会重新核对引用。")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    if report.eligibleCleanupCandidates.count > 0 {
+                        Button {
+                            viewModel.requestOrphanCleanup()
+                        } label: {
+                            Text("删除无引用文件…")
+                        }
+                        .accessibilityIdentifier("storage.orphan.cleanup")
+                        .disabled(viewModel.isMaintenanceBusy)
+                    }
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+            }
+
+            if let message = viewModel.maintenanceMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("storage.maintenance.message")
+            }
+        }
+        .padding(16)
+        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var cacheUsageText: String {
+        guard let bytes = viewModel.cacheUsageBytes else { return "—" }
+        return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+
+    private var orphanSummaryText: String {
+        guard let report = viewModel.orphanReport else { return "尚未扫描" }
+        return "缺失 \(report.missingReferencedResources.count) · 无引用 \(report.unreferencedCandidates.count)"
     }
 
     // MARK: Backup
@@ -260,9 +351,14 @@ struct SettingsView: View {
             .appendingPathComponent("WardrobeSettingsPreview", isDirectory: true)
     )
     let storage = try! StorageService(configuration: configuration)
-    SettingsView(viewModel: SettingsViewModel(coordinator: BackupCoordinator(
-        container: container,
+    let repository = SwiftDataWardrobeRepository(container: container)
+    SettingsView(viewModel: SettingsViewModel(
+        coordinator: BackupCoordinator(
+            container: container,
+            storageService: storage,
+            configuration: configuration
+        ),
         storageService: storage,
-        configuration: configuration
-    )))
+        orphanReportService: OrphanReportService(repository: repository, storage: storage)
+    ))
 }
