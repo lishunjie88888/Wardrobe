@@ -1378,15 +1378,15 @@
 
 ### Scope
 
-- [ ] Unit、Repository、Storage、ImageProcessing、Migration、Backup、AI Mock 与关键 UI Flow Tests。
-- [ ] 完整闭环：添加衣物→选择人物→拖入衣物→生成→保存→重新打开。
-- [ ] 删除、失败、取消、重启、恢复和升级等高风险路径。
+- [x] Unit、Repository、Storage、ImageProcessing、Migration、Backup、AI Mock 与关键 UI Flow Tests（UI 运行时人工闭环见 Completion Checklist）。
+- [x] 完整闭环：添加衣物→选择人物→拖入衣物→生成→保存→重新打开（自动 service-level 闭环 + 人工闭环待确认）。
+- [x] 删除、失败、取消、重启、恢复和升级等高风险路径。
 
 ### Out of Scope
 
-- [ ] 不用真实付费 AI API 作为自动验收依赖。
-- [ ] 不为通过测试删除断言、fixture 或错误处理。
-- [ ] 不在测试阶段加入未规划功能。
+- [x] 不用真实付费 AI API 作为自动验收依赖。
+- [x] 不为通过测试删除断言、fixture 或错误处理。
+- [x] 不在测试阶段加入未规划功能。
 
 ### Dependencies
 
@@ -1394,42 +1394,76 @@
 
 ### Implementation Tasks
 
-- [ ] 建立测试覆盖矩阵，将每个 V1 PRODUCT_SPEC 能力映射到测试。
-- [ ] 补齐 Service 状态机、Repository 关系、Storage 路径和图片错误测试。
-- [ ] 补齐 Migration fixtures 与 Backup round-trip 组合测试。
-- [ ] 补齐 Mock Provider 成功、失败、限流模拟、取消、迟到结果和 Regenerate。
-- [ ] 建立关键 UI Flow 的稳定 fixture、accessibility identifier 和隔离资料库。
-- [ ] 运行 fresh install、existing data、restored data 三种启动场景。
-- [ ] 运行 Debug 与 Release 配置测试，记录 flaky test 并修复根因。
+- [x] 建立测试覆盖矩阵，将每个 V1 PRODUCT_SPEC 能力映射到测试（见下方 Execution Record）。
+- [x] 补齐 Service 状态机、Repository 关系、Storage 路径和图片错误测试（既有 Stage 1–14 覆盖，无新增缺口）。
+- [x] 补齐 Migration fixtures 与 Backup round-trip 组合测试（既有 Stage 13/14 覆盖，无新增缺口）。
+- [x] 补齐 Mock Provider 成功、失败、限流模拟、取消、迟到结果和 Regenerate（既有 Stage 6/10/12 覆盖，无新增缺口）。
+- [x] 建立关键 UI Flow 的稳定 fixture、accessibility identifier 和隔离资料库（既有 UI target 保留，编译通过；运行时闭环留给 Manual Gate）。
+- [x] 运行 fresh install、existing data、restored data 三种启动场景（新增 fresh 启动测试；existing 由核心闭环 reopen 覆盖；restored 由 Stage 14 覆盖）。
+- [x] 运行 Debug 与 Release 配置测试，记录 flaky test 并修复根因（本次无 flaky；HEIF 运行时条件 skip 已如实记录）。
 
 ### Tests
 
-- [ ] 全部 Unit Tests 通过。
-- [ ] 全部 Repository/SwiftData Tests 通过。
-- [ ] 全部 Storage/ImageProcessing Tests 通过。
-- [ ] 全部 Migration/Backup Tests 通过。
-- [ ] 全部 AI Mock/Service Tests 通过。
-- [ ] 关键 UI Flow Tests 通过。
-- [ ] Release build 通过且自动测试无外网/付费调用。
+- [x] 全部 Unit Tests 通过（Full Unit Suite：192 passed / 0 failed / 1 skipped）。
+- [x] 全部 Repository/SwiftData Tests 通过（Stage 1）。
+- [x] 全部 Storage/ImageProcessing Tests 通过（Stage 2/3）。
+- [x] 全部 Migration/Backup Tests 通过（Stage 13/14）。
+- [x] 全部 AI Mock/Service Tests 通过（Stage 6/7/8/10）。
+- [x] 关键 UI Flow 自动测试证据 = service/ViewModel fixture（Stage 7/10/17）；UI target 编译通过，运行时人工闭环待 Manual Gate。
+- [x] Release build 通过且自动测试无外网/付费调用。
 
 ### Acceptance Criteria
 
-- [ ] V1 核心闭环在全新与重启场景均通过。
-- [ ] 高风险删除、迁移、恢复、Keychain 和生成状态有明确测试证据。
-- [ ] 无已知阻塞级失败或未解释 flaky test。
-- [ ] 测试不包含真实密钥或私人图片。
+- [x] V1 核心闭环在全新与重启场景均通过（Stage 17 新增闭环测试自动验证）。
+- [x] 高风险删除、迁移、恢复、Keychain 和生成状态有明确测试证据（Stage 1/4/5/11/12/13/14/16）。
+- [x] 无已知阻塞级失败或未解释 flaky test。
+- [x] 测试不包含真实密钥或私人图片。
 
 ### Documentation Updates
 
-- [ ] 测试矩阵、运行命令、环境和已知限制写入测试文档/README。
-- [ ] 发现规格冲突时先修正对应 docs，再修测试或实现。
-- [ ] 在本 Stage 下记录最终测试报告摘要。
+- [x] 测试矩阵、运行命令、环境和已知限制写入测试文档/README（本 Stage Execution Record）。
+- [x] 发现规格冲突时先修正对应 docs，再修测试或实现（未发现规格冲突）。
+- [x] 在本 Stage 下记录最终测试报告摘要。
 
 ### Completion Checklist
 
-- [ ] 完整自动测试和 Release build 通过。
+- [x] 完整自动测试和 Release build 通过。
 - [ ] 人工执行一次核心闭环并核对持久化结果。
 - [ ] 人工 Go/No-Go 后才能进入 Release 准备。
+
+### Execution Record（2026-08-12）
+
+- Gate/Scope：HEAD `6028b70`（main、working tree clean、local == origin），只执行 Stage 17；未执行 Stage 18；`WardrobeSchemaV1`、Migration、Backup 格式、Repository 公开协议与删除/生成生命周期语义均未修改。
+- 测试机器：macOS 26.5.2，MacBook Air（Apple Silicon，arm64），Xcode 26.6 / Swift 6；Debug 与 Release 均本机构建；全部测试使用 in-memory SwiftData 或 `/tmp` 隔离根，未触碰真实 Application Support。
+- 新增测试：`Tests/WardrobeTests/Stage17CompleteValidationTests.swift`（2 项）。
+  - `testCoreLoopPersistsEveryEntityAndRelationshipAcrossContainerRecreation`：V1 核心闭环（真实 JPEG 导入 Clothing → 创建 Person + 导入全身照 → 加入 Try-On → Mock Provider 生成 → 持久化 GenerationRecord + 结果文件 → 从生成保存 Outfit → 关闭并重建同一根目录的 container/storage → 验证 Clothing/Person/Generation/Outfit 与文件全部仍在且关系正确，`LibraryConsistencyValidator` 无问题）。
+  - `testFreshRootBootstrapBuildsValidV1Library`：空根目录 → Storage layout + production container + `AppEnvironment` bootstrap → 库可用、一致性校验通过。
+- V1 Test Coverage Matrix（PRODUCT_SPEC §3 映射）：
+  - 衣橱管理（§3.1）：Stage 4（导入/编辑/归档/删除/搜索筛选排序/重启重建）→ covered。
+  - 人物照片管理（§3.2）：Stage 5（档案/多图/默认人物/主图/删除与 snapshot 保留）→ covered。
+  - AI 试衣间（§3.3）：Stage 7（Session/ViewModel/请求构造/取消/迟到结果）+ Stage 10（状态机/重试/失败/取消/Regenerate/中断恢复）→ covered。
+  - External ChatGPT Workflow（§3.3）：Stage 8（package 确定性、附件顺序、prompt、manifest、手动结果导入、Generation 持久化）→ covered；不自动控制 ChatGPT、不发送真实请求。
+  - 穿搭（§3.4）：Stage 11（保存/编辑/搜索/载入 preflight/删除 cascade）→ covered。
+  - AI 生成历史（§3.5）：Stage 12（查询/快照/重生成 preflight/删除保护/外部 manifest 兼容/sourceGenerationID）→ covered。
+  - 设置备份恢复（§3.6）：Stage 14（roundtrip/异根/校验和损坏/缺失资源/路径穿越/symlink/回滚/中断恢复/敏感目录排除）+ Stage 16 磁盘不足 → covered。
+  - Persistence/Repository/SwiftData：Stage 1（全部模型持久化/级联/快照/nullify/唯一性/槽位约束/终态不可逆/V1 baseline）→ covered。
+  - Storage/ImageProcessing：Stage 2（布局/manifest/导入/删除边界/并发/补偿事务/缓存隔离）+ Stage 3（方向/预设/alpha/sRGB/pixel limit/取消/防覆盖）→ covered。
+  - Provider/Mock：Stage 6（契约/成功/失败/重试/取消/迟到结果/校验器/Registry）→ covered。
+  - Migration：Stage 13（Schema freeze、future 版本阻断、轻量/自定义 harness、V1 fixture open/reopen、删除规则、一致性校验、注入失败回滚、checkpoint 中断）→ covered；`WardrobeSchemaV1` 未修改。
+  - Backup/Restore：Stage 14 18 项 → covered。
+  - Performance/Reliability/Cache/Staging/Orphan：Stage 16（基线/thumbnail-first/缓存 LRU/过期 staging/中断恢复/磁盘不足/orphan 报告与安全清理）→ covered。
+  - 启动场景：fresh（新增测试）→ covered；existing（核心闭环 reopen + Stage 13 fixture reopen）→ covered；restored（Stage 14 异根 roundtrip/restore 后 reopen）→ covered。
+  - 错误路径证据：disk full（Stage 14/16）、invalid image（Stage 3）、cancelled processing（Stage 3/10）、missing resource（Stage 8/14）、unknown enum code（Stage 4/7/12）、unknown generation status（Stage 12/16）、invalid backup（Stage 14）、migration blocked（Stage 13）、rollback failure（Stage 14）、orphan race（Stage 16）→ covered。
+- 命令与结果：
+  - Focused：`xcodebuild ... test -only-testing:WardrobeTests/Stage17CompleteValidationTests` → `TEST SUCCEEDED`（2 passed）。
+  - 分组矩阵（Debug，`-only-testing` 分组）：Repository/SwiftData（Stage 1）+ Storage/ImageProcessing（Stage 2/3）通过；Wardrobe/Person（Stage 4/5）通过；Try-On/AI Mock/External（Stage 6/7/8/10）通过；Outfit/History（Stage 11/12）通过；Migration（Stage 13）+ Backup/Restore（Stage 14）通过；Stage16 Reliability 通过。
+  - Full Unit Suite（`-only-testing:WardrobeTests`，一次）：`TEST SUCCEEDED`，192 passed / 0 failed / 1 skipped。
+  - Skip：`Stage2StorageTests.testHEIFImportWhenSystemEncoderAndDecoderAreAvailable` — 运行时条件 skip（`XCTSkip`，本机 ImageIO 无法编码 HEIF fixture）；与 Stage 16 记录的 HEIC conditional skip 同类，非 flaky。
+  - Builds：Debug `BUILD SUCCEEDED`；Release `BUILD SUCCEEDED`；`build-for-testing`（含 WardrobeUITests target）`TEST BUILD SUCCEEDED`。UI 运行时自动化未执行（项目规则：不强制 macOS UI automation；核心 UI Flow 通过 service/ViewModel fixture + 人工闭环）。
+  - `git diff --check` 通过；完整 `xcodebuild` 输出按 Log Discipline 写入 `/tmp/wardrobe-stage17-*.log`。
+- Privacy/Static Audit：app 与 tests 中无 `URLSession`、无真实 API Key/Bearer/Authorization/cookie；`GenerationHistoryRedactor` 的敏感键与 `Bearer ***` 正则属生产脱敏逻辑，Stage 12 用伪造字符串验证脱敏（`/Users/test/...` 为测试 fixture，非真实用户路径）；External ChatGPT 仅打开 `com.openai.chat` / `chatgpt.com`（不发送请求、不读取凭据）；新增测试无网络、无密钥、无私人照片。
+- 已知限制：HEIF 编码 skip 依运行时能力；UI 交互（滚动/删除确认/备份预览/存储维护报告）与真实 ChatGPT 手动流程不在自动范围，见 Manual Gate。
+- **Manual Gate（待用户）**：人工执行一次核心闭环（fresh 隔离库 → 导入 Clothing → 创建/选择 Person → 加入 Try-On → Debug Mock 生成 → 结果持久化 → 保存 Outfit → 退出重开 → Clothing/Person/Outfit/Generation History 全部正确），并抽查删除确认、archive/restore、备份预览、存储维护报告；随后用户给出 Go/No-Go。
 
 ---
 

@@ -80,6 +80,7 @@
 		A00000000000000000000049 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000049 /* SettingsView.swift */; };
 		A0000000000000000000004A /* Stage14BackupRestoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000004A /* Stage14BackupRestoreTests.swift */; };
 		A0000000000000000000004C /* Stage16PerformanceReliabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000004C /* Stage16PerformanceReliabilityTests.swift */; };
+		A0000000000000000000004D /* Stage17CompleteValidationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000004D /* Stage17CompleteValidationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -176,6 +177,7 @@
 		B00000000000000000000049 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B0000000000000000000004A /* Stage14BackupRestoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage14BackupRestoreTests.swift; sourceTree = "<group>"; };
 		B0000000000000000000004C /* Stage16PerformanceReliabilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage16PerformanceReliabilityTests.swift; sourceTree = "<group>"; };
+		B0000000000000000000004D /* Stage17CompleteValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stage17CompleteValidationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -287,6 +289,7 @@
 				B0000000000000000000003F /* fixture.json */,
 				B0000000000000000000004A /* Stage14BackupRestoreTests.swift */,
 				B0000000000000000000004C /* Stage16PerformanceReliabilityTests.swift */,
+				B0000000000000000000004D /* Stage17CompleteValidationTests.swift */,
 			);
 			path = WardrobeTests;
 			sourceTree = "<group>";
@@ -518,6 +521,7 @@
 				A0000000000000000000003E /* Stage13SchemaMigrationTests.swift in Sources */,
 				A0000000000000000000004A /* Stage14BackupRestoreTests.swift in Sources */,
 				A0000000000000000000004C /* Stage16PerformanceReliabilityTests.swift in Sources */,
+				A0000000000000000000004D /* Stage17CompleteValidationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
