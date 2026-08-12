@@ -1,18 +1,5 @@
 import AppKit
 import SwiftUI
-import UniformTypeIdentifiers
-
-struct ClothingDragPayload: Codable, Transferable, Sendable {
-    static var transferRepresentation: some TransferRepresentation {
-        CodableRepresentation(contentType: .wardrobeClothing)
-    }
-
-    let clothingID: UUID
-}
-
-private extension UTType {
-    static let wardrobeClothing = UTType(exportedAs: "com.lishunjie.Wardrobe.clothing")
-}
 
 struct TryOnView: View {
     @State private var model: TryOnViewModel
@@ -109,7 +96,7 @@ struct TryOnView: View {
                             TryOnClothingCard(item: item, loader: model.imageLoader) { slot in
                                 model.addClothing(item.id, to: slot)
                             }
-                            .draggable(ClothingDragPayload(clothingID: item.id))
+                            .draggable(item.id.uuidString)
                             .accessibilityIdentifier("tryon.clothing.\(item.id.uuidString)")
                         }
                     }
@@ -192,8 +179,10 @@ struct TryOnView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .accessibilityIdentifier("tryon.person.canvas")
-                    .dropDestination(for: ClothingDragPayload.self) { payloads, _ in
-                        payloads.reduce(false) { accepted, payload in model.addClothing(payload.clothingID) || accepted }
+                    .dropDestination(for: String.self) { payloads, _ in
+                        payloads.compactMap(UUID.init(uuidString:)).reduce(false) { accepted, clothingID in
+                            model.addClothing(clothingID) || accepted
+                        }
                     } isTargeted: { _ in }
                     .padding(.horizontal, 16)
                     referencePicker
@@ -618,8 +607,10 @@ private struct TryOnSlotView: View {
         .padding(10)
         .background(.quaternary.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(.separator.opacity(0.55)))
-        .dropDestination(for: ClothingDragPayload.self) { payloads, _ in
-            payloads.reduce(false) { accepted, payload in model.addClothing(payload.clothingID, to: slot) || accepted }
+        .dropDestination(for: String.self) { payloads, _ in
+            payloads.compactMap(UUID.init(uuidString:)).reduce(false) { accepted, clothingID in
+                model.addClothing(clothingID, to: slot) || accepted
+            }
         } isTargeted: { _ in }
         .accessibilityIdentifier("tryon.slot.\(slot.rawValue)")
     }
